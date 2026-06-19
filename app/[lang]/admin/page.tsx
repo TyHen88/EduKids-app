@@ -1,0 +1,154 @@
+import Image from "next/image";
+import { Users, GraduationCap, PlayCircle, BookOpen } from "lucide-react";
+
+import { getAdminStats, getCoursesWithProgress } from "@/db/queries";
+
+const AdminDashboardPage = async () => {
+  const [stats, courses] = await Promise.all([
+    getAdminStats(),
+    getCoursesWithProgress(),
+  ]);
+
+  const cards = [
+    {
+      label: "Total Students",
+      value: stats.students.toLocaleString(),
+      icon: Users,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50 border-indigo-100",
+    },
+    {
+      label: "Total Courses",
+      value: stats.courses.toLocaleString(),
+      icon: GraduationCap,
+      color: "text-purple-600",
+      bg: "bg-purple-50 border-purple-100",
+    },
+    {
+      label: "Total Lessons",
+      value: stats.lessons.toLocaleString(),
+      icon: BookOpen,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 border-emerald-100",
+    },
+    {
+      label: "Completions",
+      value: stats.completions.toLocaleString(),
+      icon: PlayCircle,
+      color: "text-orange-600",
+      bg: "bg-orange-50 border-orange-100",
+    },
+  ];
+
+  return (
+    <div className="space-y-8 pb-12">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
+          Admin Overview
+        </h1>
+        <p className="mt-2 text-lg text-slate-500">
+          A snapshot of your learning platform.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {cards.map((stat) => (
+          <div
+            key={stat.label}
+            className="flex items-center gap-4 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm"
+          >
+            <div
+              className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 ${stat.bg} ${stat.color}`}
+            >
+              <stat.icon className="h-7 w-7" />
+            </div>
+            <div>
+              <div className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">
+                {stat.label}
+              </div>
+              <div className="text-3xl font-black text-slate-800">
+                {stat.value}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Manage courses */}
+        <div className="space-y-6 lg:col-span-2">
+          <div className="relative overflow-hidden rounded-[32px] border-2 border-slate-100 bg-white p-8 text-sm shadow-sm">
+            <div className="absolute left-0 right-0 top-0 h-2 bg-indigo-500" />
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-bold tracking-tight text-slate-800">
+                Manage Courses
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {courses.length === 0 && (
+                <p className="text-slate-400">No courses yet.</p>
+              )}
+              {courses.map((course) => (
+                <div
+                  key={course.id}
+                  className="group flex items-center justify-between rounded-2xl border-2 border-slate-100 p-4 transition-colors hover:border-indigo-100 hover:bg-indigo-50/30"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-100">
+                      <Image
+                        src={course.imageSrc}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    </div>
+                    <div>
+                      <div className="mb-1 text-base font-bold text-slate-900">
+                        {course.title}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                        <span className="rounded-md bg-slate-100 px-2 py-1">
+                          {course.category}
+                        </span>
+                        <span>{course.totalLessons} Lessons</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400 transition-colors group-hover:text-indigo-600">
+                    {course.difficulty}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick info */}
+        <div>
+          <div className="relative overflow-hidden rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
+            <div className="absolute left-0 right-0 top-0 h-2 bg-purple-500" />
+            <h2 className="mb-6 text-lg font-bold tracking-tight text-slate-800">
+              Platform Health
+            </h2>
+            <div className="space-y-3">
+              <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                {stats.students} learners enrolled
+              </div>
+              <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                {stats.lessons} lessons across {stats.courses} courses
+              </div>
+              <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                {stats.completions} challenges completed
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboardPage;
