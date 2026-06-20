@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { MainShell } from "@/components/main-shell";
 import { getIsAdmin } from "@/lib/admin";
-import { getUserProgress, getUserNotifications, getUnreadNotificationCount } from "@/db/queries";
+import { getUserProgress, getUserNotifications, getUnreadNotificationCount, getIsChild } from "@/db/queries";
 import { PushNotificationManager } from "@/components/push-notification-manager";
 
 type MainLayoutProps = {
@@ -19,11 +19,19 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
 
   if (!userId) redirect(`/${lang}`);
 
-  const [userProgress, isAdmin, notifications, unreadCount] = await Promise.all([
-    getUserProgress(),
+  const userProgress = await getUserProgress();
+
+  // New user with no profile → onboarding
+  if (!userProgress) redirect(`/${lang}/onboarding`);
+
+  // Parent users should use the parent dashboard
+  if (userProgress.role === "parent") redirect(`/${lang}/family`);
+
+  const [isAdmin, notifications, unreadCount, isChild] = await Promise.all([
     getIsAdmin(),
     getUserNotifications(),
     getUnreadNotificationCount(),
+    getIsChild(),
   ]);
 
   return (
@@ -38,6 +46,7 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
         userName={userProgress?.userName || "Explorer"}
         initialNotifications={notifications}
         initialUnreadCount={unreadCount}
+        isChild={isChild}
       >
         {children}
       </MainShell>

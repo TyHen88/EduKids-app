@@ -19,6 +19,8 @@ export const courses = pgTable("courses", {
   description: text("description").notNull().default(""),
   category: text("category").notNull().default("General"),
   difficulty: text("difficulty").notNull().default("Beginner"), // Beginner | Intermediate | Advanced
+  // null = public (admin-created); userId = private (parent-created, only for their children)
+  createdBy: text("created_by"),
 });
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -136,6 +138,7 @@ export const userProgress = pgTable("user_progress", {
   userId: text("user_id").primaryKey(),
   userName: text("user_name").notNull().default("User"),
   userImageSrc: text("user_image_src").notNull().default("/mascot.svg"),
+  role: text("role").notNull().default("learner"), // "learner" | "parent"
   activeCourseId: integer("active_course_id").references(() => courses.id, {
     onDelete: "cascade",
   }),
@@ -160,8 +163,67 @@ export const userProgressRelations = relations(
     userBadges: many(userBadges),
     followers: many(userFollowers, { relationName: "following" }),
     following: many(userFollowers, { relationName: "follower" }),
+    // Parent-child family relations
+    childrenAsParent: many(familyMembers, { relationName: "parent" }),
+    parentsAsChild: many(familyMembers, { relationName: "child" }),
   })
 );
+
+// --- Family (Parent ↔ Child) -------------------------------------------------
+
+export const familyMembers = pgTable("family_members", {
+  id: serial("id").primaryKey(),
+  parentId: text("parent_id")
+    .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  childId: text("child_id")
+    .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const familyMembersRelations = relations(familyMembers, ({ one }) => ({
+  parent: one(userProgress, {
+    fields: [familyMembers.parentId],
+    references: [userProgress.userId],
+    relationName: "parent",
+  }),
+  child: one(userProgress, {
+    fields: [familyMembers.childId],
+    references: [userProgress.userId],
+    relationName: "child",
+  }),
+}));
+
+export const courseAssignments = pgTable("course_assignments", {
+  id: serial("id").primaryKey(),
+  parentId: text("parent_id")
+    .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  childId: text("child_id")
+    .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+  notes: text("notes"),
+});
+
+export const courseAssignmentsRelations = relations(courseAssignments, ({ one }) => ({
+  parent: one(userProgress, {
+    fields: [courseAssignments.parentId],
+    references: [userProgress.userId],
+  }),
+  child: one(userProgress, {
+    fields: [courseAssignments.childId],
+    references: [userProgress.userId],
+  }),
+  course: one(courses, {
+    fields: [courseAssignments.courseId],
+    references: [courses.id],
+  }),
+}));
 
 // --- Badges (achievements) ---------------------------------------------------
 

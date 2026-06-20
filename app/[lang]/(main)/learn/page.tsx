@@ -19,6 +19,7 @@ import {
   getTopFriends,
   getUserBadges,
   getUserProgress,
+  getIsChild,
 } from "@/db/queries";
 
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,12 @@ const isSameDay = (a: Date, b: Date) =>
 const LearnPage = async ({ params }: Props) => {
   const { lang } = await params;
 
-  const [userProgress, courses, badges, topFriends] = await Promise.all([
+  const [userProgress, courses, badges, topFriends, isChild] = await Promise.all([
     getUserProgress(),
     getCoursesWithProgress(),
     getUserBadges(),
     getTopFriends(),
+    getIsChild(),
   ]);
 
   if (!userProgress || !userProgress.activeCourseId)
@@ -276,11 +278,11 @@ const LearnPage = async ({ params }: Props) => {
             </div>
           </section>
 
-          {/* Friends Club */}
+          {/* Friends Club / Family Club */}
           <section className="hidden lg:block">
             <div className="mb-4 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
-                <Users className="h-5 w-5 text-purple-500" /> Friends Club
+                <Users className="h-5 w-5 text-purple-500" /> {isChild ? "Family Members" : "Friends Club"}
               </h2>
             </div>
             <div className="space-y-3 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
@@ -293,10 +295,12 @@ const LearnPage = async ({ params }: Props) => {
                     height={60}
                     className="mx-auto mb-2 opacity-50 grayscale"
                   />
-                  <p className="text-slate-500 font-bold mb-1 text-sm">No friends yet!</p>
-                  <Button variant="secondary" className="w-full mt-2" asChild>
-                    <Link href={`/${lang}/friends`}>Find Friends</Link>
-                  </Button>
+                  <p className="text-slate-500 font-bold mb-1 text-sm">{isChild ? "No family members yet!" : "No friends yet!"}</p>
+                  {!isChild && (
+                    <Button variant="secondary" className="w-full mt-2" asChild>
+                      <Link href={`/${lang}/friends`}>Find Friends</Link>
+                    </Button>
+                  )}
                 </div>
               ) : (
                 topFriends.slice(0, 4).map((u, i) => {
@@ -326,13 +330,15 @@ const LearnPage = async ({ params }: Props) => {
                             {isYou ? "You" : u.userName}
                           </div>
                           <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            Rank #{i + 1}
+                            {u.role === "parent" ? "Parent" : `Rank #${i + 1}`}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 font-black text-indigo-600">
-                        {u.points} <Star className="h-3 w-3 fill-current" />
-                      </div>
+                      {u.role !== "parent" && (
+                        <div className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 font-black text-indigo-600">
+                          {u.points} <Star className="h-3 w-3 fill-current" />
+                        </div>
+                      )}
                     </div>
                   );
                 })

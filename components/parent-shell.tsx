@@ -1,0 +1,163 @@
+"use client";
+
+import type { ReactNode } from "react";
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
+import {
+  Home,
+  Users,
+  BookOpen,
+  Rocket,
+  Settings,
+  GraduationCap,
+} from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { useLocale } from "@/app/[lang]/lang-provider";
+
+type ParentShellProps = {
+  userImageSrc: string;
+  userName: string;
+  children: ReactNode;
+};
+
+export const ParentShell = ({
+  userImageSrc,
+  userName,
+  children,
+}: ParentShellProps) => {
+  const locale = useLocale();
+  const pathname = usePathname();
+
+  const parentLinks = [
+    { name: "Dashboard", href: `/${locale}/family`, icon: Home },
+    { name: "Children", href: `/${locale}/family/children`, icon: Users },
+    { name: "My Courses", href: `/${locale}/family/my-courses`, icon: GraduationCap },
+    { name: "Courses", href: `/${locale}/family/courses`, icon: BookOpen },
+    { name: "Settings", href: `/${locale}/family/profile`, icon: Settings },
+  ];
+
+  const isLinkActive = (href: string) => {
+    const dashboard = `/${locale}/family`;
+    if (href === dashboard) return pathname === dashboard;
+    return pathname === href || pathname.startsWith(href);
+  };
+
+  return (
+    <div className="relative flex h-screen flex-col overflow-hidden bg-slate-50 font-sans text-slate-900">
+      <header className="z-10 flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+        <Link
+          href={`/${locale}/family`}
+          className="flex shrink-0 items-center gap-2 text-xl font-bold text-emerald-600"
+        >
+          <div className="rounded-xl bg-emerald-600 p-2 text-white">
+            <Rocket className="h-6 w-6" />
+          </div>
+          <span className="hidden lg:inline">EduKids Family</span>
+        </Link>
+
+        {/* Top nav (tablet/desktop) */}
+        <nav className="mx-4 hidden shrink-0 items-center space-x-1 rounded-3xl border border-slate-100 bg-slate-50 p-1.5 sm:space-x-2 md:flex">
+          {parentLinks.map((link) => {
+            const isActive = isLinkActive(link.href);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={cn(
+                  "flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-300",
+                  isActive
+                    ? "border border-slate-100 bg-white text-emerald-600 shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-800"
+                )}
+              >
+                <link.icon
+                  className={cn(
+                    "h-5 w-5",
+                    isActive ? "text-emerald-600" : "text-slate-400"
+                  )}
+                />
+                <span className="hidden lg:inline">{link.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex shrink-0 items-center space-x-2 sm:space-x-4">
+          <Link
+            href={`/${locale}/family/profile`}
+            title={userName}
+            className={cn(
+              "relative ml-1 h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-slate-100 shadow-sm transition-colors sm:ml-2",
+              isLinkActive(`/${locale}/family/profile`)
+                ? "border-emerald-500"
+                : "border-slate-200 hover:border-emerald-400"
+            )}
+          >
+            <Image
+              src={userImageSrc}
+              alt={userName}
+              fill
+              className="object-cover"
+              sizes="40px"
+            />
+          </Link>
+        </div>
+      </header>
+
+      <main className="w-full flex-1 overflow-y-auto px-4 pb-28 pt-6 sm:px-8 md:pb-8">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="mx-auto h-full w-full max-w-7xl"
+        >
+          {children}
+        </motion.div>
+      </main>
+
+      {/* Bottom nav (mobile) */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex justify-center p-4 md:hidden">
+        <nav className="pointer-events-auto mx-auto flex w-full max-w-[400px] items-center justify-between rounded-[32px] border border-b-4 border-slate-200 bg-white/90 px-6 py-3 text-center shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+          {parentLinks.map((link) => {
+            const isActive = isLinkActive(link.href);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="group relative flex w-14 flex-col items-center"
+              >
+                <div
+                  className={cn(
+                    "transform rounded-2xl p-2.5 transition-all duration-300",
+                    isActive
+                      ? "-translate-y-2 scale-110 border border-emerald-100 bg-emerald-50 text-emerald-600"
+                      : "text-slate-400 group-hover:bg-slate-50 group-hover:text-slate-600"
+                  )}
+                >
+                  <link.icon
+                    className={cn("h-6 w-6", isActive && "fill-emerald-100")}
+                  />
+                </div>
+                <span
+                  className={cn(
+                    "absolute -bottom-1 w-full text-center text-[8px] font-extrabold uppercase tracking-widest transition-all duration-300",
+                    isActive
+                      ? "text-emerald-600 opacity-100"
+                      : "pointer-events-none translate-y-2 text-slate-400 opacity-0 group-hover:opacity-100"
+                  )}
+                >
+                  {link.name}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+};

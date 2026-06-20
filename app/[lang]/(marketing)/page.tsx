@@ -56,6 +56,23 @@ export default async function MarketingPage({ params }: Props) {
                   {dict["marketing.alreadyAccount"]}
                 </Link>
               </Button>
+
+              <div className="flex w-full items-center gap-4 py-2">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-xs font-bold uppercase text-slate-400">or</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <Button
+                size="lg"
+                variant="super"
+                className="w-full text-indigo-50"
+                asChild
+              >
+                <Link href={`/${lang}/kids-login`}>
+                  Kids Login
+                </Link>
+              </Button>
             </Show>
           </ClerkLoaded>
         </div>

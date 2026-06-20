@@ -2,23 +2,44 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
 
 import db from "@/db/drizzle";
 import {
   challengeOptions,
   challenges,
+  courses,
   lessons,
   units,
+  userProgress,
 } from "@/db/schema";
 import { getIsAdmin } from "@/lib/admin";
 
-const assertAdmin = async () => {
-  if (!(await getIsAdmin())) throw new Error("Unauthorized.");
+// Guard: caller must be admin OR the parent who created this course
+const assertEditorForCourse = async (courseId: number) => {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized.");
+  if (await getIsAdmin()) return; // admin always allowed
+
+  // Check if parent owns this course
+  const up = await db.query.userProgress.findFirst({
+    where: eq(userProgress.userId, userId),
+    columns: { role: true },
+  });
+  if (up?.role !== "parent") throw new Error("Unauthorized.");
+
+  const course = await db.query.courses.findFirst({
+    where: eq(courses.id, courseId),
+    columns: { createdBy: true },
+  });
+  if (course?.createdBy !== userId) throw new Error("Unauthorized.");
 };
 
 const revalidate = (courseId: number, lang: string) => {
   revalidatePath(`/${lang}/admin/courses/${courseId}`);
   revalidatePath(`/${lang}/admin/courses`);
+  revalidatePath(`/${lang}/family/my-courses/${courseId}`);
+  revalidatePath(`/${lang}/family/my-courses`);
   revalidatePath(`/${lang}/learn`);
 };
 
@@ -35,7 +56,7 @@ export const createUnit = async (
   data: UnitInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.title.trim()) throw new Error("Title is required.");
   await db.insert(units).values({
     courseId,
@@ -52,7 +73,7 @@ export const updateUnit = async (
   data: UnitInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.title.trim()) throw new Error("Title is required.");
   await db
     .update(units)
@@ -66,7 +87,7 @@ export const updateUnit = async (
 };
 
 export const deleteUnit = async (id: number, courseId: number, lang = "km") => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   await db.delete(units).where(eq(units.id, id));
   revalidate(courseId, lang);
 };
@@ -84,7 +105,7 @@ export const createLesson = async (
   data: LessonInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.title.trim()) throw new Error("Title is required.");
   await db
     .insert(lessons)
@@ -98,7 +119,7 @@ export const updateLesson = async (
   data: LessonInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.title.trim()) throw new Error("Title is required.");
   await db
     .update(lessons)
@@ -112,7 +133,7 @@ export const deleteLesson = async (
   courseId: number,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   await db.delete(lessons).where(eq(lessons.id, id));
   revalidate(courseId, lang);
 };
@@ -131,7 +152,7 @@ export const createChallenge = async (
   data: ChallengeInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.question.trim()) throw new Error("Question is required.");
   await db.insert(challenges).values({
     lessonId,
@@ -148,7 +169,7 @@ export const updateChallenge = async (
   data: ChallengeInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.question.trim()) throw new Error("Question is required.");
   await db
     .update(challenges)
@@ -166,7 +187,7 @@ export const deleteChallenge = async (
   courseId: number,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   await db.delete(challenges).where(eq(challenges.id, id));
   revalidate(courseId, lang);
 };
@@ -186,7 +207,7 @@ export const createOption = async (
   data: OptionInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.text.trim()) throw new Error("Text is required.");
   await db.insert(challengeOptions).values({
     challengeId,
@@ -204,7 +225,7 @@ export const updateOption = async (
   data: OptionInput,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   if (!data.text.trim()) throw new Error("Text is required.");
   await db
     .update(challengeOptions)
@@ -223,7 +244,7 @@ export const deleteOption = async (
   courseId: number,
   lang = "km"
 ) => {
-  await assertAdmin();
+  await assertEditorForCourse(courseId);
   await db.delete(challengeOptions).where(eq(challengeOptions.id, id));
   revalidate(courseId, lang);
 };

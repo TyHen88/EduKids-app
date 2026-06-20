@@ -1,7 +1,7 @@
 import { cache } from "react";
 
 import { auth } from "@clerk/nextjs/server";
-import { eq, ilike, not, and, inArray } from "drizzle-orm";
+import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
 
 import db from "./drizzle";
 import {
@@ -13,10 +13,28 @@ import {
   userProgress,
   userFollowers,
   appNotifications,
+  familyMembers,
+  courseAssignments,
 } from "./schema";
 
+// Returns only public (admin-created) courses. Private parent-created courses are excluded.
 export const getCourses = cache(async () => {
-  const data = await db.query.courses.findMany();
+  const data = await db.query.courses.findMany({
+    where: isNull(courses.createdBy),
+  });
+
+  return data;
+});
+
+// Returns public courses + the current parent's own private courses.
+// Used by the parent's course assignment page.
+export const getCoursesForParent = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.courses.findMany({
+    where: or(isNull(courses.createdBy), eq(courses.createdBy, userId)),
+  });
 
   return data;
 });
@@ -312,9 +330,24 @@ export const getTopFriends = cache(async () => {
   const { userId } = await auth();
   if (!userId) return [];
 
-  const following = await getFollowing();
-  const followingIds = following.map((f) => f.userId);
-  followingIds.push(userId); // include self
+  let followingIds: string[] = [userId];
+
+  // Check if child user
+  const parentLink = await db.query.familyMembers.findFirst({
+    where: eq(familyMembers.childId, userId),
+  });
+
+  if (parentLink) {
+    const siblings = await db.query.familyMembers.findMany({
+      where: eq(familyMembers.parentId, parentLink.parentId),
+    });
+    followingIds = siblings.map((s) => s.childId);
+    followingIds.push(parentLink.parentId); // include parent
+  } else {
+    const following = await getFollowing();
+    followingIds = following.map((f) => f.userId);
+    followingIds.push(userId); // include self
+  }
 
   const data = await db.query.userProgress.findMany({
     where: inArray(userProgress.userId, followingIds),
@@ -325,8 +358,17 @@ export const getTopFriends = cache(async () => {
       userName: true,
       userImageSrc: true,
       points: true,
+      role: true,
     },
   });
+
+  if (parentLink) {
+    data.sort((a, b) => {
+      if (a.role === "parent" && b.role !== "parent") return -1;
+      if (b.role === "parent" && a.role !== "parent") return 1;
+      return b.points - a.points; // otherwise sort by points descending
+    });
+  }
 
   return data;
 });
@@ -344,6 +386,17 @@ export const searchUsers = cache(async (query: string, offset: number = 0) => {
   });
 
   return data;
+});
+
+export const getIsChild = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return false;
+
+  const parentLink = await db.query.familyMembers.findFirst({
+    where: eq(familyMembers.childId, userId),
+  });
+
+  return !!parentLink;
 });
 
 // --- Courses decorated with the current user's progress (for "My Courses") ---
@@ -367,7 +420,29 @@ export const getCoursesWithProgress = cache(
     const { userId } = await auth();
     const activeUserProgress = await getUserProgress();
 
+    let childCourseIds: number[] | null = null;
+    if (userId) {
+      // Check if this user is a child (has a parent)
+      const parentLink = await db.query.familyMembers.findFirst({
+        where: eq(familyMembers.childId, userId),
+      });
+
+      if (parentLink) {
+        // This user is a child. Fetch their assigned courses.
+        const assignments = await db.query.courseAssignments.findMany({
+          where: eq(courseAssignments.childId, userId),
+        });
+        childCourseIds = assignments.map(a => a.courseId);
+        
+        // If a child has no assigned courses, return an empty backpack
+        if (childCourseIds.length === 0) {
+          return [];
+        }
+      }
+    }
+
     const data = await db.query.courses.findMany({
+      where: childCourseIds ? inArray(courses.id, childCourseIds) : undefined,
       orderBy: (courses, { asc }) => [asc(courses.id)],
       with: {
         units: {
@@ -573,4 +648,121 @@ export const getUnreadNotificationCount = cache(async () => {
   });
 
   return data.length;
+});
+
+// --- Family / Parent Features ------------------------------------------------
+
+export const getChildren = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.familyMembers.findMany({
+    where: eq(familyMembers.parentId, userId),
+    with: {
+      child: {
+        with: {
+          activeCourse: true,
+        },
+      },
+    },
+  });
+
+  return data.map((fm) => fm.child);
+});
+
+export const getChildProgress = cache(async (childId: string) => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  // Verify this child actually belongs to the parent
+  const isFamily = await db.query.familyMembers.findFirst({
+    where: and(
+      eq(familyMembers.parentId, userId),
+      eq(familyMembers.childId, childId)
+    ),
+  });
+
+  if (!isFamily) return null;
+
+  const data = await db.query.userProgress.findFirst({
+    where: eq(userProgress.userId, childId),
+    with: {
+      activeCourse: true,
+    },
+  });
+
+  return data;
+});
+
+export const getCourseAssignments = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.courseAssignments.findMany({
+    where: eq(courseAssignments.parentId, userId),
+  });
+
+  return data;
+});
+
+// --- Parent Course Management ------------------------------------------------
+
+export type ParentCourse = {
+  id: number;
+  title: string;
+  imageSrc: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  units: number;
+  lessons: number;
+};
+
+export const getParentCourses = cache(async (): Promise<ParentCourse[]> => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.courses.findMany({
+    where: eq(courses.createdBy, userId),
+    orderBy: (courses, { asc }) => [asc(courses.id)],
+    with: { units: { with: { lessons: true } } },
+  });
+
+  return data.map((course) => ({
+    id: course.id,
+    title: course.title,
+    imageSrc: course.imageSrc,
+    description: course.description,
+    category: course.category,
+    difficulty: course.difficulty,
+    units: course.units.length,
+    lessons: course.units.reduce((acc, unit) => acc + unit.lessons.length, 0),
+  }));
+});
+
+export const getParentCourseTree = cache(async (courseId: number) => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const data = await db.query.courses.findFirst({
+    where: and(eq(courses.id, courseId), eq(courses.createdBy, userId)),
+    with: {
+      units: {
+        orderBy: (units, { asc }) => [asc(units.order)],
+        with: {
+          lessons: {
+            orderBy: (lessons, { asc }) => [asc(lessons.order)],
+            with: {
+              challenges: {
+                orderBy: (challenges, { asc }) => [asc(challenges.order)],
+                with: { challengeOptions: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return data ?? null;
 });

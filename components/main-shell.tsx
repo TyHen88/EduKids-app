@@ -32,6 +32,7 @@ type MainShellProps = {
   userName: string;
   initialNotifications?: any[];
   initialUnreadCount?: number;
+  isChild?: boolean;
   children: ReactNode;
 };
 
@@ -44,6 +45,7 @@ export const MainShell = ({
   userName,
   initialNotifications = [],
   initialUnreadCount = 0,
+  isChild = false,
   children,
 }: MainShellProps) => {
   const locale = useLocale();
@@ -53,7 +55,9 @@ export const MainShell = ({
     { name: "Home", href: `/${locale}/learn`, icon: Home },
     { name: "Star Map", href: `/${locale}/path`, icon: MapIcon },
     { name: "Backpack", href: `/${locale}/courses`, icon: Backpack },
-    { name: "Friends", href: `/${locale}/friends`, icon: Users },
+    ...(isChild
+      ? [{ name: "Family", href: `/${locale}/my-family`, icon: Heart }]
+      : [{ name: "Friends", href: `/${locale}/friends`, icon: Users }]),
     { name: "Galaxy", href: `/${locale}/achievements`, icon: Trophy },
   ];
 

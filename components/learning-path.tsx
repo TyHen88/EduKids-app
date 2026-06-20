@@ -77,15 +77,19 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
     if (scrollContainerRef.current) {
       const unlockedIndex = nodes.findIndex((p) => p.status === "unlocked");
       if (unlockedIndex !== -1) {
-        const yPos = unlockedIndex * rowHeight + startY;
-        const containerHeight = scrollContainerRef.current.clientHeight;
-        scrollContainerRef.current.scrollTo({
-          top: Math.max(0, yPos - containerHeight / 2),
-          behavior: "smooth",
-        });
+        // Wait for render so offsetTop is correct
+        setTimeout(() => {
+          if (!scrollContainerRef.current) return;
+          const yPos = unlockedIndex * rowHeight + startY;
+          const containerOffset = scrollContainerRef.current.offsetTop;
+          window.scrollTo({
+            top: Math.max(0, containerOffset + yPos - window.innerHeight / 2),
+            behavior: "smooth",
+          });
+        }, 100);
       }
     }
-  }, [nodes]);
+  }, [nodes, rowHeight, startY]);
 
   return (
     <div className="mx-auto mt-4 max-w-4xl overflow-hidden px-2 pb-12 sm:px-6">
@@ -100,8 +104,7 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
 
       <div
         ref={scrollContainerRef}
-        className="hide-scrollbar relative mx-auto w-full max-w-3xl overflow-y-auto"
-        style={{ height: "70vh" }}
+        className="relative mx-auto w-full max-w-3xl"
       >
         <div
           className="relative mx-auto w-full"
