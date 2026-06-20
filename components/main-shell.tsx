@@ -16,10 +16,12 @@ import {
   Heart,
   Rocket,
   LayoutDashboard,
+  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/app/[lang]/lang-provider";
+import { NotificationBell } from "@/components/notification-bell";
 
 type MainShellProps = {
   points: number;
@@ -28,6 +30,8 @@ type MainShellProps = {
   isAdmin: boolean;
   userImageSrc: string;
   userName: string;
+  initialNotifications?: any[];
+  initialUnreadCount?: number;
   children: ReactNode;
 };
 
@@ -38,6 +42,8 @@ export const MainShell = ({
   isAdmin,
   userImageSrc,
   userName,
+  initialNotifications = [],
+  initialUnreadCount = 0,
   children,
 }: MainShellProps) => {
   const locale = useLocale();
@@ -47,6 +53,7 @@ export const MainShell = ({
     { name: "Home", href: `/${locale}/learn`, icon: Home },
     { name: "Star Map", href: `/${locale}/path`, icon: MapIcon },
     { name: "Backpack", href: `/${locale}/courses`, icon: Backpack },
+    { name: "Friends", href: `/${locale}/friends`, icon: Users },
     { name: "Galaxy", href: `/${locale}/achievements`, icon: Trophy },
   ];
 
@@ -145,6 +152,13 @@ export const MainShell = ({
               <LayoutDashboard className="h-5 w-5" />
             </Link>
           )}
+
+          <div className="ml-1 sm:ml-2">
+            <NotificationBell 
+              initialNotifications={initialNotifications} 
+              initialUnreadCount={initialUnreadCount} 
+            />
+          </div>
 
           <Link
             href={`/${locale}/profile`}

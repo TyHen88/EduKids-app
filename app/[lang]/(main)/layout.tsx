@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 
 import { MainShell } from "@/components/main-shell";
 import { getIsAdmin } from "@/lib/admin";
-import { getUserProgress } from "@/db/queries";
+import { getUserProgress, getUserNotifications, getUnreadNotificationCount } from "@/db/queries";
+import { PushNotificationManager } from "@/components/push-notification-manager";
 
 type MainLayoutProps = {
   children: ReactNode;
@@ -18,22 +19,29 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
 
   if (!userId) redirect(`/${lang}`);
 
-  const [userProgress, isAdmin] = await Promise.all([
+  const [userProgress, isAdmin, notifications, unreadCount] = await Promise.all([
     getUserProgress(),
     getIsAdmin(),
+    getUserNotifications(),
+    getUnreadNotificationCount(),
   ]);
 
   return (
-    <MainShell
-      points={userProgress?.points ?? 0}
-      hearts={userProgress?.hearts ?? 0}
-      streak={userProgress?.streak ?? 0}
-      isAdmin={isAdmin}
-      userImageSrc={userProgress?.userImageSrc || "/mascot.svg"}
-      userName={userProgress?.userName || "Explorer"}
-    >
-      {children}
-    </MainShell>
+    <>
+      <PushNotificationManager />
+      <MainShell
+        points={userProgress?.points ?? 0}
+        hearts={userProgress?.hearts ?? 0}
+        streak={userProgress?.streak ?? 0}
+        isAdmin={isAdmin}
+        userImageSrc={userProgress?.userImageSrc || "/mascot.svg"}
+        userName={userProgress?.userName || "Explorer"}
+        initialNotifications={notifications}
+        initialUnreadCount={unreadCount}
+      >
+        {children}
+      </MainShell>
+    </>
   );
 };
 

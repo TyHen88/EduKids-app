@@ -158,6 +158,8 @@ export const userProgressRelations = relations(
       references: [courses.id],
     }),
     userBadges: many(userBadges),
+    followers: many(userFollowers, { relationName: "following" }),
+    following: many(userFollowers, { relationName: "follower" }),
   })
 );
 
@@ -192,6 +194,80 @@ export const userBadgesRelations = relations(userBadges, ({ one }) => ({
   }),
   userProgress: one(userProgress, {
     fields: [userBadges.userId],
+    references: [userProgress.userId],
+  }),
+}));
+
+// --- Social (Connections/Followers) ------------------------------------------
+
+export const userFollowers = pgTable("user_followers", {
+  id: serial("id").primaryKey(),
+  followerId: text("follower_id")
+    .references(() => userProgress.userId, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  followingId: text("following_id")
+    .references(() => userProgress.userId, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  isAccepted: boolean("is_accepted").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const userFollowersRelations = relations(userFollowers, ({ one }) => ({
+  follower: one(userProgress, {
+    fields: [userFollowers.followerId],
+    references: [userProgress.userId],
+    relationName: "follower",
+  }),
+  following: one(userProgress, {
+    fields: [userFollowers.followingId],
+    references: [userProgress.userId],
+    relationName: "following",
+  }),
+}));
+
+// --- Web Push Notifications --------------------------------------------------
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => userProgress.userId, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(userProgress, {
+    fields: [pushSubscriptions.userId],
+    references: [userProgress.userId],
+  }),
+}));
+
+export const appNotifications = pgTable("app_notifications", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => userProgress.userId, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  actionUrl: text("action_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const appNotificationsRelations = relations(appNotifications, ({ one }) => ({
+  user: one(userProgress, {
+    fields: [appNotifications.userId],
     references: [userProgress.userId],
   }),
 }));

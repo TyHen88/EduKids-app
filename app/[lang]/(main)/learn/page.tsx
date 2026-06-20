@@ -9,17 +9,19 @@ import {
   CheckCircle2,
   ShieldQuestion,
   Users,
+  Globe,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { QUESTS } from "@/constants";
 import {
   getCoursesWithProgress,
-  getTopTenUsers,
+  getTopFriends,
   getUserBadges,
   getUserProgress,
 } from "@/db/queries";
 
+import { Button } from "@/components/ui/button";
 import { CompanionBuddy } from "./companion-buddy";
 import { DailyChest } from "./daily-chest";
 
@@ -35,11 +37,11 @@ const isSameDay = (a: Date, b: Date) =>
 const LearnPage = async ({ params }: Props) => {
   const { lang } = await params;
 
-  const [userProgress, courses, badges, topUsers] = await Promise.all([
+  const [userProgress, courses, badges, topFriends] = await Promise.all([
     getUserProgress(),
     getCoursesWithProgress(),
     getUserBadges(),
-    getTopTenUsers(),
+    getTopFriends(),
   ]);
 
   if (!userProgress || !userProgress.activeCourseId)
@@ -274,7 +276,7 @@ const LearnPage = async ({ params }: Props) => {
             </div>
           </section>
 
-          {/* Friends club (real leaderboard) */}
+          {/* Friends Club */}
           <section className="hidden lg:block">
             <div className="mb-4 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
@@ -282,47 +284,58 @@ const LearnPage = async ({ params }: Props) => {
               </h2>
             </div>
             <div className="space-y-3 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
-              {topUsers.slice(0, 4).map((u, i) => {
-                const isYou = u.userId === userProgress.userId;
-                return (
-                  <div
-                    key={u.userId}
-                    className={cn(
-                      "relative flex items-center justify-between rounded-2xl border-2 p-4 transition-transform hover:scale-[1.02]",
-                      isYou
-                        ? "border-indigo-200 bg-indigo-50"
-                        : "border-purple-200 bg-purple-50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-sm">
-                        <Image
-                          src={u.userImageSrc}
-                          alt={u.userName}
-                          fill
-                          className="object-cover"
-                          sizes="40px"
-                        />
+              {topFriends.length <= 1 ? (
+                <div className="text-center py-4">
+                  <Image
+                    src="/mascot.svg"
+                    alt="Mascot"
+                    width={60}
+                    height={60}
+                    className="mx-auto mb-2 opacity-50 grayscale"
+                  />
+                  <p className="text-slate-500 font-bold mb-1 text-sm">No friends yet!</p>
+                  <Button variant="secondary" className="w-full mt-2" asChild>
+                    <Link href={`/${lang}/friends`}>Find Friends</Link>
+                  </Button>
+                </div>
+              ) : (
+                topFriends.slice(0, 4).map((u, i) => {
+                  const isYou = u.userId === userProgress.userId;
+                  return (
+                    <div
+                      key={u.userId}
+                      className={cn(
+                        "relative flex items-center justify-between rounded-2xl border-2 p-4 transition-transform hover:scale-[1.02]",
+                        isYou
+                          ? "border-indigo-200 bg-indigo-50"
+                          : "border-purple-200 bg-purple-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-sm">
+                          <Image
+                            src={u.userImageSrc}
+                            alt={u.userName}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold leading-tight text-slate-800">
+                            {isYou ? "You" : u.userName}
+                          </div>
+                          <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            Rank #{i + 1}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-bold leading-tight text-slate-800">
-                          {isYou ? "You" : u.userName}
-                        </div>
-                        <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                          Rank #{i + 1}
-                        </div>
+                      <div className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 font-black text-indigo-600">
+                        {u.points} <Star className="h-3 w-3 fill-current" />
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 font-black text-indigo-600">
-                      {u.points} <Star className="h-3 w-3 fill-current" />
-                    </div>
-                  </div>
-                );
-              })}
-              {topUsers.length === 0 && (
-                <p className="text-center text-sm font-medium text-slate-400">
-                  Be the first on the leaderboard!
-                </p>
+                  );
+                })
               )}
             </div>
           </section>

@@ -1,7 +1,7 @@
 import { cache } from "react";
 
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { eq, ilike, not, and, inArray } from "drizzle-orm";
 
 import db from "./drizzle";
 import {
@@ -11,6 +11,8 @@ import {
   units,
   userBadges,
   userProgress,
+  userFollowers,
+  appNotifications,
 } from "./schema";
 
 export const getCourses = cache(async () => {
@@ -236,6 +238,114 @@ export const getTopTenUsers = cache(async () => {
   return data;
 });
 
+// --- Friends / Connections ---------------------------------------------------
+
+export const getFollowing = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.userFollowers.findMany({
+    where: and(
+      eq(userFollowers.followerId, userId),
+      eq(userFollowers.isAccepted, true)
+    ),
+    with: {
+      following: true,
+    },
+  });
+
+  return data.map((f) => f.following);
+});
+
+export const getFollowers = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.userFollowers.findMany({
+    where: and(
+      eq(userFollowers.followingId, userId),
+      eq(userFollowers.isAccepted, true)
+    ),
+    with: {
+      follower: true,
+    },
+  });
+
+  return data.map((f) => f.follower);
+});
+
+export const getPendingRequests = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.userFollowers.findMany({
+    where: and(
+      eq(userFollowers.followingId, userId),
+      eq(userFollowers.isAccepted, false)
+    ),
+    with: {
+      follower: true,
+    },
+  });
+
+  return data.map((f) => f.follower);
+});
+
+export const getSentRequests = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.userFollowers.findMany({
+    where: and(
+      eq(userFollowers.followerId, userId),
+      eq(userFollowers.isAccepted, false)
+    ),
+    with: {
+      following: true,
+    },
+  });
+
+  return data.map((f) => f.following);
+});
+
+export const getTopFriends = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const following = await getFollowing();
+  const followingIds = following.map((f) => f.userId);
+  followingIds.push(userId); // include self
+
+  const data = await db.query.userProgress.findMany({
+    where: inArray(userProgress.userId, followingIds),
+    orderBy: (userProgress, { desc }) => [desc(userProgress.points)],
+    limit: 10,
+    columns: {
+      userId: true,
+      userName: true,
+      userImageSrc: true,
+      points: true,
+    },
+  });
+
+  return data;
+});
+
+export const searchUsers = cache(async (query: string, offset: number = 0) => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.userProgress.findMany({
+    where: query 
+      ? and(ilike(userProgress.userName, `%${query}%`), not(eq(userProgress.userId, userId)))
+      : not(eq(userProgress.userId, userId)),
+    limit: 10,
+    offset: offset,
+  });
+
+  return data;
+});
+
 // --- Courses decorated with the current user's progress (for "My Courses") ---
 
 export type CourseWithProgress = {
@@ -435,4 +545,32 @@ export const getAdminCourses = cache(async (): Promise<AdminCourse[]> => {
     lessons: course.units.reduce((acc, unit) => acc + unit.lessons.length, 0),
     students: enrollments.filter((e) => e.activeCourseId === course.id).length,
   }));
+});
+
+// --- App Notifications -------------------------------------------------------
+
+export const getUserNotifications = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const data = await db.query.appNotifications.findMany({
+    where: eq(appNotifications.userId, userId),
+    orderBy: (appNotifications, { desc }) => [desc(appNotifications.createdAt)],
+  });
+
+  return data;
+});
+
+export const getUnreadNotificationCount = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return 0;
+
+  const data = await db.query.appNotifications.findMany({
+    where: and(
+      eq(appNotifications.userId, userId),
+      eq(appNotifications.isRead, false)
+    ),
+  });
+
+  return data.length;
 });
