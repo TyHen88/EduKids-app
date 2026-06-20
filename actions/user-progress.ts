@@ -12,7 +12,7 @@ import {
   getUserProgress,
   getUserSubscription,
 } from "@/db/queries";
-import { challengeProgress, challenges, userProgress } from "@/db/schema";
+import { lessonBlockProgress, lessonBlocks, userProgress } from "@/db/schema";
 
 export const upsertUserProgress = async (courseId: number, lang = "km") => {
   const { userId } = await auth();
@@ -56,7 +56,7 @@ export const upsertUserProgress = async (courseId: number, lang = "km") => {
   redirect(`/${lang}/learn`);
 };
 
-export const reduceHearts = async (challengeId: number) => {
+export const reduceHearts = async (blockId: number) => {
   const { userId } = await auth();
 
   if (!userId) throw new Error("Unauthorized.");
@@ -64,22 +64,22 @@ export const reduceHearts = async (challengeId: number) => {
   const currentUserProgress = await getUserProgress();
   const userSubscription = await getUserSubscription();
 
-  const challenge = await db.query.challenges.findFirst({
-    where: eq(challenges.id, challengeId),
+  const block = await db.query.lessonBlocks.findFirst({
+    where: eq(lessonBlocks.id, blockId),
   });
 
-  if (!challenge) throw new Error("Challenge not found.");
+  if (!block) throw new Error("Block not found.");
 
-  const lessonId = challenge.lessonId;
+  const lessonId = block.lessonId;
 
-  const existingChallengeProgress = await db.query.challengeProgress.findFirst({
+  const existingBlockProgress = await db.query.lessonBlockProgress.findFirst({
     where: and(
-      eq(challengeProgress.userId, userId),
-      eq(challengeProgress.challengeId, challengeId)
+      eq(lessonBlockProgress.userId, userId),
+      eq(lessonBlockProgress.blockId, blockId)
     ),
   });
 
-  const isPractice = !!existingChallengeProgress;
+  const isPractice = !!existingBlockProgress;
 
   if (isPractice) return { error: "practice" };
 

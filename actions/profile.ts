@@ -10,6 +10,9 @@ export type ProfileInput = {
   userName: string;
   userImageSrc: string;
   buddyName: string;
+  familyName?: string;
+  familyCover?: string;
+  familyMotto?: string;
 };
 
 export const updateProfile = async (data: ProfileInput, lang = "km") => {
@@ -20,6 +23,9 @@ export const updateProfile = async (data: ProfileInput, lang = "km") => {
     userName: data.userName.trim() || "Explorer",
     userImageSrc: data.userImageSrc.trim() || "/mascot.svg",
     buddyName: data.buddyName.trim() || "Cosmo",
+    familyName: data.familyName?.trim() || "My Family",
+    familyCover: data.familyCover || "emerald",
+    familyMotto: data.familyMotto?.trim() || "",
   };
 
   await db

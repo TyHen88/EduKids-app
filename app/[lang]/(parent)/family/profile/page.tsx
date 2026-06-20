@@ -28,6 +28,9 @@ const ParentProfilePage = async ({ params }: Props) => {
       initialName={userProgress.userName || user?.firstName || "Parent"}
       initialImage={userProgress.userImageSrc || "/mascot.svg"}
       email={email}
+      initialFamilyName={userProgress.familyName}
+      initialFamilyCover={userProgress.familyCover}
+      initialFamilyMotto={userProgress.familyMotto}
     />
   );
 };

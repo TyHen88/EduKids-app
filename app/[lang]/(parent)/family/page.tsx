@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Users, BookOpen, Star, Flame, Heart, ArrowRight } from "lucide-react";
 
-import { getChildren } from "@/db/queries";
+import { getChildren, getUserProgress } from "@/db/queries";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -10,21 +10,82 @@ type Props = {
   params: Promise<{ lang: string }>;
 };
 
+type PresetCover = {
+  name: string;
+  classes?: string;
+  imageSrc?: string;
+};
+
+const PRESET_COVERS: Record<string, PresetCover> = {
+  space: {
+    name: "Space Adventure",
+    imageSrc: "/uploads/family_cover_default.png",
+  },
+  emerald: {
+    name: "Emerald Aurora",
+    classes: "from-emerald-500 to-teal-600 border-emerald-100",
+  },
+  sunset: {
+    name: "Sunset Glow",
+    classes: "from-orange-500 to-rose-600 border-rose-100",
+  },
+  cosmic: {
+    name: "Cosmic Stardust",
+    classes: "from-indigo-600 to-violet-800 border-indigo-100",
+  },
+  ocean: {
+    name: "Ocean Breeze",
+    classes: "from-blue-500 to-cyan-600 border-cyan-100",
+  },
+};
+
 const FamilyDashboardPage = async ({ params }: Props) => {
   const { lang } = await params;
-  const children = await getChildren();
+  const [children, userProgress] = await Promise.all([
+    getChildren(),
+    getUserProgress(),
+  ]);
 
   const totalPoints = children.reduce((acc, child) => acc + child.points, 0);
 
+  const familyName = userProgress?.familyName || "My Family";
+  const familyCover = userProgress?.familyCover || "emerald";
+  const familyMotto = userProgress?.familyMotto || "";
+
   return (
     <div className="space-y-8 pb-12">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-          Family Dashboard
-        </h1>
-        <p className="mt-2 text-lg text-slate-500">
-          Monitor and manage your family's learning progress.
-        </p>
+      {/* Premium Family Banner */}
+      <div className={cn(
+        "relative overflow-hidden rounded-[32px] border-4 p-8 text-white shadow-md min-h-[160px] flex flex-col justify-end bg-slate-100",
+        PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.classes
+          ? `bg-gradient-to-br ${PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS].classes}`
+          : "border-slate-100"
+      )}>
+        {(PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || (!PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS] && familyCover)) && (
+          <Image
+            src={PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || familyCover}
+            alt="Family Cover"
+            fill
+            className="object-cover animate-fade-in"
+          />
+        )}
+        {(PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || (!PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS] && familyCover)) && (
+          <div className="absolute inset-0 bg-black/35" />
+        )}
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight drop-shadow-sm">
+            {familyName}
+          </h1>
+          {familyMotto ? (
+            <p className="mt-2 text-sm sm:text-base font-semibold text-white/95 italic drop-shadow-sm max-w-xl">
+              "{familyMotto}"
+            </p>
+          ) : (
+            <p className="mt-1.5 text-sm sm:text-base font-medium text-white/85 drop-shadow-sm">
+              Monitor and manage your family's learning progress.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Overview Cards */}

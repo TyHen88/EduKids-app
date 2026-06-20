@@ -9,35 +9,35 @@ import { LESSON_XP } from "@/lib/buddy";
 import db from "@/db/drizzle";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
 import {
-  challengeProgress,
-  challenges,
+  lessonBlockProgress,
+  lessonBlocks,
   userBadges,
   userProgress,
 } from "@/db/schema";
 
 // Cosmic Explorer — award the next un-collected sticker (badge) when the user
-// finishes every challenge in a lesson for the first time.
+// finishes every block in a lesson for the first time.
 const awardStickerIfLessonComplete = async (
   userId: string,
   lessonId: number
 ) => {
-  const lessonChallenges = await db.query.challenges.findMany({
-    where: eq(challenges.lessonId, lessonId),
+  const lessonBlocksData = await db.query.lessonBlocks.findMany({
+    where: eq(lessonBlocks.lessonId, lessonId),
     columns: { id: true },
   });
 
-  if (lessonChallenges.length === 0) return;
+  if (lessonBlocksData.length === 0) return;
 
-  const completed = await db.query.challengeProgress.findMany({
+  const completed = await db.query.lessonBlockProgress.findMany({
     where: and(
-      eq(challengeProgress.userId, userId),
-      eq(challengeProgress.completed, true)
+      eq(lessonBlockProgress.userId, userId),
+      eq(lessonBlockProgress.completed, true)
     ),
-    columns: { challengeId: true },
+    columns: { blockId: true },
   });
-  const completedIds = new Set(completed.map((c) => c.challengeId));
+  const completedIds = new Set(completed.map((c) => c.blockId));
 
-  const lessonComplete = lessonChallenges.every((c) => completedIds.has(c.id));
+  const lessonComplete = lessonBlocksData.every((c) => completedIds.has(c.id));
   if (!lessonComplete) return;
 
   const [allStickers, owned] = await Promise.all([
@@ -55,7 +55,7 @@ const awardStickerIfLessonComplete = async (
   await db.insert(userBadges).values({ userId, badgeId: next.id });
 };
 
-export const upsertChallengeProgress = async (challengeId: number) => {
+export const upsertLessonBlockProgress = async (blockId: number) => {
   const { userId } = await auth();
 
   if (!userId) throw new Error("Unauthorized.");
@@ -65,22 +65,22 @@ export const upsertChallengeProgress = async (challengeId: number) => {
 
   if (!currentUserProgress) throw new Error("User progress not found.");
 
-  const challenge = await db.query.challenges.findFirst({
-    where: eq(challenges.id, challengeId),
+  const block = await db.query.lessonBlocks.findFirst({
+    where: eq(lessonBlocks.id, blockId),
   });
 
-  if (!challenge) throw new Error("Challenge not found.");
+  if (!block) throw new Error("Block not found.");
 
-  const lessonId = challenge.lessonId;
+  const lessonId = block.lessonId;
 
-  const existingChallengeProgress = await db.query.challengeProgress.findFirst({
+  const existingBlockProgress = await db.query.lessonBlockProgress.findFirst({
     where: and(
-      eq(challengeProgress.userId, userId),
-      eq(challengeProgress.challengeId, challengeId)
+      eq(lessonBlockProgress.userId, userId),
+      eq(lessonBlockProgress.blockId, blockId)
     ),
   });
 
-  const isPractice = !!existingChallengeProgress;
+  const isPractice = !!existingBlockProgress;
 
   if (
     currentUserProgress.hearts === 0 &&
@@ -91,11 +91,11 @@ export const upsertChallengeProgress = async (challengeId: number) => {
 
   if (isPractice) {
     await db
-      .update(challengeProgress)
+      .update(lessonBlockProgress)
       .set({
         completed: true,
       })
-      .where(eq(challengeProgress.id, existingChallengeProgress.id));
+      .where(eq(lessonBlockProgress.id, existingBlockProgress.id));
 
     await db
       .update(userProgress)
@@ -113,8 +113,8 @@ export const upsertChallengeProgress = async (challengeId: number) => {
     return;
   }
 
-  await db.insert(challengeProgress).values({
-    challengeId,
+  await db.insert(lessonBlockProgress).values({
+    blockId,
     userId,
     completed: true,
   });

@@ -11,6 +11,11 @@ import {
   Layers,
   BookOpen,
   HelpCircle,
+  Type,
+  Image as ImageIcon,
+  X,
+  GripVertical,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,13 +37,15 @@ import {
   createLesson,
   updateLesson,
   deleteLesson,
-  createChallenge,
-  updateChallenge,
-  deleteChallenge,
-  createOption,
-  updateOption,
-  deleteOption,
 } from "@/actions/content";
+import {
+  createLessonBlock,
+  updateLessonBlock,
+  deleteLessonBlock,
+  reorderLessonBlocks,
+  uploadImage,
+} from "@/actions/lesson-block";
+import { BlockInput } from "@/actions/lesson-block";
 
 type Option = {
   id: number;
@@ -47,19 +54,25 @@ type Option = {
   imageSrc: string | null;
   audioSrc: string | null;
 };
-type Challenge = {
+
+type Block = {
   id: number;
-  question: string;
-  type: "SELECT" | "ASSIST";
+  question: string | null;
+  type: string;
   order: number;
-  challengeOptions: Option[];
+  body: string | null;
+  imageSrc: string | null;
+  caption: string | null;
+  lessonBlockOptions: Option[];
 };
+
 type Lesson = {
   id: number;
   title: string;
   order: number;
-  challenges: Challenge[];
+  lessonBlocks: Block[];
 };
+
 type Unit = {
   id: number;
   title: string;
@@ -74,19 +87,32 @@ export type CourseTree = {
   units: Unit[];
 };
 
-type Kind = "unit" | "lesson" | "challenge" | "option";
+type Kind = "unit" | "lesson" | "block";
+
+type FormOption = {
+  id?: number;
+  text: string;
+  correct: boolean;
+  imageSrc: string;
+  audioSrc: string;
+};
 
 type Form = {
   title: string;
   description: string;
   order: number;
   question: string;
-  type: "SELECT" | "ASSIST";
-  text: string;
-  correct: boolean;
+  type: "TEXT" | "IMAGE" | "SELECT" | "ASSIST";
+  body: string;
+  caption: string;
   imageSrc: string;
-  audioSrc: string;
+  options: FormOption[];
 };
+
+const defaultOptions = (): FormOption[] => [
+  { text: "", correct: false, imageSrc: "", audioSrc: "" },
+  { text: "", correct: false, imageSrc: "", audioSrc: "" },
+];
 
 const emptyForm: Form = {
   title: "",
@@ -94,17 +120,16 @@ const emptyForm: Form = {
   order: 1,
   question: "",
   type: "SELECT",
-  text: "",
-  correct: false,
+  body: "",
+  caption: "",
   imageSrc: "",
-  audioSrc: "",
+  options: defaultOptions(),
 };
 
 const KIND_LABEL: Record<Kind, string> = {
   unit: "Unit",
   lesson: "Lesson",
-  challenge: "Challenge",
-  option: "Option",
+  block: "Block",
 };
 
 export const ContentManager = ({
@@ -120,15 +145,22 @@ export const ContentManager = ({
 
   const [openUnits, setOpenUnits] = useState<Set<number>>(new Set());
   const [openLessons, setOpenLessons] = useState<Set<number>>(new Set());
-  const [openChallenges, setOpenChallenges] = useState<Set<number>>(new Set());
+  const [openBlocks, setOpenBlocks] = useState<Set<number>>(new Set());
 
-  const [dialog, setDialog] = useState<{
-    open: boolean;
+  // Drag and drop block tracking
+  const [draggedBlockId, setDraggedBlockId] = useState<number | null>(null);
+
+  // File upload state
+  const [uploading, setUploading] = useState(false);
+
+  // Track the active inline editor (or dialog editor)
+  const [editor, setEditor] = useState<{
     kind: Kind;
     mode: "create" | "edit";
-    parentId: number; // unitId / lessonId / challengeId for creates; for unit create it is courseId
+    parentId: number; // unitId / lessonId / blockId for creates; for unit create it is courseId
     entityId?: number;
-  }>({ open: false, kind: "unit", mode: "create", parentId: courseId });
+  } | null>(null);
+
   const [form, setForm] = useState<Form>(emptyForm);
 
   const toggle = (
@@ -146,8 +178,8 @@ export const ContentManager = ({
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const openCreate = (kind: Kind, parentId: number, nextOrder: number) => {
-    setDialog({ open: true, kind, mode: "create", parentId });
-    setForm({ ...emptyForm, order: nextOrder });
+    setEditor({ kind, mode: "create", parentId });
+    setForm({ ...emptyForm, order: nextOrder, options: defaultOptions() });
   };
 
   const openEdit = (
@@ -156,8 +188,13 @@ export const ContentManager = ({
     entityId: number,
     values: Partial<Form>
   ) => {
-    setDialog({ open: true, kind, mode: "edit", parentId, entityId });
+    setEditor({ kind, mode: "edit", parentId, entityId });
     setForm({ ...emptyForm, ...values });
+  };
+
+  const cancelEditor = () => {
+    setEditor(null);
+    setForm(emptyForm);
   };
 
   const runAction = (promise: Promise<unknown>, successMsg: string) => {
@@ -165,7 +202,7 @@ export const ContentManager = ({
       promise
         .then(() => {
           toast.success(successMsg);
-          setDialog((d) => ({ ...d, open: false }));
+          setEditor(null);
           router.refresh();
         })
         .catch((e) =>
@@ -174,8 +211,56 @@ export const ContentManager = ({
     });
   };
 
+  const handleBlockDrop = (targetId: number, blocks: Block[]) => {
+    if (draggedBlockId === null || draggedBlockId === targetId) return;
+
+    const dragIndex = blocks.findIndex((b) => b.id === draggedBlockId);
+    const hoverIndex = blocks.findIndex((b) => b.id === targetId);
+    if (dragIndex === -1 || hoverIndex === -1) return;
+
+    const reordered = [...blocks];
+    const [removed] = reordered.splice(dragIndex, 1);
+    reordered.splice(hoverIndex, 0, removed);
+
+    const updates = reordered.map((b, idx) => ({
+      id: b.id,
+      order: idx + 1,
+    }));
+
+    setDraggedBlockId(null);
+    runAction(
+      reorderLessonBlocks(updates, courseId, lang),
+      "Blocks reordered successfully."
+    );
+  };
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onUploaded: (url: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading(true);
+    const toastId = toast.loading("Uploading image...");
+    try {
+      const url = await uploadImage(formData);
+      onUploaded(url);
+      toast.success("Image uploaded successfully!", { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const onSubmit = () => {
-    const { kind, mode, parentId, entityId } = dialog;
+    if (!editor) return;
+    const { kind, mode, parentId, entityId } = editor;
     const verb = mode === "create" ? "created" : "updated";
     const msg = `${KIND_LABEL[kind]} ${verb}.`;
 
@@ -199,29 +284,23 @@ export const ContentManager = ({
           : updateLesson(entityId!, courseId, data, lang),
         msg
       );
-    } else if (kind === "challenge") {
-      const data = {
-        question: form.question,
-        type: form.type,
-        order: form.order,
-      };
+    } else if (kind === "block") {
+      const data: BlockInput =
+        form.type === "TEXT"
+          ? { type: "TEXT", order: form.order, body: form.body }
+          : form.type === "IMAGE"
+          ? { type: "IMAGE", order: form.order, imageSrc: form.imageSrc, caption: form.caption }
+          : {
+              type: form.type as "SELECT" | "ASSIST",
+              order: form.order,
+              question: form.question,
+              options: form.options.filter((o) => o.text.trim() !== ""),
+            };
+
       runAction(
         mode === "create"
-          ? createChallenge(parentId, courseId, data, lang)
-          : updateChallenge(entityId!, courseId, data, lang),
-        msg
-      );
-    } else {
-      const data = {
-        text: form.text,
-        correct: form.correct,
-        imageSrc: form.imageSrc,
-        audioSrc: form.audioSrc,
-      };
-      runAction(
-        mode === "create"
-          ? createOption(parentId, courseId, data, lang)
-          : updateOption(entityId!, courseId, data, lang),
+          ? createLessonBlock(parentId, courseId, data, lang)
+          : updateLessonBlock(entityId!, courseId, data, lang),
         msg
       );
     }
@@ -232,12 +311,238 @@ export const ContentManager = ({
     label: string,
     promise: () => Promise<unknown>
   ) => {
-    const extra =
-      kind === "option"
-        ? ""
-        : " This cascades to everything nested under it.";
+    const extra = " This cascades to everything nested under it.";
     if (!window.confirm(`Delete ${kind} "${label}"?${extra}`)) return;
     runAction(promise(), `${KIND_LABEL[kind]} deleted.`);
+  };
+
+  const getBlockIcon = (type: string) => {
+    if (type === "TEXT") return <Type className="h-4 w-4 shrink-0 text-blue-500" />;
+    if (type === "IMAGE") return <ImageIcon className="h-4 w-4 shrink-0 text-emerald-500" />;
+    return <HelpCircle className="h-4 w-4 shrink-0 text-purple-500" />;
+  };
+
+  const getBlockTitle = (block: Block) => {
+    if (block.type === "TEXT") return block.body ? block.body.substring(0, 40) + (block.body.length > 40 ? "..." : "") : "Text Block";
+    if (block.type === "IMAGE") return block.caption || "Image Block";
+    return block.question || "Question";
+  };
+
+  // Render Inline Form for block ONLY
+  const renderInlineBlockForm = () => {
+    if (!editor || editor.kind !== "block") return null;
+
+    const isSaveDisabled =
+      pending ||
+      uploading ||
+      (form.type === "TEXT" && !form.body) ||
+      (form.type === "IMAGE" && !form.imageSrc) ||
+      ((form.type === "SELECT" || form.type === "ASSIST") && !form.question);
+
+    return (
+      <div className="my-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/20 p-4 transition-all space-y-4">
+        <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+          <span className="text-sm font-bold text-indigo-700">
+            {editor.mode === "create" ? "Add New" : "Edit"} Block ({form.type})
+          </span>
+          <button
+            onClick={cancelEditor}
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {(form.type === "SELECT" || form.type === "ASSIST") && (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-600">Question</Label>
+                <Input
+                  value={form.question}
+                  onChange={(e) => setField("question", e.target.value)}
+                  placeholder="e.g., Which of these is 'the apple'?"
+                  className="bg-white"
+                />
+              </div>
+
+              {/* Inline Options Editing */}
+              <div className="space-y-3 border-t border-indigo-100 pt-3">
+                <Label className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Answer Options</Label>
+                <div className="divide-y divide-slate-200">
+                  {form.options.map((opt, optIdx) => (
+                    <div key={optIdx} className="py-3 first:pt-0 last:pb-0 space-y-2 relative">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-600">Option #{optIdx + 1}</span>
+                        {form.options.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOpts = [...form.options];
+                              newOpts.splice(optIdx, 1);
+                              setField("options", newOpts);
+                            }}
+                            className="text-xs text-rose-500 hover:underline flex items-center gap-0.5"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <Input
+                            value={opt.text}
+                            onChange={(e) => {
+                              const newOpts = [...form.options];
+                              newOpts[optIdx] = { ...newOpts[optIdx], text: e.target.value };
+                              setField("options", newOpts);
+                            }}
+                            placeholder="Option text"
+                            className="h-8 text-sm bg-white"
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-4 items-center pt-1">
+                          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={opt.correct}
+                              onChange={(e) => {
+                                const newOpts = [...form.options];
+                                newOpts[optIdx] = { ...newOpts[optIdx], correct: e.target.checked };
+                                setField("options", newOpts);
+                              }}
+                              className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                            />
+                            Correct Option
+                          </label>
+                          <div className="flex-1 min-w-[120px] flex items-center gap-1.5">
+                            <Input
+                              value={opt.imageSrc}
+                              onChange={(e) => {
+                                const newOpts = [...form.options];
+                                newOpts[optIdx] = { ...newOpts[optIdx], imageSrc: e.target.value };
+                                setField("options", newOpts);
+                              }}
+                              placeholder="Image URL (optional)"
+                              className="h-7 text-[11px] px-2 bg-white flex-1"
+                            />
+                            <label className="cursor-pointer bg-slate-50 border border-slate-200 text-slate-700 rounded-lg p-1.5 hover:bg-slate-100 transition shrink-0">
+                              <Upload className="h-3.5 w-3.5" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleImageUpload(e, (url) => {
+                                    const newOpts = [...form.options];
+                                    newOpts[optIdx] = { ...newOpts[optIdx], imageSrc: url };
+                                    setField("options", newOpts);
+                                  })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <div className="flex-1 min-w-[120px]">
+                            <Input
+                              value={opt.audioSrc}
+                              onChange={(e) => {
+                                const newOpts = [...form.options];
+                                newOpts[optIdx] = { ...newOpts[optIdx], audioSrc: e.target.value };
+                                setField("options", newOpts);
+                              }}
+                              placeholder="Audio URL (optional)"
+                              className="h-7 text-[11px] px-2 bg-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setField("options", [
+                      ...form.options,
+                      { text: "", correct: false, imageSrc: "", audioSrc: "" }
+                    ]);
+                  }}
+                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Option
+                </button>
+              </div>
+            </>
+          )}
+
+          {form.type === "TEXT" && (
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-600">Body Text</Label>
+              <textarea
+                value={form.body}
+                onChange={(e) => setField("body", e.target.value)}
+                className="w-full min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-indigo-500"
+                placeholder="Enter the lesson reading material here..."
+              />
+            </div>
+          )}
+
+          {form.type === "IMAGE" && (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-600">Image</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    value={form.imageSrc}
+                    onChange={(e) => setField("imageSrc", e.target.value)}
+                    placeholder="Image URL or upload"
+                    className="bg-white flex-1 text-xs h-9"
+                  />
+                  <label className="cursor-pointer bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl px-3 py-1.5 text-xs font-bold shrink-0 hover:bg-indigo-100 transition flex items-center gap-1.5">
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, (url) => setField("imageSrc", url))}
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-600">Caption (optional)</Label>
+                <Input
+                  value={form.caption}
+                  onChange={(e) => setField("caption", e.target.value)}
+                  placeholder="e.g., An apple"
+                  className="bg-white"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-indigo-100 pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={cancelEditor}
+            disabled={pending || uploading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={isSaveDisabled}
+            onClick={onSubmit}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -260,6 +565,7 @@ export const ContentManager = ({
 
       {course.units.map((unit) => {
         const unitOpen = openUnits.has(unit.id);
+
         return (
           <div
             key={unit.id}
@@ -308,6 +614,7 @@ export const ContentManager = ({
               <div className="space-y-3 border-t-2 border-slate-50 bg-slate-50/50 p-4 pl-6">
                 {unit.lessons.map((lesson) => {
                   const lessonOpen = openLessons.has(lesson.id);
+
                   return (
                     <div
                       key={lesson.id}
@@ -329,7 +636,7 @@ export const ContentManager = ({
                             {lesson.title}
                           </span>
                           <span className="text-xs text-slate-400">
-                            {lesson.challenges.length} challenges
+                            {lesson.lessonBlocks.length} blocks
                           </span>
                         </button>
                         <RowActions
@@ -349,150 +656,193 @@ export const ContentManager = ({
                         />
                       </div>
 
-                      {/* Challenges */}
+                      {/* Blocks */}
                       {lessonOpen && (
                         <div className="space-y-2 border-t border-slate-100 bg-slate-50/60 p-3 pl-5">
-                          {lesson.challenges.map((challenge) => {
-                            const chOpen = openChallenges.has(challenge.id);
+                          {lesson.lessonBlocks.map((block) => {
+                            const blockOpen = openBlocks.has(block.id);
+                            const isInteractive = block.type === "SELECT" || block.type === "ASSIST";
+                            const isEditingThisBlock = editor?.kind === "block" && editor.mode === "edit" && editor.entityId === block.id;
+
                             return (
                               <div
-                                key={challenge.id}
-                                className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                                key={block.id}
+                                draggable={editor === null}
+                                onDragStart={() => setDraggedBlockId(block.id)}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => handleBlockDrop(block.id, lesson.lessonBlocks)}
+                                className={cn(
+                                  "overflow-hidden rounded-xl border border-slate-200 bg-white transition-all",
+                                  draggedBlockId === block.id && "opacity-50 border-dashed border-indigo-300 bg-indigo-50/10 cursor-grabbing",
+                                  editor === null && "cursor-grab hover:border-slate-300"
+                                )}
                               >
-                                <div className="flex items-center gap-2 p-3">
-                                  <button
-                                    onClick={() =>
-                                      toggle(setOpenChallenges, challenge.id)
-                                    }
-                                    className="flex flex-1 items-center gap-2 text-left"
-                                  >
-                                    <ChevronRight
-                                      className={cn(
-                                        "h-4 w-4 shrink-0 text-slate-400 transition-transform",
-                                        chOpen && "rotate-90"
-                                      )}
+                                {isEditingThisBlock ? (
+                                  <div className="p-3 bg-slate-50/50">
+                                    {renderInlineBlockForm()}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 p-3">
+                                    <div className="text-slate-400 cursor-grab shrink-0 pr-1">
+                                      <GripVertical className="h-4 w-4" />
+                                    </div>
+                                    <button
+                                      onClick={() => toggle(setOpenBlocks, block.id)}
+                                      className="flex flex-1 items-center gap-2 text-left"
+                                    >
+                                      <ChevronRight
+                                        className={cn(
+                                          "h-4 w-4 shrink-0 text-slate-400 transition-transform",
+                                          blockOpen && "rotate-90"
+                                        )}
+                                      />
+                                      {getBlockIcon(block.type)}
+                                      <span className="text-sm font-bold text-slate-700">
+                                        {getBlockTitle(block)}
+                                      </span>
+                                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                                        {block.type}
+                                      </span>
+                                    </button>
+                                    <RowActions
+                                      disabled={pending}
+                                      small
+                                      onEdit={() =>
+                                        openEdit("block", lesson.id, block.id, {
+                                          type: block.type as any,
+                                          question: block.question || "",
+                                          body: block.body || "",
+                                          caption: block.caption || "",
+                                          imageSrc: block.imageSrc || "",
+                                          options: block.lessonBlockOptions.map((o) => ({
+                                            id: o.id,
+                                            text: o.text,
+                                            correct: o.correct,
+                                            imageSrc: o.imageSrc || "",
+                                            audioSrc: o.audioSrc || "",
+                                          })),
+                                        })
+                                      }
+                                      onDelete={() =>
+                                        confirmDelete("block", getBlockTitle(block), () =>
+                                          deleteLessonBlock(block.id, courseId, lang)
+                                        )
+                                      }
                                     />
-                                    <HelpCircle className="h-4 w-4 shrink-0 text-purple-500" />
-                                    <span className="text-sm font-bold text-slate-700">
-                                      {challenge.question}
-                                    </span>
-                                    <span className="rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-600">
-                                      {challenge.type}
-                                    </span>
-                                  </button>
-                                  <RowActions
-                                    disabled={pending}
-                                    small
-                                    onEdit={() =>
-                                      openEdit(
-                                        "challenge",
-                                        lesson.id,
-                                        challenge.id,
-                                        {
-                                          question: challenge.question,
-                                          type: challenge.type,
-                                          order: challenge.order,
-                                        }
-                                      )
-                                    }
-                                    onDelete={() =>
-                                      confirmDelete(
-                                        "challenge",
-                                        challenge.question,
-                                        () =>
-                                          deleteChallenge(
-                                            challenge.id,
-                                            courseId,
-                                            lang
-                                          )
-                                      )
-                                    }
-                                  />
-                                </div>
+                                  </div>
+                                )}
 
-                                {/* Options */}
-                                {chOpen && (
-                                  <div className="space-y-1.5 border-t border-slate-100 bg-slate-50/70 p-3 pl-5">
-                                    {challenge.challengeOptions.map((opt) => (
+                                {/* Options (Viewing Mode) */}
+                                {blockOpen && isInteractive && !isEditingThisBlock && (
+                                  <div className="space-y-1.5 border-t border-slate-100 bg-slate-50/70 p-3 pl-10">
+                                    {block.lessonBlockOptions.map((opt) => (
                                       <div
                                         key={opt.id}
-                                        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                                        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5"
                                       >
                                         <span
                                           className={cn(
-                                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-                                            opt.correct
-                                              ? "bg-emerald-500 text-white"
-                                              : "bg-slate-200 text-slate-400"
+                                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-white",
+                                            opt.correct ? "bg-emerald-500" : "bg-slate-200"
                                           )}
                                         >
-                                          {opt.correct && (
-                                            <Check className="h-3 w-3" />
-                                          )}
+                                          {opt.correct && <Check className="h-2.5 w-2.5" />}
                                         </span>
-                                        <span className="flex-1 text-sm font-medium text-slate-700">
-                                          {opt.text}
-                                        </span>
-                                        <RowActions
-                                          disabled={pending}
-                                          small
-                                          onEdit={() =>
-                                            openEdit(
-                                              "option",
-                                              challenge.id,
-                                              opt.id,
-                                              {
-                                                text: opt.text,
-                                                correct: opt.correct,
-                                                imageSrc: opt.imageSrc ?? "",
-                                                audioSrc: opt.audioSrc ?? "",
-                                              }
-                                            )
-                                          }
-                                          onDelete={() =>
-                                            confirmDelete("option", opt.text, () =>
-                                              deleteOption(opt.id, courseId, lang)
-                                            )
-                                          }
-                                        />
+                                        <span className="text-xs font-semibold text-slate-700">{opt.text}</span>
                                       </div>
                                     ))}
-                                    <button
-                                      onClick={() =>
-                                        openCreate("option", challenge.id, 0)
-                                      }
-                                      disabled={pending}
-                                      className="flex items-center gap-1 px-1 py-1 text-xs font-bold text-indigo-600 hover:underline disabled:opacity-50"
-                                    >
-                                      <Plus className="h-3.5 w-3.5" /> Add option
-                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Text Content (Viewing Mode) */}
+                                {blockOpen && block.type === "TEXT" && !isEditingThisBlock && (
+                                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 pl-10 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                                    {block.body}
+                                  </div>
+                                )}
+
+                                {/* Image Preview (Viewing Mode) */}
+                                {blockOpen && block.type === "IMAGE" && !isEditingThisBlock && (
+                                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 pl-10 space-y-2">
+                                    {block.imageSrc && (
+                                      <img
+                                        src={block.imageSrc}
+                                        alt={block.caption || "Image"}
+                                        className="max-h-[120px] rounded-lg border border-slate-200 bg-white object-contain p-1"
+                                      />
+                                    )}
+                                    {block.caption && (
+                                      <p className="text-xs font-semibold text-slate-500 italic">
+                                        Caption: {block.caption}
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>
                             );
                           })}
-                          <button
-                            onClick={() =>
-                              openCreate(
-                                "challenge",
-                                lesson.id,
-                                lesson.challenges.length + 1
-                              )
-                            }
-                            disabled={pending}
-                            className="flex items-center gap-1 px-1 py-1 text-xs font-bold text-indigo-600 hover:underline disabled:opacity-50"
-                          >
-                            <Plus className="h-3.5 w-3.5" /> Add challenge
-                          </button>
+
+                          {editor?.kind === "block" && editor.mode === "create" && editor.parentId === lesson.id && renderInlineBlockForm()}
+
+                          {!(editor?.kind === "block" && editor.mode === "create" && editor.parentId === lesson.id) && (
+                            <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 mt-1">
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Block:</span>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold flex items-center gap-1.5 px-3 h-8 border border-blue-100 rounded-xl"
+                                  onClick={() => {
+                                    openCreate("block", lesson.id, lesson.lessonBlocks.length + 1);
+                                    setForm((f) => ({ ...f, type: "TEXT" }));
+                                  }}
+                                >
+                                  <Type className="h-3.5 w-3.5" /> Text
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold flex items-center gap-1.5 px-3 h-8 border border-emerald-100 rounded-xl"
+                                  onClick={() => {
+                                    openCreate("block", lesson.id, lesson.lessonBlocks.length + 1);
+                                    setForm((f) => ({ ...f, type: "IMAGE" }));
+                                  }}
+                                >
+                                  <ImageIcon className="h-3.5 w-3.5" /> Image
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="bg-purple-50 text-purple-600 hover:bg-purple-100 text-xs font-bold flex items-center gap-1.5 px-3 h-8 border border-purple-100 rounded-xl"
+                                  onClick={() => {
+                                    openCreate("block", lesson.id, lesson.lessonBlocks.length + 1);
+                                    setForm((f) => ({ ...f, type: "SELECT" }));
+                                  }}
+                                >
+                                  <HelpCircle className="h-3.5 w-3.5" /> Q&A Select
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="bg-pink-50 text-pink-600 hover:bg-pink-100 text-xs font-bold flex items-center gap-1.5 px-3 h-8 border border-pink-100 rounded-xl"
+                                  onClick={() => {
+                                    openCreate("block", lesson.id, lesson.lessonBlocks.length + 1);
+                                    setForm((f) => ({ ...f, type: "ASSIST" }));
+                                  }}
+                                >
+                                  <HelpCircle className="h-3.5 w-3.5" /> Q&A Assist
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   );
                 })}
+
                 <button
-                  onClick={() =>
-                    openCreate("lesson", unit.id, unit.lessons.length + 1)
-                  }
+                  onClick={() => openCreate("lesson", unit.id, unit.lessons.length + 1)}
                   disabled={pending}
                   className="flex items-center gap-1 px-1 py-1 text-sm font-bold text-indigo-600 hover:underline disabled:opacity-50"
                 >
@@ -504,145 +854,50 @@ export const ContentManager = ({
         );
       })}
 
-      {/* Shared dialog */}
+      {/* Editor Modal for Units and Lessons */}
       <Dialog
-        open={dialog.open}
-        onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}
+        open={editor !== null && (editor.kind === "unit" || editor.kind === "lesson")}
+        onOpenChange={(open) => !open && cancelEditor()}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              {dialog.mode === "create" ? "Add" : "Edit"} {KIND_LABEL[dialog.kind]}
+            <DialogTitle>
+              {editor?.mode === "create" ? "Add" : "Edit"} {editor?.kind ? KIND_LABEL[editor.kind] : ""}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            {dialog.kind === "unit" && (
-              <>
-                <Field label="Title">
-                  <Input
-                    value={form.title}
-                    onChange={(e) => setField("title", e.target.value)}
-                    placeholder="Unit 1"
-                  />
-                </Field>
-                <Field label="Description">
-                  <Input
-                    value={form.description}
-                    onChange={(e) => setField("description", e.target.value)}
-                    placeholder="Learn the basics"
-                  />
-                </Field>
-                <OrderField value={form.order} onChange={(v) => setField("order", v)} />
-              </>
-            )}
+          <div className="space-y-4 py-4">
 
-            {dialog.kind === "lesson" && (
-              <>
-                <Field label="Title">
-                  <Input
-                    value={form.title}
-                    onChange={(e) => setField("title", e.target.value)}
-                    placeholder="Nouns"
-                  />
-                </Field>
-                <OrderField value={form.order} onChange={(v) => setField("order", v)} />
-              </>
-            )}
 
-            {dialog.kind === "challenge" && (
-              <>
-                <Field label="Question">
-                  <textarea
-                    value={form.question}
-                    onChange={(e) => setField("question", e.target.value)}
-                    rows={2}
-                    placeholder='Which one of these is "the man"?'
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                </Field>
-                <Field label="Type">
-                  <div className="flex gap-2">
-                    {(["SELECT", "ASSIST"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setField("type", t)}
-                        className={cn(
-                          "flex-1 rounded-xl border-2 px-2 py-2 text-xs font-bold transition-colors",
-                          form.type === t
-                            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                            : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                        )}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-                <OrderField value={form.order} onChange={(v) => setField("order", v)} />
-              </>
-            )}
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={form.title}
+                onChange={(e) => setField("title", e.target.value)}
+              />
+            </div>
 
-            {dialog.kind === "option" && (
-              <>
-                <Field label="Text">
-                  <Input
-                    value={form.text}
-                    onChange={(e) => setField("text", e.target.value)}
-                    placeholder="man"
-                  />
-                </Field>
-                <button
-                  type="button"
-                  onClick={() => setField("correct", !form.correct)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition-colors",
-                    form.correct
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                      : "border-slate-200 text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 items-center justify-center rounded-md border-2",
-                      form.correct
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-slate-300"
-                    )}
-                  >
-                    {form.correct && <Check className="h-3.5 w-3.5" />}
-                  </span>
-                  Correct answer
-                </button>
-                <Field label="Image path (optional)">
-                  <Input
-                    value={form.imageSrc}
-                    onChange={(e) => setField("imageSrc", e.target.value)}
-                    placeholder="/man.svg"
-                  />
-                </Field>
-                <Field label="Audio path (optional)">
-                  <Input
-                    value={form.audioSrc}
-                    onChange={(e) => setField("audioSrc", e.target.value)}
-                    placeholder="/es_man.mp3"
-                  />
-                </Field>
-              </>
+            {editor?.kind === "unit" && (
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={form.description}
+                  onChange={(e) => setField("description", e.target.value)}
+                />
+              </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button
-              variant="primaryOutline"
-              onClick={() => setDialog((d) => ({ ...d, open: false }))}
-              disabled={pending}
-            >
+            <Button variant="ghost" onClick={cancelEditor} disabled={pending}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={onSubmit} disabled={pending}>
-              {dialog.mode === "create" ? "Add" : "Save"}
+            <Button
+              variant="primary"
+              disabled={pending || !form.title}
+              onClick={onSubmit}
+            >
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -651,34 +906,7 @@ export const ContentManager = ({
   );
 };
 
-const Field = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
-  <div className="space-y-1.5">
-    <Label>{label}</Label>
-    {children}
-  </div>
-);
-
-const OrderField = ({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-}) => (
-  <Field label="Order">
-    <Input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value) || 0)}
-    />
-  </Field>
-);
+// --- Helper Component --------------------------------------------------------
 
 const RowActions = ({
   onEdit,
@@ -690,26 +918,25 @@ const RowActions = ({
   onDelete: () => void;
   disabled?: boolean;
   small?: boolean;
-}) => {
-  const size = small ? "h-3.5 w-3.5" : "h-4 w-4";
-  return (
-    <div className="flex shrink-0 gap-1">
-      <button
-        onClick={onEdit}
-        disabled={disabled}
-        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
-        title="Edit"
-      >
-        <Pencil className={size} />
-      </button>
-      <button
-        onClick={onDelete}
-        disabled={disabled}
-        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
-        title="Delete"
-      >
-        <Trash2 className={size} />
-      </button>
-    </div>
-  );
-};
+}) => (
+  <div className="flex shrink-0 gap-1">
+    <Button
+      variant="ghost"
+      size={small ? "sm" : "default"}
+      className={cn("h-8 w-8 p-0 text-slate-400 hover:text-indigo-500")}
+      disabled={disabled}
+      onClick={onEdit}
+    >
+      <Pencil className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size={small ? "sm" : "default"}
+      className={cn("h-8 w-8 p-0 text-slate-400 hover:text-rose-500")}
+      disabled={disabled}
+      onClick={onDelete}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+);

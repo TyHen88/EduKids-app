@@ -141,7 +141,7 @@ const AdminDashboardPage = async () => {
                 {stats.lessons} lessons across {stats.courses} courses
               </div>
               <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
-                {stats.completions} challenges completed
+                {stats.completions} blocks completed
               </div>
             </div>
           </div>

@@ -28,7 +28,7 @@ const ParentCourseContentPage = async ({ params }: Props) => {
           {course.title} — Content
         </h1>
         <p className="mt-2 text-lg text-slate-500">
-          Manage units, lessons, challenges and answer options.
+          Manage units, lessons, blocks and answer options.
         </p>
       </div>
 

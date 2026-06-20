@@ -2,18 +2,18 @@
 
 import { motion } from "motion/react";
 
-import { challengeOptions, challenges } from "@/db/schema";
+import { lessonBlockOptions } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 import { Card } from "./card";
 
 type ChallengeProps = {
-  options: (typeof challengeOptions.$inferSelect)[];
+  options: (typeof lessonBlockOptions.$inferSelect)[];
   onSelect: (id: number) => void;
   status: "correct" | "wrong" | "none";
   selectedOption?: number;
   disabled?: boolean;
-  type: (typeof challenges.$inferSelect)["type"];
+  type: "SELECT" | "ASSIST";
 };
 
 export const Challenge = ({

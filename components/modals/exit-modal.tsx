@@ -67,7 +67,7 @@ export const ExitModal = () => {
               size="lg"
               onClick={() => {
                 close();
-                router.push(`/${locale}/learn`);
+                window.location.href = `/${locale}/learn`;
               }}
             >
               {dict["exitModal.endSession"] || "End session"}

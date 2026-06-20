@@ -64,75 +64,72 @@ export const lessonsRelations = relations(lessons, ({ one, many }) => ({
     fields: [lessons.unitId],
     references: [units.id],
   }),
-  challenges: many(challenges),
+  lessonBlocks: many(lessonBlocks),
 }));
 
-export const challengesEnum = pgEnum("type", ["SELECT", "ASSIST"]);
 
-export const challenges = pgTable("challenges", {
+
+// --- Lesson Blocks (new unified content + Q&A system) ------------------------
+
+export const lessonBlocks = pgTable("lesson_blocks", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id")
-    .references(() => lessons.id, {
-      onDelete: "cascade",
-    })
+    .references(() => lessons.id, { onDelete: "cascade" })
     .notNull(),
-  type: challengesEnum("type").notNull(),
-  question: text("question").notNull(),
+  // "TEXT" | "IMAGE" | "SELECT" | "ASSIST"
+  type: text("type").notNull(),
   order: integer("order").notNull(),
+  // TEXT blocks
+  body: text("body"),
+  // IMAGE blocks
+  imageSrc: text("image_src"),
+  caption: text("caption"),
+  // SELECT / ASSIST blocks
+  question: text("question"),
 });
 
-export const challengesRelations = relations(challenges, ({ one, many }) => ({
+export const lessonBlocksRelations = relations(lessonBlocks, ({ one, many }) => ({
   lesson: one(lessons, {
-    fields: [challenges.lessonId],
+    fields: [lessonBlocks.lessonId],
     references: [lessons.id],
   }),
-  challengeOptions: many(challengeOptions),
-  challengeProgress: many(challengeProgress),
+  lessonBlockOptions: many(lessonBlockOptions),
+  lessonBlockProgress: many(lessonBlockProgress),
 }));
 
-export const challengeOptions = pgTable("challenge_options", {
+export const lessonBlockOptions = pgTable("lesson_block_options", {
   id: serial("id").primaryKey(),
-  challengeId: integer("challenge_id")
-    .references(() => challenges.id, {
-      onDelete: "cascade",
-    })
+  blockId: integer("block_id")
+    .references(() => lessonBlocks.id, { onDelete: "cascade" })
     .notNull(),
   text: text("text").notNull(),
-  correct: boolean("correct").notNull(),
+  correct: boolean("correct").notNull().default(false),
   imageSrc: text("image_src"),
   audioSrc: text("audio_src"),
 });
 
-export const challengeOptionsRelations = relations(
-  challengeOptions,
-  ({ one }) => ({
-    challenge: one(challenges, {
-      fields: [challengeOptions.challengeId],
-      references: [challenges.id],
-    }),
-  })
-);
+export const lessonBlockOptionsRelations = relations(lessonBlockOptions, ({ one }) => ({
+  block: one(lessonBlocks, {
+    fields: [lessonBlockOptions.blockId],
+    references: [lessonBlocks.id],
+  }),
+}));
 
-export const challengeProgress = pgTable("challenge_progress", {
+export const lessonBlockProgress = pgTable("lesson_block_progress", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
-  challengeId: integer("challenge_id")
-    .references(() => challenges.id, {
-      onDelete: "cascade",
-    })
+  blockId: integer("block_id")
+    .references(() => lessonBlocks.id, { onDelete: "cascade" })
     .notNull(),
   completed: boolean("completed").notNull().default(false),
 });
 
-export const challengeProgressRelations = relations(
-  challengeProgress,
-  ({ one }) => ({
-    challenge: one(challenges, {
-      fields: [challengeProgress.challengeId],
-      references: [challenges.id],
-    }),
-  })
-);
+export const lessonBlockProgressRelations = relations(lessonBlockProgress, ({ one }) => ({
+  block: one(lessonBlocks, {
+    fields: [lessonBlockProgress.blockId],
+    references: [lessonBlocks.id],
+  }),
+}));
 
 export const userProgress = pgTable("user_progress", {
   userId: text("user_id").primaryKey(),
@@ -151,6 +148,10 @@ export const userProgress = pgTable("user_progress", {
   buddyXp: integer("buddy_xp").notNull().default(0),
   // --- Cosmic Explorer: daily surprise chest ---
   lastChestAt: timestamp("last_chest_at"),
+  // --- Family Customization ---
+  familyName: text("family_name").notNull().default("My Family"),
+  familyCover: text("family_cover").notNull().default("emerald"),
+  familyMotto: text("family_motto").notNull().default(""),
 });
 
 export const userProgressRelations = relations(

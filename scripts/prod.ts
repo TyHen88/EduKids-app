@@ -14,11 +14,11 @@ const main = async () => {
     // Delete all existing data
     await Promise.all([
       db.delete(schema.userProgress),
-      db.delete(schema.challenges),
+      db.delete(schema.lessonBlocks),
       db.delete(schema.units),
       db.delete(schema.lessons),
       db.delete(schema.courses),
-      db.delete(schema.challengeOptions),
+      db.delete(schema.lessonBlockOptions),
       db.delete(schema.userBadges),
       db.delete(schema.badges),
     ]);
@@ -126,8 +126,8 @@ const main = async () => {
             .returning();
 
           for (const lesson of lessons) {
-            const challenges = await db
-              .insert(schema.challenges)
+            const lessonBlocks = await db
+              .insert(schema.lessonBlocks)
               .values([
                 {
                   lessonId: lesson.id,
@@ -180,61 +180,61 @@ const main = async () => {
               ])
               .returning();
 
-            for (const challenge of challenges) {
+            for (const challenge of lessonBlocks) {
               if (challenge.order === 1) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "បុរស", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "បុរស", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 2) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "ស្រី", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
-                  { challengeId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "ស្រី", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
+                  { blockId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
                 ]);
               }
               if (challenge.order === 3) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: true, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: true, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 4) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "ស្រី" },
-                  { challengeId: challenge.id, correct: true, text: "បុរស" },
-                  { challengeId: challenge.id, correct: false, text: "ក្មេងប្រុស" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "ស្រី" },
+                  { blockId: challenge.id, correct: true, text: "បុរស" },
+                  { blockId: challenge.id, correct: false, text: "ក្មេងប្រុស" },
                 ]);
               }
               if (challenge.order === 5) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: true, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: false, text: "ស្រី", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: true, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
                 ]);
               }
               if (challenge.order === 6) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "រ៉ូបូត", imageSrc: "/robot.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "រ៉ូបូត", imageSrc: "/robot.svg" },
+                  { blockId: challenge.id, correct: false, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
+                  { blockId: challenge.id, correct: false, text: "ក្មេងប្រុស", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 7) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "ក្មេងស្រី", imageSrc: "/girl.svg" },
-                  { challengeId: challenge.id, correct: false, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
-                  { challengeId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "ក្មេងស្រី", imageSrc: "/girl.svg" },
+                  { blockId: challenge.id, correct: false, text: "ខ្មោចឆៅ", imageSrc: "/zombie.svg" },
+                  { blockId: challenge.id, correct: false, text: "បុរស", imageSrc: "/man.svg" },
                 ]);
               }
               if (challenge.order === 8) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "ស្រី" },
-                  { challengeId: challenge.id, correct: true, text: "ខ្មោចឆៅ" },
-                  { challengeId: challenge.id, correct: false, text: "ក្មេងប្រុស" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "ស្រី" },
+                  { blockId: challenge.id, correct: true, text: "ខ្មោចឆៅ" },
+                  { blockId: challenge.id, correct: false, text: "ក្មេងប្រុស" },
                 ]);
               }
             }
@@ -272,8 +272,8 @@ const main = async () => {
             .returning();
 
           for (const lesson of lessons) {
-            const challenges = await db
-              .insert(schema.challenges)
+            const lessonBlocks = await db
+              .insert(schema.lessonBlocks)
               .values([
                 {
                   lessonId: lesson.id,
@@ -326,61 +326,61 @@ const main = async () => {
               ])
               .returning();
 
-            for (const challenge of challenges) {
+            for (const challenge of lessonBlocks) {
               if (challenge.order === 1) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "man", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "man", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 2) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "woman", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
-                  { challengeId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "woman", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
+                  { blockId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
                 ]);
               }
               if (challenge.order === 3) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: true, text: "boy", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: true, text: "boy", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 4) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "woman" },
-                  { challengeId: challenge.id, correct: true, text: "man" },
-                  { challengeId: challenge.id, correct: false, text: "boy" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "woman" },
+                  { blockId: challenge.id, correct: true, text: "man" },
+                  { blockId: challenge.id, correct: false, text: "boy" },
                 ]);
               }
               if (challenge.order === 5) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
-                  { challengeId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
-                  { challengeId: challenge.id, correct: true, text: "zombie", imageSrc: "/zombie.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
+                  { blockId: challenge.id, correct: false, text: "woman", imageSrc: "/woman.svg" },
+                  { blockId: challenge.id, correct: true, text: "zombie", imageSrc: "/zombie.svg" },
                 ]);
               }
               if (challenge.order === 6) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "robot", imageSrc: "/robot.svg" },
-                  { challengeId: challenge.id, correct: false, text: "zombie", imageSrc: "/zombie.svg" },
-                  { challengeId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "robot", imageSrc: "/robot.svg" },
+                  { blockId: challenge.id, correct: false, text: "zombie", imageSrc: "/zombie.svg" },
+                  { blockId: challenge.id, correct: false, text: "boy", imageSrc: "/boy.svg" },
                 ]);
               }
               if (challenge.order === 7) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "girl", imageSrc: "/girl.svg" },
-                  { challengeId: challenge.id, correct: false, text: "zombie", imageSrc: "/zombie.svg" },
-                  { challengeId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "girl", imageSrc: "/girl.svg" },
+                  { blockId: challenge.id, correct: false, text: "zombie", imageSrc: "/zombie.svg" },
+                  { blockId: challenge.id, correct: false, text: "man", imageSrc: "/man.svg" },
                 ]);
               }
               if (challenge.order === 8) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "woman" },
-                  { challengeId: challenge.id, correct: true, text: "zombie" },
-                  { challengeId: challenge.id, correct: false, text: "boy" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "woman" },
+                  { blockId: challenge.id, correct: true, text: "zombie" },
+                  { blockId: challenge.id, correct: false, text: "boy" },
                 ]);
               }
             }
@@ -418,8 +418,8 @@ const main = async () => {
             .returning();
 
           for (const lesson of lessons) {
-            const challenges = await db
-              .insert(schema.challenges)
+            const lessonBlocks = await db
+              .insert(schema.lessonBlocks)
               .values([
                 {
                   lessonId: lesson.id,
@@ -472,61 +472,61 @@ const main = async () => {
               ])
               .returning();
 
-            for (const challenge of challenges) {
+            for (const challenge of lessonBlocks) {
               if (challenge.order === 1) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "2" },
-                  { challengeId: challenge.id, correct: false, text: "3" },
-                  { challengeId: challenge.id, correct: false, text: "4" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "2" },
+                  { blockId: challenge.id, correct: false, text: "3" },
+                  { blockId: challenge.id, correct: false, text: "4" },
                 ]);
               }
               if (challenge.order === 2) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "5" },
-                  { challengeId: challenge.id, correct: false, text: "4" },
-                  { challengeId: challenge.id, correct: false, text: "6" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "5" },
+                  { blockId: challenge.id, correct: false, text: "4" },
+                  { blockId: challenge.id, correct: false, text: "6" },
                 ]);
               }
               if (challenge.order === 3) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "6" },
-                  { challengeId: challenge.id, correct: false, text: "8" },
-                  { challengeId: challenge.id, correct: true, text: "7" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "6" },
+                  { blockId: challenge.id, correct: false, text: "8" },
+                  { blockId: challenge.id, correct: true, text: "7" },
                 ]);
               }
               if (challenge.order === 4) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "12" },
-                  { challengeId: challenge.id, correct: true, text: "15" },
-                  { challengeId: challenge.id, correct: false, text: "14" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "12" },
+                  { blockId: challenge.id, correct: true, text: "15" },
+                  { blockId: challenge.id, correct: false, text: "14" },
                 ]);
               }
               if (challenge.order === 5) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "5" },
-                  { challengeId: challenge.id, correct: false, text: "7" },
-                  { challengeId: challenge.id, correct: true, text: "6" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "5" },
+                  { blockId: challenge.id, correct: false, text: "7" },
+                  { blockId: challenge.id, correct: true, text: "6" },
                 ]);
               }
               if (challenge.order === 6) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "8" },
-                  { challengeId: challenge.id, correct: false, text: "9" },
-                  { challengeId: challenge.id, correct: false, text: "10" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "8" },
+                  { blockId: challenge.id, correct: false, text: "9" },
+                  { blockId: challenge.id, correct: false, text: "10" },
                 ]);
               }
               if (challenge.order === 7) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: true, text: "12" },
-                  { challengeId: challenge.id, correct: false, text: "11" },
-                  { challengeId: challenge.id, correct: false, text: "13" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: true, text: "12" },
+                  { blockId: challenge.id, correct: false, text: "11" },
+                  { blockId: challenge.id, correct: false, text: "13" },
                 ]);
               }
               if (challenge.order === 8) {
-                await db.insert(schema.challengeOptions).values([
-                  { challengeId: challenge.id, correct: false, text: "15" },
-                  { challengeId: challenge.id, correct: true, text: "16" },
-                  { challengeId: challenge.id, correct: false, text: "18" },
+                await db.insert(schema.lessonBlockOptions).values([
+                  { blockId: challenge.id, correct: false, text: "15" },
+                  { blockId: challenge.id, correct: true, text: "16" },
+                  { blockId: challenge.id, correct: false, text: "18" },
                 ]);
               }
             }

@@ -5,7 +5,7 @@ import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
 
 import db from "./drizzle";
 import {
-  challengeProgress,
+  lessonBlockProgress,
   courses,
   lessons,
   units,
@@ -67,11 +67,11 @@ export const getUnits = cache(async () => {
       lessons: {
         orderBy: (lessons, { asc }) => [asc(lessons.order)],
         with: {
-          challenges: {
-            orderBy: (challenges, { asc }) => [asc(challenges.order)],
+          lessonBlocks: {
+            orderBy: (lessonBlocks, { asc }) => [asc(lessonBlocks.order)],
             with: {
-              challengeProgress: {
-                where: eq(challengeProgress.userId, userId),
+              lessonBlockProgress: {
+                where: eq(lessonBlockProgress.userId, userId),
               },
             },
           },
@@ -82,18 +82,18 @@ export const getUnits = cache(async () => {
 
   const normalizedData = data.map((unit) => {
     const lessonsWithCompletedStatus = unit.lessons.map((lesson) => {
-      if (lesson.challenges.length === 0)
+      if (lesson.lessonBlocks.length === 0)
         return { ...lesson, completed: false };
 
-      const allCompletedChallenges = lesson.challenges.every((challenge) => {
+      const allCompletedBlocks = lesson.lessonBlocks.every((block) => {
         return (
-          challenge.challengeProgress &&
-          challenge.challengeProgress.length > 0 &&
-          challenge.challengeProgress.every((progress) => progress.completed)
+          block.lessonBlockProgress &&
+          block.lessonBlockProgress.length > 0 &&
+          block.lessonBlockProgress.every((progress) => progress.completed)
         );
       });
 
-      return { ...lesson, completed: allCompletedChallenges };
+      return { ...lesson, completed: allCompletedBlocks };
     });
 
     return { ...unit, lessons: lessonsWithCompletedStatus };
@@ -134,10 +134,10 @@ export const getCourseProgress = cache(async () => {
         orderBy: (lessons, { asc }) => [asc(lessons.order)],
         with: {
           unit: true,
-          challenges: {
+          lessonBlocks: {
             with: {
-              challengeProgress: {
-                where: eq(challengeProgress.userId, userId),
+              lessonBlockProgress: {
+                where: eq(lessonBlockProgress.userId, userId),
               },
             },
           },
@@ -149,11 +149,11 @@ export const getCourseProgress = cache(async () => {
   const firstUncompletedLesson = unitsInActiveCourse
     .flatMap((unit) => unit.lessons)
     .find((lesson) => {
-      return lesson.challenges.some((challenge) => {
+      return lesson.lessonBlocks.some((block) => {
         return (
-          !challenge.challengeProgress ||
-          challenge.challengeProgress.length === 0 ||
-          challenge.challengeProgress.some((progress) => !progress.completed)
+          !block.lessonBlockProgress ||
+          block.lessonBlockProgress.length === 0 ||
+          block.lessonBlockProgress.some((progress) => !progress.completed)
         );
       });
     });
@@ -177,30 +177,30 @@ export const getLesson = cache(async (id?: number) => {
   const data = await db.query.lessons.findFirst({
     where: eq(lessons.id, lessonId),
     with: {
-      challenges: {
-        orderBy: (challenges, { asc }) => [asc(challenges.order)],
+      lessonBlocks: {
+        orderBy: (lessonBlocks, { asc }) => [asc(lessonBlocks.order)],
         with: {
-          challengeOptions: true,
-          challengeProgress: {
-            where: eq(challengeProgress.userId, userId),
+          lessonBlockOptions: true,
+          lessonBlockProgress: {
+            where: eq(lessonBlockProgress.userId, userId),
           },
         },
       },
     },
   });
 
-  if (!data || !data.challenges) return null;
+  if (!data || !data.lessonBlocks) return null;
 
-  const normalizedChallenges = data.challenges.map((challenge) => {
+  const normalizedBlocks = data.lessonBlocks.map((block) => {
     const completed =
-      challenge.challengeProgress &&
-      challenge.challengeProgress.length > 0 &&
-      challenge.challengeProgress.every((progress) => progress.completed);
+      block.lessonBlockProgress &&
+      block.lessonBlockProgress.length > 0 &&
+      block.lessonBlockProgress.every((progress) => progress.completed);
 
-    return { ...challenge, completed };
+    return { ...block, completed };
   });
 
-  return { ...data, challenges: normalizedChallenges };
+  return { ...data, lessonBlocks: normalizedBlocks };
 });
 
 export const getLessonPercentage = cache(async () => {
@@ -212,12 +212,12 @@ export const getLessonPercentage = cache(async () => {
 
   if (!lesson) return 0;
 
-  const completedChallenges = lesson.challenges.filter(
-    (challenge) => challenge.completed
+  const completedBlocks = lesson.lessonBlocks.filter(
+    (block) => block.completed
   );
 
   const percentage = Math.round(
-    (completedChallenges.length / lesson.challenges.length) * 100
+    (completedBlocks.length / lesson.lessonBlocks.length) * 100
   );
 
   return percentage;
@@ -449,10 +449,10 @@ export const getCoursesWithProgress = cache(
           with: {
             lessons: {
               with: {
-                challenges: {
+                lessonBlocks: {
                   with: {
-                    challengeProgress: userId
-                      ? { where: eq(challengeProgress.userId, userId) }
+                    lessonBlockProgress: userId
+                      ? { where: eq(lessonBlockProgress.userId, userId) }
                       : { limit: 0 },
                   },
                 },
@@ -468,11 +468,11 @@ export const getCoursesWithProgress = cache(
       const totalLessons = allLessons.length;
 
       const completedLessons = allLessons.filter((lesson) => {
-        if (lesson.challenges.length === 0) return false;
-        return lesson.challenges.every(
-          (challenge) =>
-            challenge.challengeProgress.length > 0 &&
-            challenge.challengeProgress.every((progress) => progress.completed)
+        if (lesson.lessonBlocks.length === 0) return false;
+        return lesson.lessonBlocks.every(
+          (block) =>
+            block.lessonBlockProgress.length > 0 &&
+            block.lessonBlockProgress.every((progress) => progress.completed)
         );
       }).length;
 
@@ -533,7 +533,7 @@ export const getAdminStats = cache(async () => {
     db.$count(userProgress),
     db.$count(courses),
     db.$count(lessons),
-    db.$count(challengeProgress, eq(challengeProgress.completed, true)),
+    db.$count(lessonBlockProgress, eq(lessonBlockProgress.completed, true)),
   ]);
 
   return { students, courses: courseCount, lessons: lessonCount, completions };
@@ -570,6 +570,7 @@ export type AdminCourse = {
   units: number;
   lessons: number;
   students: number;
+  createdBy: string | null;
 };
 
 export const getAdminCourseTree = cache(async (courseId: number) => {
@@ -582,12 +583,12 @@ export const getAdminCourseTree = cache(async (courseId: number) => {
           lessons: {
             orderBy: (lessons, { asc }) => [asc(lessons.order)],
             with: {
-              challenges: {
-                orderBy: (challenges, { asc }) => [asc(challenges.order)],
+              lessonBlocks: {
+                orderBy: (lessonBlocks, { asc }) => [asc(lessonBlocks.order)],
                 with: {
-                  challengeOptions: {
-                    orderBy: (challengeOptions, { asc }) => [
-                      asc(challengeOptions.id),
+                  lessonBlockOptions: {
+                    orderBy: (lessonBlockOptions, { asc }) => [
+                      asc(lessonBlockOptions.id),
                     ],
                   },
                 },
@@ -619,6 +620,7 @@ export const getAdminCourses = cache(async (): Promise<AdminCourse[]> => {
     units: course.units.length,
     lessons: course.units.reduce((acc, unit) => acc + unit.lessons.length, 0),
     students: enrollments.filter((e) => e.activeCourseId === course.id).length,
+    createdBy: course.createdBy,
   }));
 });
 
@@ -753,9 +755,9 @@ export const getParentCourseTree = cache(async (courseId: number) => {
           lessons: {
             orderBy: (lessons, { asc }) => [asc(lessons.order)],
             with: {
-              challenges: {
-                orderBy: (challenges, { asc }) => [asc(challenges.order)],
-                with: { challengeOptions: true },
+              lessonBlocks: {
+                orderBy: (lessonBlocks, { asc }) => [asc(lessonBlocks.order)],
+                with: { lessonBlockOptions: true },
               },
             },
           },

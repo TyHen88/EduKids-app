@@ -12,6 +12,7 @@ import {
   Layers,
   Settings2,
   Lock,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ import {
   updateParentCourse,
   deleteParentCourse,
 } from "@/actions/parent-course";
+import { uploadImage } from "@/actions/lesson-block";
 import type { CourseInput } from "@/actions/course";
 import type { ParentCourse } from "@/db/queries";
 
@@ -56,6 +58,7 @@ export const ParentCourseManager = ({
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<CourseInput>(empty);
+  const [uploading, setUploading] = useState(false);
 
   const openCreate = () => {
     setEditingId(null);
@@ -77,6 +80,27 @@ export const ParentCourseManager = ({
 
   const set = (key: keyof CourseInput, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading(true);
+    const toastId = toast.loading("Uploading course image...");
+    try {
+      const url = await uploadImage(formData);
+      set("imageSrc", url);
+      toast.success("Image uploaded successfully!", { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const onSubmit = () => {
     if (!form.title.trim()) {
@@ -242,13 +266,27 @@ export const ParentCourseManager = ({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="imageSrc">Image path or URL</Label>
-              <Input
-                id="imageSrc"
-                value={form.imageSrc}
-                onChange={(e) => set("imageSrc", e.target.value)}
-                placeholder="/math.svg"
-              />
+              <Label htmlFor="imageSrc">Image upload or URL</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="imageSrc"
+                  value={form.imageSrc}
+                  onChange={(e) => set("imageSrc", e.target.value)}
+                  placeholder="/math.svg"
+                  className="flex-1"
+                />
+                <label className="cursor-pointer bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-3 py-2 text-xs font-bold shrink-0 hover:bg-emerald-100 transition flex items-center gap-1">
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -289,14 +327,14 @@ export const ParentCourseManager = ({
             <Button
               variant="primaryOutline"
               onClick={() => setOpen(false)}
-              disabled={pending}
+              disabled={pending || uploading}
             >
               Cancel
             </Button>
             <Button
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
               onClick={onSubmit}
-              disabled={pending}
+              disabled={pending || uploading}
             >
               {editingId ? "Save changes" : "Create"}
             </Button>
