@@ -78,7 +78,7 @@ export const MainShell = ({
   };
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-slate-50 font-sans text-slate-900">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
       <header className="z-10 flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
         <Link
           href={`/${locale}/learn`}

@@ -52,7 +52,7 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans text-slate-900">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <aside className="z-10 hidden w-64 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="flex h-20 items-center border-b border-slate-100 px-6">

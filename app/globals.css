@@ -1,3 +1,6 @@
+/* Khmer fonts — loaded globally so the helper classes work on every page. */
+@import url("https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&family=Fasthand&family=Khmer&family=Noto+Sans+Khmer:wght@100..900&family=Preahvihear&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -95,4 +98,29 @@ body,
 .hide-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/* ── Khmer font helpers (loaded via Google Fonts in app/[lang]/layout.tsx) ── */
+.khmer-regular {
+  font-family: "Khmer", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.battambang-regular {
+  font-family: "Battambang", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.fasthand-regular {
+  font-family: "Fasthand", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+.preahvihear-regular {
+  font-family: "Preahvihear", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.noto-khmer {
+  font-family: "Noto Sans Khmer", sans-serif;
 }

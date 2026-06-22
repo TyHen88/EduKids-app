@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import { Nunito, Noto_Sans_Khmer } from "next/font/google";
+import { Nunito, Battambang } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config";
 
@@ -13,7 +13,7 @@ import { DictionaryProvider } from "./lang-provider";
 import "../globals.css";
 
 const nunito = Nunito({ subsets: ["latin"] });
-const khmerFont = Noto_Sans_Khmer({ subsets: ["khmer"], weight: "400" });
+const battambang = Battambang({ subsets: ["khmer"], weight: ["400", "700"] });
 
 export const viewport: Viewport = { themeColor: "#D97706" };
 export const metadata: Metadata = siteConfig;
@@ -31,7 +31,8 @@ export default async function RootLayout({
 }) {
   const { lang } = await params;
   const dict = await getDictionary(lang as any);
-  const fontClass = lang === "km" ? khmerFont.className : nunito.className;
+  // km pages render in Battambang (self-hosted via next/font); en pages use Nunito.
+  const fontClass = lang === "km" ? battambang.className : nunito.className;
   return (
     <ClerkProvider
       appearance={{
