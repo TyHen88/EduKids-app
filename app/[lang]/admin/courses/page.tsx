@@ -1,6 +1,7 @@
 import { BookOpen } from "lucide-react";
 
 import { getAdminCourses } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 import { CourseManager } from "./course-manager";
 
@@ -10,6 +11,7 @@ type Props = {
 
 const AdminCoursesPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const courses = await getAdminCourses();
 
   return (
@@ -17,10 +19,11 @@ const AdminCoursesPage = async ({ params }: Props) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-            Courses
+            {dict["admin.courses"] || "Courses"}
           </h1>
           <p className="mt-2 text-lg text-slate-500">
-            Create and manage your learning courses.
+            {dict["admin.coursesSubtitle"] ||
+              "Create and manage your learning courses."}
           </p>
         </div>
         <div className="hidden h-14 w-14 items-center justify-center rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-600 sm:flex">

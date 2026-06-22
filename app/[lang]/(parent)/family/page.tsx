@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Users, BookOpen, Star, Flame, Heart, ArrowRight, Crown, Sparkles } from "lucide-react";
 
 import { getChildren, getUserProgress } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ const PRESET_COVERS: Record<string, PresetCover> = {
 
 const FamilyDashboardPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const [children, userProgress] = await Promise.all([
     getChildren(),
     getUserProgress(),
@@ -86,7 +88,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
             </p>
           ) : (
             <p className="mt-1.5 text-sm sm:text-base font-medium text-white/85 drop-shadow-sm">
-              Monitor and manage your family's learning progress.
+              {dict["parent.bannerSubtitle"] || "Monitor and manage your family's learning progress."}
             </p>
           )}
         </div>
@@ -100,7 +102,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
           </div>
           <div>
             <div className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">
-              Children
+              {dict["parent.children"] || "Children"}
             </div>
             <div className="text-3xl font-black text-slate-800">
               {children.length}
@@ -113,7 +115,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
           </div>
           <div>
             <div className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">
-              Total Family Stardust
+              {dict["parent.totalFamilyStardust"] || "Total Family Stardust"}
             </div>
             <div className="text-3xl font-black text-slate-800">
               {totalPoints}
@@ -145,13 +147,13 @@ const FamilyDashboardPage = async ({ params }: Props) => {
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-amber-600">
-                <Crown className="h-3.5 w-3.5" /> Top Star
+                <Crown className="h-3.5 w-3.5" /> {dict["parent.topStar"] || "Top Star"}
               </div>
               <h3 className="truncate text-xl font-black text-slate-800">
-                🎉 Congratulations, {topChild.userName}!
+                🎉 {dict["parent.congratulations"] || "Congratulations"}, {topChild.userName}!
               </h3>
               <p className="text-sm font-semibold text-slate-500">
-                Leading the family with {topChild.points} Stardust. Keep it up!
+                {dict["parent.leadingWith"] || "Leading the family with"} {topChild.points} {dict["parent.stardust"] || "Stardust"}. {dict["parent.keepItUp"] || "Keep it up!"}
               </p>
             </div>
 
@@ -161,7 +163,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                 {topChild.points}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-amber-600/80">
-                Stardust
+                {dict["parent.stardust"] || "Stardust"}
               </div>
             </div>
           </div>
@@ -171,10 +173,10 @@ const FamilyDashboardPage = async ({ params }: Props) => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-tight text-slate-800">
-            Your Children
+            {dict["parent.yourChildren"] || "Your Children"}
           </h2>
           <Button asChild variant="secondary" className="rounded-xl">
-            <Link href={`/${lang}/family/children`}>Manage</Link>
+            <Link href={`/${lang}/family/children`}>{dict["parent.manage"] || "Manage"}</Link>
           </Button>
         </div>
 
@@ -188,13 +190,13 @@ const FamilyDashboardPage = async ({ params }: Props) => {
               className="mb-4 opacity-50 grayscale"
             />
             <h3 className="mb-2 text-xl font-bold text-slate-700">
-              No children added yet
+              {dict["parent.noChildrenAdded"] || "No children added yet"}
             </h3>
             <p className="mb-6 max-w-sm text-slate-500">
-              Create a profile for your child so they can start exploring and learning!
+              {dict["parent.createProfilePrompt"] || "Create a profile for your child so they can start exploring and learning!"}
             </p>
             <Button asChild size="lg" className="rounded-2xl shadow-md">
-              <Link href={`/${lang}/family/children`}>Add your first child</Link>
+              <Link href={`/${lang}/family/children`}>{dict["parent.addFirstChild"] || "Add your first child"}</Link>
             </Button>
           </div>
         ) : (
@@ -213,7 +215,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
               >
                 {isTop && (
                   <span className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-                    <Crown className="h-3 w-3 fill-current" /> Top Star
+                    <Crown className="h-3 w-3 fill-current" /> {dict["parent.topStar"] || "Top Star"}
                   </span>
                 )}
                 <div className="p-6">
@@ -236,7 +238,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                         {child.userName}
                       </h3>
                       <p className="text-sm font-bold text-slate-500">
-                        {child.activeCourse?.title || "No active course"}
+                        {child.activeCourse?.title || dict["parent.noActiveCourse"] || "No active course"}
                       </p>
                     </div>
                   </div>
@@ -244,11 +246,11 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                   <div className="grid grid-cols-2 gap-2 text-sm font-bold">
                     <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-slate-600">
                       <Flame className="h-5 w-5 text-orange-500" />
-                      {child.streak} Day{child.streak !== 1 ? "s" : ""}
+                      {child.streak} {child.streak !== 1 ? (dict["parent.days"] || "Days") : (dict["parent.day"] || "Day")}
                     </div>
                     <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-slate-600">
                       <Star className="h-5 w-5 text-indigo-500" />
-                      {child.points} XP
+                      {child.points} {dict["parent.xp"] || "XP"}
                     </div>
                   </div>
                 </div>
@@ -260,7 +262,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                     className="w-full justify-between text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700"
                   >
                     <Link href={`/${lang}/family/children/${child.userId}`}>
-                      View Progress
+                      {dict["parent.viewProgress"] || "View Progress"}
                       <ArrowRight className="h-5 w-5" />
                     </Link>
                   </Button>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { getChildProgress, getChildCourses } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 import { Button } from "@/components/ui/button";
 import { RefreshButton } from "./refresh-button";
 
@@ -46,6 +47,7 @@ const formatDuration = (totalSeconds: number) => {
 
 const ChildDetailPage = async ({ params }: Props) => {
   const { lang, childId } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const [child, childCourses] = await Promise.all([
     getChildProgress(childId),
     getChildCourses(childId),
@@ -60,11 +62,11 @@ const ChildDetailPage = async ({ params }: Props) => {
   const now = Date.now();
   const STALE_MS = 7 * 24 * 60 * 60 * 1000;
   const relativeDays = (d: Date | null) => {
-    if (!d) return "Not started";
+    if (!d) return dict["parent.notStarted"] || "Not started";
     const days = Math.floor((now - new Date(d).getTime()) / (24 * 60 * 60 * 1000));
-    if (days <= 0) return "Active today";
-    if (days === 1) return "Active yesterday";
-    return `Active ${days} days ago`;
+    if (days <= 0) return dict["parent.activeToday"] || "Active today";
+    if (days === 1) return dict["parent.activeYesterday"] || "Active yesterday";
+    return `${dict["parent.activePrefix"] || "Active"} ${days} ${dict["parent.daysAgo"] || "days ago"}`;
   };
   const needsAttention = (c: (typeof childCourses)[number]) =>
     c.totalLessons > 0 &&
@@ -81,7 +83,7 @@ const ChildDetailPage = async ({ params }: Props) => {
         </Button>
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
-            {child.userName}&apos;s Progress
+            {child.userName}&apos;s {dict["parent.progressSuffix"] || "Progress"}
           </h1>
         </div>
       </div>
@@ -100,19 +102,19 @@ const ChildDetailPage = async ({ params }: Props) => {
           </div>
           <div className="text-center">
             <h2 className="text-xl font-black text-slate-800">{child.userName}</h2>
-            <p className="text-sm font-medium text-slate-500">Learner</p>
+            <p className="text-sm font-medium text-slate-500">{dict["parent.learner"] || "Learner"}</p>
           </div>
         </div>
 
         {/* Stats grid */}
         <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat icon={<Star className="h-7 w-7 text-indigo-500" />} value={child.points} label="XP" />
-          <Stat icon={<Flame className="h-7 w-7 text-orange-500" />} value={child.streak} label="Day Streak" />
-          <Stat icon={<Heart className="h-7 w-7 text-rose-500" />} value={child.hearts} label="Hearts" />
+          <Stat icon={<Star className="h-7 w-7 text-indigo-500" />} value={child.points} label={dict["parent.xp"] || "XP"} />
+          <Stat icon={<Flame className="h-7 w-7 text-orange-500" />} value={child.streak} label={dict["parent.dayStreak"] || "Day Streak"} />
+          <Stat icon={<Heart className="h-7 w-7 text-rose-500" />} value={child.hearts} label={dict["parent.hearts"] || "Hearts"} />
           <Stat
             icon={<Clock className="h-7 w-7 text-emerald-500" />}
             value={formatDuration(totalSeconds)}
-            label="Time Learning"
+            label={dict["parent.timeLearning"] || "Time Learning"}
           />
         </div>
       </div>
@@ -122,7 +124,7 @@ const ChildDetailPage = async ({ params }: Props) => {
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-emerald-500" />
-            <h3 className="text-lg font-black text-slate-800">Courses</h3>
+            <h3 className="text-lg font-black text-slate-800">{dict["parent.courses"] || "Courses"}</h3>
             {childCourses.length > 0 && (
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-sm font-black text-emerald-700">
                 {childCourses.length}
@@ -134,12 +136,12 @@ const ChildDetailPage = async ({ params }: Props) => {
 
         {childCourses.length === 0 ? (
           <div className="rounded-[32px] border-2 border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
-            No courses assigned yet.{" "}
+            {dict["parent.noCoursesAssigned"] || "No courses assigned yet."}{" "}
             <Link
               href={`/${lang}/family/courses`}
               className="font-bold text-emerald-600 hover:underline"
             >
-              Assign a course
+              {dict["parent.assignCourse"] || "Assign a course"}
             </Link>
           </div>
         ) : (
@@ -176,7 +178,7 @@ const ChildDetailPage = async ({ params }: Props) => {
                         )}
                         {needsAttention(course) && (
                           <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
-                            <AlertTriangle className="h-3 w-3" /> Attention
+                            <AlertTriangle className="h-3 w-3" /> {dict["parent.attention"] || "Attention"}
                           </span>
                         )}
                       </div>
@@ -198,14 +200,14 @@ const ChildDetailPage = async ({ params }: Props) => {
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-bold text-slate-400">
                       <span className="flex items-center gap-1">
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                        {course.completedLessons}/{course.totalLessons} lessons
+                        {course.completedLessons}/{course.totalLessons} {dict["parent.lessonsLabel"] || "lessons"}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                        {formatDuration(course.totalSeconds)} total
+                        {formatDuration(course.totalSeconds)} {dict["parent.total"] || "total"}
                       </span>
                       {course.avgSeconds > 0 && (
-                        <span>~{formatDuration(course.avgSeconds)}/lesson</span>
+                        <span>~{formatDuration(course.avgSeconds)}{dict["parent.perLesson"] || "/lesson"}</span>
                       )}
                       <span
                         className={
@@ -214,7 +216,7 @@ const ChildDetailPage = async ({ params }: Props) => {
                         }
                       >
                         <XCircle className="h-3.5 w-3.5" />
-                        {course.totalWrong} wrong
+                        {course.totalWrong} {dict["parent.wrong"] || "wrong"}
                       </span>
                       <span>{relativeDays(course.lastActiveAt)}</span>
                     </div>
@@ -229,13 +231,13 @@ const ChildDetailPage = async ({ params }: Props) => {
                       target="_blank"
                       className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
                     >
-                      <FileDown className="h-3.5 w-3.5" /> Export PDF
+                      <FileDown className="h-3.5 w-3.5" /> {dict["parent.exportPdf"] || "Export PDF"}
                     </Link>
                   </div>
 
                   {course.totalLessons === 0 ? (
                     <p className="text-center text-sm font-medium text-slate-400">
-                      This course has no lessons yet.
+                      {dict["parent.courseNoLessons"] || "This course has no lessons yet."}
                     </p>
                   ) : (
                     course.units.map((unit) => (
@@ -293,12 +295,12 @@ const ChildDetailPage = async ({ params }: Props) => {
                                         <div className="mt-0.5 font-medium">
                                           {q.correctAnswer && (
                                             <span className="text-emerald-600">
-                                              Correct: {q.correctAnswer}
+                                              {dict["parent.correctLabel"] || "Correct:"} {q.correctAnswer}
                                             </span>
                                           )}
                                           {q.chosenAnswers.length > 0 && (
                                             <span className="text-rose-500">
-                                              {q.correctAnswer ? ", " : ""}Wrong:{" "}
+                                              {q.correctAnswer ? ", " : ""}{dict["parent.wrongLabel"] || "Wrong:"}{" "}
                                               {q.chosenAnswers.join(", ")}
                                             </span>
                                           )}

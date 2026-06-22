@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getAdminCourseTree } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 import { ContentManager } from "./content-manager";
 
@@ -12,6 +13,7 @@ type Props = {
 
 const AdminCourseContentPage = async ({ params }: Props) => {
   const { lang, courseId } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const course = await getAdminCourseTree(Number(courseId));
 
   if (!course) redirect(`/${lang}/admin/courses`);
@@ -23,13 +25,15 @@ const AdminCourseContentPage = async ({ params }: Props) => {
           href={`/${lang}/admin/courses`}
           className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-slate-500 transition-colors hover:text-indigo-600"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to courses
+          <ArrowLeft className="h-4 w-4" />{" "}
+          {dict["admin.backToCourses"] || "Back to courses"}
         </Link>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-          {course.title} — Content
+          {course.title} — {dict["admin.content"] || "Content"}
         </h1>
         <p className="mt-2 text-lg text-slate-500">
-          Manage units, lessons, blocks and answer options.
+          {dict["admin.contentSubtitle"] ||
+            "Manage units, lessons, blocks and answer options."}
         </p>
       </div>
 

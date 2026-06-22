@@ -3,11 +3,15 @@
 import Image from "next/image";
 import { motion } from "motion/react";
 
+import { useDictionary } from "@/app/[lang]/lang-provider";
+
 type QuestionBubbleProps = {
   question: string;
 };
 
 export const QuestionBubble = ({ question }: QuestionBubbleProps) => {
+  const dict = useDictionary();
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -16 }}
@@ -17,14 +21,14 @@ export const QuestionBubble = ({ question }: QuestionBubbleProps) => {
     >
       <Image
         src="/mascot.svg"
-        alt="Mascot"
+        alt={dict["lesson.mascot"] || "Mascot"}
         height={60}
         width={60}
         className="hidden lg:block"
       />
       <Image
         src="/mascot.svg"
-        alt="Mascot"
+        alt={dict["lesson.mascot"] || "Mascot"}
         height={40}
         width={40}
         className="block lg:hidden"

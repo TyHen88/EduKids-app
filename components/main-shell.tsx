@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
 import { NotificationBell } from "@/components/notification-bell";
 
 type MainShellProps = {
@@ -51,6 +51,7 @@ export const MainShell = ({
   children,
 }: MainShellProps) => {
   const locale = useLocale();
+  const dict = useDictionary();
   const pathname = usePathname();
 
   const studentLinks = [
@@ -59,15 +60,15 @@ export const MainShell = ({
     // their Backpack.
     ...(hasActiveCourse
       ? [
-          { name: "Home", href: `/${locale}/learn`, icon: Home },
-          { name: "Star Map", href: `/${locale}/path`, icon: MapIcon },
+          { name: dict["nav.home"] || "Home", href: `/${locale}/learn`, icon: Home },
+          { name: dict["nav.starMap"] || "Star Map", href: `/${locale}/path`, icon: MapIcon },
         ]
       : []),
-    { name: "Backpack", href: `/${locale}/courses`, icon: Backpack },
+    { name: dict["nav.backpack"] || "Backpack", href: `/${locale}/courses`, icon: Backpack },
     ...(isChild
-      ? [{ name: "Family", href: `/${locale}/my-family`, icon: Heart }]
-      : [{ name: "Friends", href: `/${locale}/friends`, icon: Users }]),
-    { name: "Galaxy", href: `/${locale}/achievements`, icon: Trophy },
+      ? [{ name: dict["nav.family"] || "Family", href: `/${locale}/my-family`, icon: Heart }]
+      : [{ name: dict["nav.friends"] || "Friends", href: `/${locale}/friends`, icon: Users }]),
+    { name: dict["nav.galaxy"] || "Galaxy", href: `/${locale}/achievements`, icon: Trophy },
   ];
 
   const isLinkActive = (href: string) => {
@@ -95,7 +96,7 @@ export const MainShell = ({
             const isActive = isLinkActive(link.href);
             return (
               <Link
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className={cn(
                   "flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-300",
@@ -122,7 +123,7 @@ export const MainShell = ({
             <Flame className="h-4 w-4 fill-current text-orange-500 sm:h-5 sm:w-5" />
             <div className="leading-tight">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                Streak
+                {dict["common.streak"] || "Streak"}
               </p>
               <p className="text-sm font-black text-orange-500 sm:text-base">
                 {streak}
@@ -135,7 +136,7 @@ export const MainShell = ({
             <Heart className="h-4 w-4 fill-current text-rose-500 sm:h-5 sm:w-5" />
             <div className="leading-tight">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                Hearts
+                {dict["common.hearts"] || "Hearts"}
               </p>
               <p className="text-sm font-black text-rose-500 sm:text-base">
                 {hearts}
@@ -148,7 +149,7 @@ export const MainShell = ({
             <Star className="h-4 w-4 fill-current text-indigo-600 sm:h-5 sm:w-5" />
             <div className="leading-tight">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                Stardust
+                {dict["common.stardust"] || "Stardust"}
               </p>
               <p className="text-sm font-black text-indigo-600 sm:text-base">
                 {points}
@@ -160,7 +161,7 @@ export const MainShell = ({
             <Link
               href={`/${locale}/admin`}
               className="ml-1 hidden h-10 w-10 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-slate-500 shadow-sm transition-colors hover:border-indigo-500 hover:text-indigo-600 sm:flex"
-              title="Admin"
+              title={dict["admin.brandShort"] || "Admin"}
             >
               <LayoutDashboard className="h-5 w-5" />
             </Link>
@@ -216,7 +217,7 @@ export const MainShell = ({
             const isActive = isLinkActive(link.href);
             return (
               <Link
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className="group relative flex w-14 flex-col items-center"
               >

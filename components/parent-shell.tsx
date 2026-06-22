@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
 
 type ParentShellProps = {
   userImageSrc: string;
@@ -30,14 +30,15 @@ export const ParentShell = ({
   children,
 }: ParentShellProps) => {
   const locale = useLocale();
+  const dict = useDictionary();
   const pathname = usePathname();
 
   const parentLinks = [
-    { name: "Dashboard", href: `/${locale}/family`, icon: Home },
-    { name: "Children", href: `/${locale}/family/children`, icon: Users },
-    { name: "My Courses", href: `/${locale}/family/my-courses`, icon: GraduationCap },
-    { name: "Courses", href: `/${locale}/family/courses`, icon: BookOpen },
-    { name: "Settings", href: `/${locale}/family/profile`, icon: Settings },
+    { name: dict["nav.dashboard"] || "Dashboard", href: `/${locale}/family`, icon: Home },
+    { name: dict["nav.children"] || "Children", href: `/${locale}/family/children`, icon: Users },
+    { name: dict["nav.myCourses"] || "My Courses", href: `/${locale}/family/my-courses`, icon: GraduationCap },
+    { name: dict["nav.courses"] || "Courses", href: `/${locale}/family/courses`, icon: BookOpen },
+    { name: dict["nav.settings"] || "Settings", href: `/${locale}/family/profile`, icon: Settings },
   ];
 
   const isLinkActive = (href: string) => {
@@ -65,7 +66,7 @@ export const ParentShell = ({
             const isActive = isLinkActive(link.href);
             return (
               <Link
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className={cn(
                   "flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-300",
@@ -130,7 +131,7 @@ export const ParentShell = ({
             const isActive = isLinkActive(link.href);
             return (
               <Link
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className="group relative flex w-14 flex-col items-center"
               >

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { upsertUserProgress } from "@/actions/user-progress";
 import type { CourseWithProgress } from "@/db/queries";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type CourseCardProps = {
   course: CourseWithProgress;
@@ -24,6 +25,7 @@ type CourseCardProps = {
 };
 
 export const CourseCard = ({ course, lang }: CourseCardProps) => {
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [showEmptyInfo, setShowEmptyInfo] = useState(false);
@@ -42,7 +44,7 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
 
     startTransition(() => {
       upsertUserProgress(course.id, lang).catch(() =>
-        toast.error("Something went wrong.")
+        toast.error(dict["common.somethingWentWrong"] || "Something went wrong.")
       );
     });
   };
@@ -62,7 +64,7 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
         </div>
         {course.isActive && (
           <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
-            <Check className="h-3 w-3" /> Active
+            <Check className="h-3 w-3" /> {dict["courses.active"] || "Active"}
           </div>
         )}
       </div>
@@ -72,20 +74,24 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
           <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             <span>{course.difficulty}</span>
             <span>·</span>
-            <span>{course.totalLessons} Lessons</span>
+            <span>
+              {course.totalLessons} {dict["courses.lessons"] || "Lessons"}
+            </span>
           </div>
           <h3 className="mb-2 text-xl font-bold text-slate-800">
             {course.title}
           </h3>
           <p className="mb-6 line-clamp-2 text-sm text-slate-500">
-            {course.description || "Start your learning adventure!"}
+            {course.description ||
+              dict["courses.startAdventure"] ||
+              "Start your learning adventure!"}
           </p>
         </div>
 
         <div>
           <div className="mb-2 flex justify-between text-xs font-bold">
             <span className="uppercase tracking-wider text-slate-400">
-              Progress
+              {dict["courses.progress"] || "Progress"}
             </span>
             <span className="font-black text-indigo-600">
               {course.progress}%
@@ -112,15 +118,18 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
           >
             {course.status === "Completed" ? (
               <>
-                <CheckCircle2 className="h-5 w-5" /> Read Again
+                <CheckCircle2 className="h-5 w-5" />{" "}
+                {dict["courses.readAgain"] || "Read Again"}
               </>
             ) : course.isActive ? (
               <>
-                <PlayCircle className="h-5 w-5" /> Continue Book
+                <PlayCircle className="h-5 w-5" />{" "}
+                {dict["courses.continueBook"] || "Continue Book"}
               </>
             ) : (
               <>
-                <PlayCircle className="h-5 w-5" /> Start Book
+                <PlayCircle className="h-5 w-5" />{" "}
+                {dict["courses.startBook"] || "Start Book"}
               </>
             )}
           </button>
@@ -134,7 +143,7 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
               <Info className="h-7 w-7" />
             </div>
             <DialogTitle className="text-center text-xl font-bold">
-              No lessons yet
+              {dict["courses.noLessonsYet"] || "No lessons yet"}
             </DialogTitle>
           </DialogHeader>
           <p className="text-center text-sm font-medium text-slate-500">
@@ -145,7 +154,7 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
               className="w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 font-bold text-white hover:bg-indigo-700 active:translate-y-1 active:border-b-0"
               onClick={() => setShowEmptyInfo(false)}
             >
-              Got it
+              {dict["common.gotIt"] || "Got it"}
             </Button>
           </DialogFooter>
         </DialogContent>

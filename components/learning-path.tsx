@@ -14,6 +14,7 @@ import {
 import { motion } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 export type PathNode = {
   id: number;
@@ -29,7 +30,14 @@ type LearningPathProps = {
 };
 
 export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
+  const dict = useDictionary();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const typeLabel = (type: string) => {
+    if (type === "quiz") return dict["path.quiz"] || "quiz";
+    if (type === "exam") return dict["path.exam"] || "exam";
+    return dict["path.lesson"] || "lesson";
+  };
 
   const getIcon = (type: string, status: string) => {
     if (status === "locked") return <Lock className="h-6 w-6" />;
@@ -95,10 +103,13 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
     <div className="mx-auto mt-4 max-w-4xl overflow-hidden px-2 pb-12 sm:px-6">
       <div className="mb-10 shrink-0 pt-4 text-center">
         <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-slate-800">
-          Star Journey 🚀
+          {dict["path.starJourney"] || "Star Journey"} 🚀
         </h1>
         <p className="text-lg font-medium text-slate-500">
-          Travel the stars through {courseTitle}!
+          {(dict["path.travelStars"] || "Travel the stars through {course}!").replace(
+            "{course}",
+            courseTitle
+          )}
         </p>
       </div>
 
@@ -228,7 +239,7 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
                           isEven ? "text-right" : "text-left"
                         )}
                       >
-                        {node.type}
+                        {typeLabel(node.type)}
                       </div>
 
                       <h3
@@ -247,8 +258,12 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
                           className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-indigo-700 sm:py-2.5"
                         >
                           <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Start Now</span>
-                          <span className="sm:hidden">Start</span>
+                          <span className="hidden sm:inline">
+                            {dict["path.startNow"] || "Start Now"}
+                          </span>
+                          <span className="sm:hidden">
+                            {dict["path.start"] || "Start"}
+                          </span>
                         </Link>
                       )}
 
@@ -260,7 +275,7 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
                           )}
                         >
                           <CheckCircle2 className="h-3 w-3 text-emerald-500 sm:h-4 sm:w-4" />{" "}
-                          Finished
+                          {dict["path.finished"] || "Finished"}
                         </div>
                       )}
                     </div>

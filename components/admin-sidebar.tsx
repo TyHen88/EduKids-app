@@ -15,17 +15,34 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export const AdminShell = ({ children }: { children: ReactNode }) => {
   const locale = useLocale();
+  const dict = useDictionary();
   const pathname = usePathname();
 
   const adminLinks = [
-    { name: "Dashboard", href: `/${locale}/admin`, icon: LayoutDashboard },
-    { name: "Students", href: `/${locale}/admin/students`, icon: Users },
-    { name: "Courses", href: `/${locale}/admin/courses`, icon: BookOpen },
-    { name: "Settings", href: `/${locale}/admin/settings`, icon: Settings },
+    {
+      name: dict["admin.navDashboard"] || "Dashboard",
+      href: `/${locale}/admin`,
+      icon: LayoutDashboard,
+    },
+    {
+      name: dict["admin.navStudents"] || "Students",
+      href: `/${locale}/admin/students`,
+      icon: Users,
+    },
+    {
+      name: dict["admin.navCourses"] || "Courses",
+      href: `/${locale}/admin/courses`,
+      icon: BookOpen,
+    },
+    {
+      name: dict["admin.navSettings"] || "Settings",
+      href: `/${locale}/admin/settings`,
+      icon: Settings,
+    },
   ];
 
   const isActive = (href: string) => {
@@ -41,7 +58,7 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
         <div className="flex h-20 items-center border-b border-slate-100 px-6">
           <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-indigo-600">
             <GraduationCap className="h-6 w-6" />
-            <span>EduKids Admin</span>
+            <span>{dict["admin.brandFull"] || "EduKids Admin"}</span>
           </div>
         </div>
 
@@ -74,7 +91,7 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100"
           >
             <LogOut className="h-5 w-5 text-slate-400" />
-            Switch to Student
+            {dict["admin.switchToStudent"] || "Switch to Student"}
           </Link>
         </div>
       </aside>
@@ -84,7 +101,7 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
         <header className="z-10 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-6 md:px-8">
           <div className="flex items-center gap-2 text-xl font-bold text-indigo-600 md:hidden">
             <GraduationCap className="h-6 w-6" />
-            <span>Admin</span>
+            <span>{dict["admin.brandShort"] || "Admin"}</span>
           </div>
           <h1 className="hidden text-2xl font-bold capitalize tracking-tight text-slate-800 md:block">
             {pathname.split("/").pop() || "Dashboard"}

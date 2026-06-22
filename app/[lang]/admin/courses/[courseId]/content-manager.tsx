@@ -46,6 +46,7 @@ import {
   uploadImage,
 } from "@/actions/lesson-block";
 import { BlockInput } from "@/actions/lesson-block";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type Option = {
   id: number;
@@ -126,12 +127,6 @@ const emptyForm: Form = {
   options: defaultOptions(),
 };
 
-const KIND_LABEL: Record<Kind, string> = {
-  unit: "Unit",
-  lesson: "Lesson",
-  block: "Block",
-};
-
 export const ContentManager = ({
   course,
   lang,
@@ -140,8 +135,16 @@ export const ContentManager = ({
   lang: string;
 }) => {
   const courseId = course.id;
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  const kindLabel = (kind: Kind) =>
+    ({
+      unit: dict["admin.unit"] || "Unit",
+      lesson: dict["admin.lesson"] || "Lesson",
+      block: dict["admin.block"] || "Block",
+    })[kind];
 
   const [openUnits, setOpenUnits] = useState<Set<number>>(new Set());
   const [openLessons, setOpenLessons] = useState<Set<number>>(new Set());
@@ -206,7 +209,11 @@ export const ContentManager = ({
           router.refresh();
         })
         .catch((e) =>
-          toast.error(e instanceof Error ? e.message : "Something went wrong.")
+          toast.error(
+            e instanceof Error
+              ? e.message
+              : dict["common.somethingWentWrong"] || "Something went wrong."
+          )
         );
     });
   };
@@ -230,7 +237,7 @@ export const ContentManager = ({
     setDraggedBlockId(null);
     runAction(
       reorderLessonBlocks(updates, courseId, lang),
-      "Blocks reordered successfully."
+      dict["admin.blocksReordered"] || "Blocks reordered successfully."
     );
   };
 
@@ -245,13 +252,23 @@ export const ContentManager = ({
     formData.append("file", file);
 
     setUploading(true);
-    const toastId = toast.loading("Uploading image...");
+    const toastId = toast.loading(
+      dict["admin.uploadingImage"] || "Uploading image..."
+    );
     try {
       const url = await uploadImage(formData);
       onUploaded(url);
-      toast.success("Image uploaded successfully!", { id: toastId });
+      toast.success(
+        dict["admin.imageUploaded"] || "Image uploaded successfully!",
+        { id: toastId }
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : dict["admin.uploadFailed"] || "Upload failed.",
+        { id: toastId }
+      );
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -261,8 +278,11 @@ export const ContentManager = ({
   const onSubmit = () => {
     if (!editor) return;
     const { kind, mode, parentId, entityId } = editor;
-    const verb = mode === "create" ? "created" : "updated";
-    const msg = `${KIND_LABEL[kind]} ${verb}.`;
+    const verb =
+      mode === "create"
+        ? dict["admin.verbCreated"] || "created"
+        : dict["admin.verbUpdated"] || "updated";
+    const msg = `${kindLabel(kind)} ${verb}.`;
 
     if (kind === "unit") {
       const data = {
@@ -311,9 +331,22 @@ export const ContentManager = ({
     label: string,
     promise: () => Promise<unknown>
   ) => {
-    const extra = " This cascades to everything nested under it.";
-    if (!window.confirm(`Delete ${kind} "${label}"?${extra}`)) return;
-    runAction(promise(), `${KIND_LABEL[kind]} deleted.`);
+    const extra =
+      " " +
+      (dict["admin.deleteCascade"] ||
+        "This cascades to everything nested under it.");
+    if (
+      !window.confirm(
+        `${dict["admin.deletePrefix"] || "Delete"} ${kindLabel(
+          kind
+        ).toLowerCase()} "${label}"?${extra}`
+      )
+    )
+      return;
+    runAction(
+      promise(),
+      `${kindLabel(kind)} ${dict["admin.verbDeleted"] || "deleted"}.`
+    );
   };
 
   const getBlockIcon = (type: string) => {
@@ -323,9 +356,13 @@ export const ContentManager = ({
   };
 
   const getBlockTitle = (block: Block) => {
-    if (block.type === "TEXT") return block.body ? block.body.substring(0, 40) + (block.body.length > 40 ? "..." : "") : "Text Block";
-    if (block.type === "IMAGE") return block.caption || "Image Block";
-    return block.question || "Question";
+    if (block.type === "TEXT")
+      return block.body
+        ? block.body.substring(0, 40) + (block.body.length > 40 ? "..." : "")
+        : dict["admin.textBlock"] || "Text Block";
+    if (block.type === "IMAGE")
+      return block.caption || dict["admin.imageBlock"] || "Image Block";
+    return block.question || dict["admin.question"] || "Question";
   };
 
   // Render Inline Form for block ONLY
@@ -343,7 +380,10 @@ export const ContentManager = ({
       <div className="my-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/20 p-4 transition-all space-y-4">
         <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
           <span className="text-sm font-bold text-indigo-700">
-            {editor.mode === "create" ? "Add New" : "Edit"} Block ({form.type})
+            {editor.mode === "create"
+              ? dict["admin.addNew"] || "Add New"
+              : dict["common.edit"] || "Edit"}{" "}
+            {dict["admin.block"] || "Block"} ({form.type})
           </span>
           <button
             onClick={cancelEditor}
@@ -357,23 +397,32 @@ export const ContentManager = ({
           {(form.type === "SELECT" || form.type === "ASSIST") && (
             <>
               <div className="space-y-1">
-                <Label className="text-xs font-bold text-slate-600">Question</Label>
+                <Label className="text-xs font-bold text-slate-600">
+                  {dict["admin.question"] || "Question"}
+                </Label>
                 <Input
                   value={form.question}
                   onChange={(e) => setField("question", e.target.value)}
-                  placeholder="e.g., Which of these is 'the apple'?"
+                  placeholder={
+                    dict["admin.questionPlaceholder"] ||
+                    "e.g., Which of these is 'the apple'?"
+                  }
                   className="bg-white"
                 />
               </div>
 
               {/* Inline Options Editing */}
               <div className="space-y-3 border-t border-indigo-100 pt-3">
-                <Label className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Answer Options</Label>
+                <Label className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                  {dict["admin.answerOptions"] || "Answer Options"}
+                </Label>
                 <div className="divide-y divide-slate-200">
                   {form.options.map((opt, optIdx) => (
                     <div key={optIdx} className="py-3 first:pt-0 last:pb-0 space-y-2 relative">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-600">Option #{optIdx + 1}</span>
+                        <span className="text-xs font-bold text-indigo-600">
+                          {dict["admin.option"] || "Option"} #{optIdx + 1}
+                        </span>
                         {form.options.length > 2 && (
                           <button
                             type="button"
@@ -384,7 +433,8 @@ export const ContentManager = ({
                             }}
                             className="text-xs text-rose-500 hover:underline flex items-center gap-0.5"
                           >
-                            <Trash2 className="h-3.5 w-3.5" /> Remove
+                            <Trash2 className="h-3.5 w-3.5" />{" "}
+                            {dict["admin.remove"] || "Remove"}
                           </button>
                         )}
                       </div>
@@ -397,7 +447,7 @@ export const ContentManager = ({
                               newOpts[optIdx] = { ...newOpts[optIdx], text: e.target.value };
                               setField("options", newOpts);
                             }}
-                            placeholder="Option text"
+                            placeholder={dict["admin.optionText"] || "Option text"}
                             className="h-8 text-sm bg-white"
                           />
                         </div>
@@ -413,7 +463,7 @@ export const ContentManager = ({
                               }}
                               className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
                             />
-                            Correct Option
+                            {dict["admin.correctOption"] || "Correct Option"}
                           </label>
                           <div className="flex-1 min-w-[120px] flex items-center gap-1.5">
                             <Input
@@ -423,7 +473,10 @@ export const ContentManager = ({
                                 newOpts[optIdx] = { ...newOpts[optIdx], imageSrc: e.target.value };
                                 setField("options", newOpts);
                               }}
-                              placeholder="Image URL (optional)"
+                              placeholder={
+                                dict["admin.imageUrlOptional"] ||
+                                "Image URL (optional)"
+                              }
                               className="h-7 text-[11px] px-2 bg-white flex-1"
                             />
                             <label className="cursor-pointer bg-slate-50 border border-slate-200 text-slate-700 rounded-lg p-1.5 hover:bg-slate-100 transition shrink-0">
@@ -450,7 +503,10 @@ export const ContentManager = ({
                                 newOpts[optIdx] = { ...newOpts[optIdx], audioSrc: e.target.value };
                                 setField("options", newOpts);
                               }}
-                              placeholder="Audio URL (optional)"
+                              placeholder={
+                                dict["admin.audioUrlOptional"] ||
+                                "Audio URL (optional)"
+                              }
                               className="h-7 text-[11px] px-2 bg-white"
                             />
                           </div>
@@ -469,7 +525,8 @@ export const ContentManager = ({
                   }}
                   className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Add Option
+                  <Plus className="h-3.5 w-3.5" />{" "}
+                  {dict["admin.addOption"] || "Add Option"}
                 </button>
               </div>
             </>
@@ -477,12 +534,17 @@ export const ContentManager = ({
 
           {form.type === "TEXT" && (
             <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-600">Body Text</Label>
+              <Label className="text-xs font-bold text-slate-600">
+                {dict["admin.bodyText"] || "Body Text"}
+              </Label>
               <textarea
                 value={form.body}
                 onChange={(e) => setField("body", e.target.value)}
                 className="w-full min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-indigo-500"
-                placeholder="Enter the lesson reading material here..."
+                placeholder={
+                  dict["admin.bodyTextPlaceholder"] ||
+                  "Enter the lesson reading material here..."
+                }
               />
             </div>
           )}
@@ -490,17 +552,21 @@ export const ContentManager = ({
           {form.type === "IMAGE" && (
             <>
               <div className="space-y-1">
-                <Label className="text-xs font-bold text-slate-600">Image</Label>
+                <Label className="text-xs font-bold text-slate-600">
+                  {dict["admin.image"] || "Image"}
+                </Label>
                 <div className="flex items-center gap-3">
                   <Input
                     value={form.imageSrc}
                     onChange={(e) => setField("imageSrc", e.target.value)}
-                    placeholder="Image URL or upload"
+                    placeholder={
+                      dict["admin.imageUrlOrUpload"] || "Image URL or upload"
+                    }
                     className="bg-white flex-1 text-xs h-9"
                   />
                   <label className="cursor-pointer bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl px-3 py-1.5 text-xs font-bold shrink-0 hover:bg-indigo-100 transition flex items-center gap-1.5">
                     <Upload className="h-3.5 w-3.5" />
-                    Upload
+                    {dict["common.upload"] || "Upload"}
                     <input
                       type="file"
                       accept="image/*"
@@ -511,11 +577,13 @@ export const ContentManager = ({
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-bold text-slate-600">Caption (optional)</Label>
+                <Label className="text-xs font-bold text-slate-600">
+                  {dict["admin.captionOptional"] || "Caption (optional)"}
+                </Label>
                 <Input
                   value={form.caption}
                   onChange={(e) => setField("caption", e.target.value)}
-                  placeholder="e.g., An apple"
+                  placeholder={dict["admin.captionPlaceholder"] || "e.g., An apple"}
                   className="bg-white"
                 />
               </div>
@@ -530,7 +598,7 @@ export const ContentManager = ({
             onClick={cancelEditor}
             disabled={pending || uploading}
           >
-            Cancel
+            {dict["common.cancel"] || "Cancel"}
           </Button>
           <Button
             variant="primary"
@@ -538,7 +606,7 @@ export const ContentManager = ({
             disabled={isSaveDisabled}
             onClick={onSubmit}
           >
-            Save
+            {dict["common.save"] || "Save"}
           </Button>
         </div>
       </div>
@@ -553,13 +621,14 @@ export const ContentManager = ({
           disabled={pending}
           onClick={() => openCreate("unit", courseId, course.units.length + 1)}
         >
-          <Plus className="mr-1 h-5 w-5" /> Add Unit
+          <Plus className="mr-1 h-5 w-5" /> {dict["admin.addUnit"] || "Add Unit"}
         </Button>
       </div>
 
       {course.units.length === 0 && (
         <div className="rounded-[24px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          No units yet. Add your first unit to start building lessons.
+          {dict["admin.noUnitsYet"] ||
+            "No units yet. Add your first unit to start building lessons."}
         </div>
       )}
 
@@ -587,8 +656,8 @@ export const ContentManager = ({
                 <div>
                   <div className="font-bold text-slate-800">{unit.title}</div>
                   <div className="text-xs text-slate-500">
-                    {unit.description || "No description"} · {unit.lessons.length}{" "}
-                    lessons
+                    {unit.description || dict["admin.noDescriptionShort"] || "No description"} ·{" "}
+                    {unit.lessons.length} {dict["admin.lessonsLower"] || "lessons"}
                   </div>
                 </div>
               </button>
@@ -636,7 +705,8 @@ export const ContentManager = ({
                             {lesson.title}
                           </span>
                           <span className="text-xs text-slate-400">
-                            {lesson.lessonBlocks.length} blocks
+                            {lesson.lessonBlocks.length}{" "}
+                            {dict["admin.blocksLower"] || "blocks"}
                           </span>
                         </button>
                         <RowActions
@@ -773,7 +843,8 @@ export const ContentManager = ({
                                     )}
                                     {block.caption && (
                                       <p className="text-xs font-semibold text-slate-500 italic">
-                                        Caption: {block.caption}
+                                        {dict["admin.captionLabel"] || "Caption"}:{" "}
+                                        {block.caption}
                                       </p>
                                     )}
                                   </div>
@@ -786,7 +857,9 @@ export const ContentManager = ({
 
                           {!(editor?.kind === "block" && editor.mode === "create" && editor.parentId === lesson.id) && (
                             <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 mt-1">
-                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Block:</span>
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                {dict["admin.addBlock"] || "Add Block:"}
+                              </span>
                               <div className="flex flex-wrap gap-2">
                                 <Button
                                   variant="ghost"
@@ -797,7 +870,8 @@ export const ContentManager = ({
                                     setForm((f) => ({ ...f, type: "TEXT" }));
                                   }}
                                 >
-                                  <Type className="h-3.5 w-3.5" /> Text
+                                  <Type className="h-3.5 w-3.5" />{" "}
+                                  {dict["admin.text"] || "Text"}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -808,7 +882,8 @@ export const ContentManager = ({
                                     setForm((f) => ({ ...f, type: "IMAGE" }));
                                   }}
                                 >
-                                  <ImageIcon className="h-3.5 w-3.5" /> Image
+                                  <ImageIcon className="h-3.5 w-3.5" />{" "}
+                                  {dict["admin.image"] || "Image"}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -819,7 +894,8 @@ export const ContentManager = ({
                                     setForm((f) => ({ ...f, type: "SELECT" }));
                                   }}
                                 >
-                                  <HelpCircle className="h-3.5 w-3.5" /> Q&A Select
+                                  <HelpCircle className="h-3.5 w-3.5" />{" "}
+                                  {dict["admin.qaSelect"] || "Q&A Select"}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -830,7 +906,8 @@ export const ContentManager = ({
                                     setForm((f) => ({ ...f, type: "ASSIST" }));
                                   }}
                                 >
-                                  <HelpCircle className="h-3.5 w-3.5" /> Q&A Assist
+                                  <HelpCircle className="h-3.5 w-3.5" />{" "}
+                                  {dict["admin.qaAssist"] || "Q&A Assist"}
                                 </Button>
                               </div>
                             </div>
@@ -846,7 +923,7 @@ export const ContentManager = ({
                   disabled={pending}
                   className="flex items-center gap-1 px-1 py-1 text-sm font-bold text-indigo-600 hover:underline disabled:opacity-50"
                 >
-                  <Plus className="h-4 w-4" /> Add lesson
+                  <Plus className="h-4 w-4" /> {dict["admin.addLesson"] || "Add lesson"}
                 </button>
               </div>
             )}
@@ -862,7 +939,10 @@ export const ContentManager = ({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editor?.mode === "create" ? "Add" : "Edit"} {editor?.kind ? KIND_LABEL[editor.kind] : ""}
+              {editor?.mode === "create"
+                ? dict["admin.add"] || "Add"
+                : dict["common.edit"] || "Edit"}{" "}
+              {editor?.kind ? kindLabel(editor.kind) : ""}
             </DialogTitle>
           </DialogHeader>
 
@@ -870,7 +950,7 @@ export const ContentManager = ({
 
 
             <div className="space-y-2">
-              <Label>Title</Label>
+              <Label>{dict["admin.fieldTitle"] || "Title"}</Label>
               <Input
                 value={form.title}
                 onChange={(e) => setField("title", e.target.value)}
@@ -879,7 +959,7 @@ export const ContentManager = ({
 
             {editor?.kind === "unit" && (
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>{dict["admin.fieldDescription"] || "Description"}</Label>
                 <Input
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
@@ -890,14 +970,14 @@ export const ContentManager = ({
 
           <DialogFooter>
             <Button variant="ghost" onClick={cancelEditor} disabled={pending}>
-              Cancel
+              {dict["common.cancel"] || "Cancel"}
             </Button>
             <Button
               variant="primary"
               disabled={pending || !form.title}
               onClick={onSubmit}
             >
-              Save
+              {dict["common.save"] || "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

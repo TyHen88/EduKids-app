@@ -1,4 +1,8 @@
+"use client";
+
 import Image from "next/image";
+
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type ContentBlockProps = {
   type: "TEXT" | "IMAGE" | "SELECT" | "ASSIST" | string;
@@ -13,6 +17,8 @@ export const ContentBlock = ({
   imageSrc,
   caption,
 }: ContentBlockProps) => {
+  const dict = useDictionary();
+
   if (type === "TEXT") {
     return (
       <div className="prose prose-slate lg:prose-xl">
@@ -28,7 +34,7 @@ export const ContentBlock = ({
           <div className="relative aspect-video w-full max-w-[500px] overflow-hidden rounded-xl border-2">
             <Image
               src={imageSrc}
-              alt={caption || "Lesson Image"}
+              alt={caption || dict["lesson.lessonImage"] || "Lesson Image"}
               fill
               className="object-cover"
             />

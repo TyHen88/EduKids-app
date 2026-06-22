@@ -47,7 +47,12 @@ export const ResultCard = ({ value, variant }: ResultCardProps) => {
       >
         {isPoints ? (
           <>
-            <Image src="/points.svg" alt="points" height={30} width={30} />
+            <Image
+              src="/points.svg"
+              alt={dict["common.points"] || "points"}
+              height={30}
+              width={30}
+            />
             {value}
           </>
         ) : (

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { assignCourse, unassignCourse } from "@/actions/course-assignment";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 import { cn } from "@/lib/utils";
 
 type CoursesClientProps = {
@@ -17,6 +18,7 @@ type CoursesClientProps = {
 };
 
 export const CoursesClient = ({ courses, childrenData, assignments, lang }: CoursesClientProps) => {
+  const dict = useDictionary();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(
     childrenData.length > 0 ? childrenData[0].userId : null
   );
@@ -40,9 +42,9 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
   if (childrenData.length === 0) {
     return (
       <div className="space-y-8 pb-12">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">Assign Courses</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">{dict["assignCourses.title"] || "Assign Courses"}</h1>
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          Add children to your family first to assign courses to them.
+          {dict["assignCourses.noChildren"] || "Add children to your family first to assign courses to them."}
         </div>
       </div>
     );
@@ -56,13 +58,13 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
       try {
         if (isAssigned) {
           await unassignCourse(selectedChildId, courseId, lang);
-          toast.success("Course unassigned");
+          toast.success(dict["assignCourses.courseUnassigned"] || "Course unassigned");
         } else {
           await assignCourse(selectedChildId, courseId, lang);
-          toast.success("Course assigned");
+          toast.success(dict["assignCourses.courseAssigned"] || "Course assigned");
         }
       } catch (err: any) {
-        toast.error(err.message || "Something went wrong");
+        toast.error(err.message || dict["common.somethingWentWrong"] || "Something went wrong");
       } finally {
         setLoadingCourseId(null);
       }
@@ -77,10 +79,10 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
     <div className="space-y-8 pb-12">
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-          Assign Courses
+          {dict["assignCourses.title"] || "Assign Courses"}
         </h1>
         <p className="mt-2 text-lg text-slate-500">
-          Choose which courses your children can play.
+          {dict["assignCourses.subtitle"] || "Choose which courses your children can play."}
         </p>
       </div>
 
@@ -111,26 +113,26 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
       {/* Filters Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-5 rounded-[24px] border-2 border-slate-100 shadow-sm">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Source</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{dict["assignCourses.source"] || "Source"}</label>
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value as any)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="ALL">All Sources</option>
-            <option value="SYSTEM">System Courses</option>
-            <option value="MY_COURSE">My Courses</option>
+            <option value="ALL">{dict["assignCourses.allSources"] || "All Sources"}</option>
+            <option value="SYSTEM">{dict["assignCourses.systemCourses"] || "System Courses"}</option>
+            <option value="MY_COURSE">{dict["myCourses.title"] || "My Courses"}</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{dict["assignCourses.category"] || "Category"}</label>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="ALL">All Categories</option>
+            <option value="ALL">{dict["assignCourses.allCategories"] || "All Categories"}</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -138,23 +140,23 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Difficulty</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{dict["assignCourses.difficulty"] || "Difficulty"}</label>
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="ALL">All Difficulties</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            <option value="ALL">{dict["assignCourses.allDifficulties"] || "All Difficulties"}</option>
+            <option value="Beginner">{dict["difficulty.beginner"] || "Beginner"}</option>
+            <option value="Intermediate">{dict["difficulty.intermediate"] || "Intermediate"}</option>
+            <option value="Advanced">{dict["difficulty.advanced"] || "Advanced"}</option>
           </select>
         </div>
       </div>
 
       {filteredCourses.length === 0 ? (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          No courses match your filter criteria.
+          {dict["assignCourses.noMatch"] || "No courses match your filter criteria."}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -205,11 +207,11 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : isAssigned ? (
                       <>
-                        <Check className="mr-2 h-5 w-5 text-emerald-500" /> Assigned
+                        <Check className="mr-2 h-5 w-5 text-emerald-500" /> {dict["assignCourses.assigned"] || "Assigned"}
                       </>
                     ) : (
                       <>
-                        <Plus className="mr-2 h-5 w-5" /> Assign to {childrenData.find(c => c.userId === selectedChildId)?.userName}
+                        <Plus className="mr-2 h-5 w-5" /> {dict["assignCourses.assignTo"] || "Assign to"} {childrenData.find(c => c.userId === selectedChildId)?.userName}
                       </>
                     )}
                   </Button>

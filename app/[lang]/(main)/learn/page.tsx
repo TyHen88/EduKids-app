@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 import { QUESTS } from "@/constants";
 import {
   getCoursesWithProgress,
@@ -41,7 +42,11 @@ const isSameDay = (a: Date, b: Date) =>
   a.getDate() === b.getDate();
 
 // Tiered leaderboard shout-out card theme for the welcome area.
-const rankTheme = (rank: number, name: string) => {
+const rankTheme = (
+  rank: number,
+  name: string,
+  dict: Record<string, string>
+) => {
   if (rank === 1)
     return {
       grad: "from-amber-50 to-yellow-50",
@@ -51,9 +56,11 @@ const rankTheme = (rank: number, name: string) => {
       chip: "text-amber-600",
       num: "text-amber-500",
       Icon: Crown,
-      label: "Top Star",
-      title: `🎉 Congratulations, ${name}!`,
-      subtitle: "You're #1 on the leaderboard — amazing work!",
+      label: dict["learn.rankTopStar"] || "Top Star",
+      title: `🎉 ${dict["learn.rankCongrats"] || "Congratulations"}, ${name}!`,
+      subtitle:
+        dict["learn.rankFirstSubtitle"] ||
+        "You're #1 on the leaderboard — amazing work!",
     };
   if (rank === 2)
     return {
@@ -64,9 +71,10 @@ const rankTheme = (rank: number, name: string) => {
       chip: "text-slate-500",
       num: "text-slate-500",
       Icon: Medal,
-      label: "Runner-Up",
-      title: `Awesome, ${name}!`,
-      subtitle: "You're #2 — so close to the top!",
+      label: dict["learn.rankRunnerUp"] || "Runner-Up",
+      title: `${dict["learn.rankAwesome"] || "Awesome"}, ${name}!`,
+      subtitle:
+        dict["learn.rankSecondSubtitle"] || "You're #2 — so close to the top!",
     };
   if (rank === 3)
     return {
@@ -77,9 +85,10 @@ const rankTheme = (rank: number, name: string) => {
       chip: "text-orange-600",
       num: "text-orange-500",
       Icon: Medal,
-      label: "Bronze Star",
-      title: `Great going, ${name}!`,
-      subtitle: "You're #3 — keep climbing!",
+      label: dict["learn.rankBronzeStar"] || "Bronze Star",
+      title: `${dict["learn.rankGreatGoing"] || "Great going"}, ${name}!`,
+      subtitle:
+        dict["learn.rankThirdSubtitle"] || "You're #3 — keep climbing!",
     };
   if (rank <= 10)
     return {
@@ -90,9 +99,9 @@ const rankTheme = (rank: number, name: string) => {
       chip: "text-indigo-600",
       num: "text-indigo-500",
       Icon: Star,
-      label: "Top 10",
-      title: `You're in the Top 10, ${name}!`,
-      subtitle: `Ranked #${rank} — push for the podium!`,
+      label: dict["learn.rankTop10"] || "Top 10",
+      title: `${dict["learn.rankInTop10"] || "You're in the Top 10"}, ${name}!`,
+      subtitle: `${dict["learn.rankNum"] || "Ranked"} #${rank} — ${dict["learn.rankPushPodium"] || "push for the podium!"}`,
     };
   return {
     grad: "from-sky-50 to-indigo-50",
@@ -102,14 +111,15 @@ const rankTheme = (rank: number, name: string) => {
     chip: "text-sky-600",
     num: "text-sky-500",
     Icon: Star,
-    label: "Keep Going",
-    title: `Nice work, ${name}!`,
-    subtitle: `You're ranked #${rank} — every lesson moves you up!`,
+    label: dict["learn.rankKeepGoing"] || "Keep Going",
+    title: `${dict["learn.rankNiceWork"] || "Nice work"}, ${name}!`,
+    subtitle: `${dict["learn.rankYoureRanked"] || "You're ranked"} #${rank} — ${dict["learn.rankEveryLesson"] || "every lesson moves you up!"}`,
   };
 };
 
 const LearnPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
 
   const [userProgress, courses, badges, topFriends, isChild, rank] = await Promise.all([
     getUserProgress(),
@@ -128,15 +138,20 @@ const LearnPage = async ({ params }: Props) => {
     courses.find((c) => c.status === "In Progress") ??
     courses[0];
 
-  const name = userProgress.userName || "friend";
+  const name = userProgress.userName || dict["learn.friend"] || "friend";
 
   // Celebratory rank card (kid-friendly), only when the rank is meaningful.
   const rankCard =
-    rank && rank.points > 0 && rank.total > 1 ? rankTheme(rank.rank, name) : null;
+    rank && rank.points > 0 && rank.total > 1
+      ? rankTheme(rank.rank, name, dict)
+      : null;
 
   // Real, points-based daily goals (uses existing QUESTS thresholds).
   const goals = QUESTS.slice(0, 3).map((q) => ({
-    title: `Earn ${q.value} XP`,
+    title: (dict["learn.earnXp"] || "Earn {value} XP").replace(
+      "{value}",
+      String(q.value)
+    ),
     value: q.value,
     done: userProgress.points >= q.value,
   }));
@@ -221,7 +236,7 @@ const LearnPage = async ({ params }: Props) => {
                 #{rank.rank}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                of {rank.total}
+                {dict["learn.of"] || "of"} {rank.total}
               </div>
             </div>
           </div>
@@ -248,7 +263,8 @@ const LearnPage = async ({ params }: Props) => {
           {/* Continue adventure */}
           <section>
             <h2 className="mb-4 flex items-center gap-2 px-2 text-lg font-black tracking-tight text-slate-800">
-              <Target className="h-5 w-5 text-indigo-500" /> Continue Adventure
+              <Target className="h-5 w-5 text-indigo-500" />{" "}
+              {dict["learn.continueAdventure"] || "Continue Adventure"}
             </h2>
             {currentCourse ? (
               <div className="group relative flex flex-col gap-4 overflow-hidden rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-indigo-200 sm:flex-row sm:gap-6 sm:rounded-[32px] sm:p-6">
@@ -283,18 +299,19 @@ const LearnPage = async ({ params }: Props) => {
                     href={`/${lang}/path`}
                     className="flex items-center justify-center gap-2 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-6 py-3.5 text-center text-sm font-black text-white shadow-lg transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0"
                   >
-                    <PlayCircle className="h-5 w-5" /> Jump In!
+                    <PlayCircle className="h-5 w-5" />{" "}
+                    {dict["learn.jumpIn"] || "Jump In!"}
                   </Link>
                 </div>
               </div>
             ) : (
               <div className="rounded-[32px] border-2 border-slate-100 bg-white p-6 text-slate-500 shadow-sm">
-                No course yet.{" "}
+                {dict["learn.noCourseYet"] || "No course yet."}{" "}
                 <Link
                   href={`/${lang}/courses`}
                   className="font-bold text-indigo-600 hover:underline"
                 >
-                  Pick one!
+                  {dict["learn.pickOne"] || "Pick one!"}
                 </Link>
               </div>
             )}
@@ -304,10 +321,11 @@ const LearnPage = async ({ params }: Props) => {
           <section>
             <div className="mb-4 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
-                <Award className="h-5 w-5 text-orange-500" /> Today&apos;s Goals
+                <Award className="h-5 w-5 text-orange-500" />{" "}
+                {dict["learn.todaysGoals"] || "Today's Goals"}
               </h2>
               <span className="text-sm font-bold text-slate-400">
-                {goalsDone}/{goals.length} Done
+                {goalsDone}/{goals.length} {dict["common.done"] || "Done"}
               </span>
             </div>
             <div className="rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
@@ -351,7 +369,9 @@ const LearnPage = async ({ params }: Props) => {
                           goal.done ? "text-emerald-700/80" : "text-slate-500"
                         )}
                       >
-                        {goal.done ? "Completed" : "In progress"}
+                        {goal.done
+                          ? dict["learn.completed"] || "Completed"
+                          : dict["learn.inProgress"] || "In progress"}
                       </div>
                     </div>
                   </div>
@@ -367,13 +387,14 @@ const LearnPage = async ({ params }: Props) => {
           <section>
             <div className="mb-4 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
-                <Star className="h-5 w-5 text-yellow-500" /> Recent Rewards
+                <Star className="h-5 w-5 text-yellow-500" />{" "}
+                {dict["learn.recentRewards"] || "Recent Rewards"}
               </h2>
               <Link
                 href={`/${lang}/achievements`}
                 className="text-xs font-bold uppercase tracking-widest text-indigo-600 hover:underline"
               >
-                See All
+                {dict["learn.seeAll"] || "See All"}
               </Link>
             </div>
             <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
@@ -391,21 +412,21 @@ const LearnPage = async ({ params }: Props) => {
                         {ub.badge.name}
                       </h4>
                       <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-yellow-700/80">
-                        Earned
+                        {dict["learn.earned"] || "Earned"}
                       </p>
                     </div>
                   </div>
                 ))
               ) : (
                 <p className="text-center text-sm font-medium text-slate-400">
-                  No rewards yet — keep learning!
+                  {dict["learn.noRewardsYet"] || "No rewards yet — keep learning!"}
                 </p>
               )}
               <Link
                 href={`/${lang}/achievements`}
                 className="mt-4 block w-full rounded-2xl border-2 border-slate-200 bg-slate-50 py-3.5 text-center font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800"
               >
-                Open Rewards Island
+                {dict["learn.openRewardsIsland"] || "Open Rewards Island"}
               </Link>
             </div>
           </section>
@@ -414,7 +435,10 @@ const LearnPage = async ({ params }: Props) => {
           <section className="hidden lg:block">
             <div className="mb-4 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
-                <Users className="h-5 w-5 text-purple-500" /> {isChild ? "Family Members" : "Friends Club"}
+                <Users className="h-5 w-5 text-purple-500" />{" "}
+                {isChild
+                  ? dict["learn.familyMembers"] || "Family Members"
+                  : dict["learn.friendsClub"] || "Friends Club"}
               </h2>
             </div>
             <div className="space-y-3 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
@@ -427,10 +451,10 @@ const LearnPage = async ({ params }: Props) => {
                     height={60}
                     className="mx-auto mb-2 opacity-50 grayscale"
                   />
-                  <p className="text-slate-500 font-bold mb-1 text-sm">{isChild ? "No family members yet!" : "No friends yet!"}</p>
+                  <p className="text-slate-500 font-bold mb-1 text-sm">{isChild ? (dict["learn.noFamilyYet"] || "No family members yet!") : (dict["learn.noFriendsYet"] || "No friends yet!")}</p>
                   {!isChild && (
                     <Button variant="secondary" className="w-full mt-2" asChild>
-                      <Link href={`/${lang}/friends`}>Find Friends</Link>
+                      <Link href={`/${lang}/friends`}>{dict["learn.findFriends"] || "Find Friends"}</Link>
                     </Button>
                   )}
                 </div>
@@ -459,10 +483,12 @@ const LearnPage = async ({ params }: Props) => {
                         </div>
                         <div>
                           <div className="text-sm font-bold leading-tight text-slate-800">
-                            {isYou ? "You" : u.userName}
+                            {isYou ? dict["learn.you"] || "You" : u.userName}
                           </div>
                           <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            {u.role === "parent" ? "Parent" : `Rank #${i + 1}`}
+                            {u.role === "parent"
+                              ? dict["learn.parent"] || "Parent"
+                              : `${dict["learn.rank"] || "Rank"} #${i + 1}`}
                           </div>
                         </div>
                       </div>

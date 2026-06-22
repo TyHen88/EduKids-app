@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Rocket, ArrowLeft, CheckCircle2, Circle, XCircle } from "lucide-react";
 
 import { getChildProgress, getChildCourses } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 import { PrintButton } from "./print-button";
 
 type Props = {
@@ -32,6 +33,7 @@ const gradeColor = (grade: string) =>
 
 const ReportPage = async ({ params }: Props) => {
   const { lang, childId, courseId } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
 
   const [child, courses] = await Promise.all([
     getChildProgress(childId),
@@ -71,7 +73,7 @@ const ReportPage = async ({ params }: Props) => {
           href={`/${lang}/family/children/${childId}`}
           className="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-800"
         >
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {dict["common.back"] || "Back"}
         </Link>
         <PrintButton />
       </div>
@@ -87,12 +89,12 @@ const ReportPage = async ({ params }: Props) => {
             <div>
               <div className="text-xl font-black text-slate-800">EduKids</div>
               <div className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                Course Progress Report
+                {dict["report.courseProgressReport"] || "Course Progress Report"}
               </div>
             </div>
           </div>
           <div className="text-right text-xs font-medium text-slate-400">
-            Generated
+            {dict["report.generated"] || "Generated"}
             <br />
             {generatedAt}
           </div>
@@ -125,22 +127,22 @@ const ReportPage = async ({ params }: Props) => {
           ) : (
             <div className="flex h-20 w-20 flex-col items-center justify-center rounded-2xl bg-slate-200 text-slate-500">
               <div className="text-xl font-black leading-none">—</div>
-              <div className="text-[10px] font-bold">No score</div>
+              <div className="text-[10px] font-bold">{dict["report.noScore"] || "No score"}</div>
             </div>
           )}
         </div>
 
         {/* Summary stats */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <ReportStat label="Progress" value={`${course.progress}%`} />
-          <ReportStat label="Lessons" value={`${course.completedLessons}/${course.totalLessons}`} />
-          <ReportStat label="Time spent" value={formatDuration(course.totalSeconds)} />
-          <ReportStat label="Wrong answers" value={`${course.totalWrong}`} />
+          <ReportStat label={dict["report.progress"] || "Progress"} value={`${course.progress}%`} />
+          <ReportStat label={dict["report.lessons"] || "Lessons"} value={`${course.completedLessons}/${course.totalLessons}`} />
+          <ReportStat label={dict["report.timeSpent"] || "Time spent"} value={formatDuration(course.totalSeconds)} />
+          <ReportStat label={dict["report.wrongAnswers"] || "Wrong answers"} value={`${course.totalWrong}`} />
         </div>
 
         {/* Lessons by unit */}
         <h2 className="mb-3 mt-8 text-sm font-black uppercase tracking-widest text-slate-500">
-          Lessons
+          {dict["report.lessons"] || "Lessons"}
         </h2>
         <div className="space-y-4">
           {course.units.map((unit) => (
@@ -168,7 +170,7 @@ const ReportPage = async ({ params }: Props) => {
                         {lesson.seconds > 0 ? formatDuration(lesson.seconds) : "—"}
                       </td>
                       <td className="w-20 py-2 text-right font-bold text-rose-500">
-                        {lesson.wrongAnswers > 0 ? `${lesson.wrongAnswers} wrong` : ""}
+                        {lesson.wrongAnswers > 0 ? `${lesson.wrongAnswers} ${dict["parent.wrong"] || "wrong"}` : ""}
                       </td>
                     </tr>
                   ))}
@@ -180,11 +182,11 @@ const ReportPage = async ({ params }: Props) => {
 
         {/* Questions to review */}
         <h2 className="mb-3 mt-8 text-sm font-black uppercase tracking-widest text-slate-500">
-          Questions to Review
+          {dict["report.questionsToReview"] || "Questions to Review"}
         </h2>
         {reviewItems.length === 0 ? (
           <div className="rounded-xl bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
-            No mistakes recorded — great job! 🎉
+            {dict["report.noMistakes"] || "No mistakes recorded — great job!"} 🎉
           </div>
         ) : (
           <div className="space-y-2">
@@ -205,11 +207,11 @@ const ReportPage = async ({ params }: Props) => {
                 {(q.correctAnswer || q.chosenAnswers.length > 0) && (
                   <div className="mt-1 font-medium">
                     {q.correctAnswer && (
-                      <span className="text-emerald-600">Correct: {q.correctAnswer}</span>
+                      <span className="text-emerald-600">{dict["parent.correctLabel"] || "Correct:"} {q.correctAnswer}</span>
                     )}
                     {q.chosenAnswers.length > 0 && (
                       <span className="text-rose-500">
-                        {q.correctAnswer ? ", " : ""}Wrong: {q.chosenAnswers.join(", ")}
+                        {q.correctAnswer ? ", " : ""}{dict["parent.wrongLabel"] || "Wrong:"} {q.chosenAnswers.join(", ")}
                       </span>
                     )}
                   </div>

@@ -4,48 +4,60 @@ import { UserButton } from "@clerk/nextjs";
 import { Heart, Coins, Globe, ShieldCheck, Settings as Cog } from "lucide-react";
 
 import { MAX_HEARTS, POINTS_TO_REFILL } from "@/constants";
-import { locales, defaultLocale } from "@/app/[lang]/dictionaries";
+import {
+  locales,
+  defaultLocale,
+  getDictionary,
+} from "@/app/[lang]/dictionaries";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
-const AdminSettingsPage = async () => {
+const AdminSettingsPage = async ({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) => {
+  const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const user = await currentUser();
 
   const adminCount =
     process.env.CLERK_ADMIN_IDS?.split(", ").filter(Boolean).length ?? 0;
 
   const name =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Admin";
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    dict["admin.adminBadge"] ||
+    "Admin";
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "—";
 
   const configRows = [
     {
       icon: Heart,
       color: "text-rose-500",
-      label: "Max hearts",
+      label: dict["admin.maxHearts"] || "Max hearts",
       value: MAX_HEARTS,
     },
     {
       icon: Coins,
       color: "text-indigo-600",
-      label: "Points to refill hearts",
+      label: dict["admin.pointsToRefill"] || "Points to refill hearts",
       value: POINTS_TO_REFILL,
     },
     {
       icon: Globe,
       color: "text-emerald-600",
-      label: "Locales",
+      label: dict["admin.locales"] || "Locales",
       value: locales.join(", "),
     },
     {
       icon: Globe,
       color: "text-emerald-600",
-      label: "Default locale",
+      label: dict["admin.defaultLocale"] || "Default locale",
       value: defaultLocale,
     },
     {
       icon: ShieldCheck,
       color: "text-purple-600",
-      label: "Admin accounts",
+      label: dict["admin.adminAccounts"] || "Admin accounts",
       value: adminCount,
     },
   ];
@@ -55,10 +67,11 @@ const AdminSettingsPage = async () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
-            Settings
+            {dict["admin.settings"] || "Settings"}
           </h1>
           <p className="mt-2 text-lg text-slate-500">
-            Your account and platform configuration.
+            {dict["admin.settingsSubtitle"] ||
+              "Your account and platform configuration."}
           </p>
         </div>
         <div className="hidden h-14 w-14 items-center justify-center rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-600 sm:flex">
@@ -69,7 +82,7 @@ const AdminSettingsPage = async () => {
       {/* Account */}
       <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="mb-6 text-lg font-bold tracking-tight text-slate-800">
-          Account
+          {dict["admin.account"] || "Account"}
         </h2>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -88,7 +101,7 @@ const AdminSettingsPage = async () => {
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black text-slate-800">{name}</span>
                 <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-600">
-                  Admin
+                  {dict["admin.adminBadge"] || "Admin"}
                 </span>
               </div>
               <div className="text-sm font-medium text-slate-500">{email}</div>
@@ -96,7 +109,7 @@ const AdminSettingsPage = async () => {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-bold text-slate-500">
-              Manage account
+              {dict["admin.manageAccount"] || "Manage account"}
             </span>
             <UserButton />
           </div>
@@ -106,10 +119,11 @@ const AdminSettingsPage = async () => {
       {/* Language preference */}
       <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="mb-2 text-lg font-bold tracking-tight text-slate-800">
-          Language
+          {dict["admin.language"] || "Language"}
         </h2>
         <p className="mb-5 text-sm font-medium text-slate-500">
-          Switch the interface language for the current session.
+          {dict["admin.languageSubtitle"] ||
+            "Switch the interface language for the current session."}
         </p>
         <LanguageSwitcher />
       </section>
@@ -117,7 +131,7 @@ const AdminSettingsPage = async () => {
       {/* Platform config */}
       <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="mb-6 text-lg font-bold tracking-tight text-slate-800">
-          Platform configuration
+          {dict["admin.platformConfiguration"] || "Platform configuration"}
         </h2>
         <div className="divide-y divide-slate-100">
           {configRows.map((row) => (
@@ -134,9 +148,12 @@ const AdminSettingsPage = async () => {
           ))}
         </div>
         <p className="mt-6 rounded-2xl bg-slate-50 p-4 text-xs font-medium text-slate-400">
-          Gameplay constants live in <code>constants.ts</code>. Admin accounts
-          are configured via the <code>CLERK_ADMIN_IDS</code> environment
-          variable.
+          {dict["admin.gameplayConstantsLiveIn"] || "Gameplay constants live in"}{" "}
+          <code>constants.ts</code>.{" "}
+          {dict["admin.adminAccountsConfiguredVia"] ||
+            "Admin accounts are configured via the"}{" "}
+          <code>CLERK_ADMIN_IDS</code>{" "}
+          {dict["admin.environmentVariable"] || "environment variable."}
         </p>
       </section>
     </div>

@@ -227,7 +227,12 @@ export const Quiz = ({
             animate={{ y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 2.4, ease: "easeInOut" }}
           >
-            <Image src="/finish.svg" alt="Finish" height={100} width={100} />
+            <Image
+              src="/finish.svg"
+              alt={dict["lesson.finish"] || "Finish"}
+              height={100}
+              width={100}
+            />
           </motion.div>
 
           <h1 className="text-lg font-black text-slate-800 lg:text-3xl">
@@ -278,7 +283,8 @@ export const Quiz = ({
             className="pointer-events-none fixed left-1/2 top-24 z-50 -translate-x-1/2"
           >
             <div className="flex items-center gap-2 rounded-full border-2 border-orange-300 bg-gradient-to-r from-orange-400 to-rose-500 px-5 py-2 text-sm font-black uppercase tracking-widest text-white shadow-lg">
-              <span className="text-lg">🔥</span> On fire! x{combo}
+              <span className="text-lg">🔥</span>{" "}
+              {dict["lesson.onFire"] || "On fire!"} x{combo}
             </div>
           </motion.div>
         )}

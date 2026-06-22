@@ -12,12 +12,13 @@ import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
 import { clerkError } from "@/lib/clerk-error";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export default function SignInPage() {
   const { signIn } = useSignIn();
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,47 +38,61 @@ export default function SignInPage() {
       });
 
       if (signInError) {
-        setError(clerkError(signInError, "Wrong email or password."));
+        setError(
+          clerkError(
+            signInError,
+            dict["auth.wrongEmailOrPassword"] || "Wrong email or password."
+          )
+        );
         setLoading(false);
         return;
       }
 
       await signIn.finalize({ navigate: () => router.push(`/${locale}/learn`) });
     } catch (err) {
-      setError(clerkError(err, "Wrong email or password."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.wrongEmailOrPassword"] || "Wrong email or password."
+        )
+      );
       setLoading(false);
     }
   };
 
   return (
     <AuthShell
-      title="Welcome back, explorer! 🚀"
-      subtitle="Sign in to continue your adventure."
+      title={dict["auth.signInTitle"] || "Welcome back, explorer! 🚀"}
+      subtitle={
+        dict["auth.signInSubtitle"] || "Sign in to continue your adventure."
+      }
       footer={
         <>
-          New here?{" "}
+          {dict["auth.newHere"] || "New here?"}{" "}
           <Link
             href={`/${locale}/sign-up`}
             className="font-bold text-indigo-600 hover:underline"
           >
-            Create an account
+            {dict["auth.createAnAccount"] || "Create an account"}
           </Link>
         </>
       }
     >
-      <GoogleButton label="Continue with Google" />
+      <GoogleButton
+        label={dict["auth.continueWithGoogle"] || "Continue with Google"}
+      />
 
       <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-100" />
         <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-          or
+          {dict["common.or"] || "or"}
         </span>
         <div className="h-px flex-1 bg-slate-100" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{dict["auth.email"] || "Email"}</Label>
           <Input
             id="email"
             type="email"
@@ -92,12 +107,14 @@ export default function SignInPage() {
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">
+              {dict["auth.password"] || "Password"}
+            </Label>
             <Link
               href={`/${locale}/forgot-password`}
               className="text-xs font-bold text-indigo-600 hover:underline"
             >
-              Forgot?
+              {dict["auth.forgot"] || "Forgot?"}
             </Link>
           </div>
           <Input
@@ -125,7 +142,11 @@ export default function SignInPage() {
           size="lg"
           disabled={loading}
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Sign in"}
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            dict["auth.signIn"] || "Sign in"
+          )}
         </Button>
       </form>
     </AuthShell>

@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
 import { clerkError } from "@/lib/clerk-error";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export default function SignUpPage() {
   const { signUp } = useSignUp();
@@ -20,6 +20,7 @@ export default function SignUpPage() {
   const signUpRef = useRef(signUp);
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
 
   const [step, setStep] = useState<"form" | "verify">("form");
   const [email, setEmail] = useState("");
@@ -40,14 +41,24 @@ export default function SignUpPage() {
         password,
       });
       if (createError) {
-        setError(clerkError(createError, "Couldn't create your account."));
+        setError(
+          clerkError(
+            createError,
+            dict["auth.couldntCreateAccount"] || "Couldn't create your account."
+          )
+        );
         setLoading(false);
         return;
       }
 
       const { error: sendError } = await signUp.verifications.sendEmailCode();
       if (sendError) {
-        setError(clerkError(sendError, "Couldn't send the code."));
+        setError(
+          clerkError(
+            sendError,
+            dict["auth.couldntSendCode"] || "Couldn't send the code."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -55,7 +66,12 @@ export default function SignUpPage() {
       signUpRef.current = signUp;
       setStep("verify");
     } catch (err) {
-      setError(clerkError(err, "Couldn't create your account."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.couldntCreateAccount"] || "Couldn't create your account."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -75,14 +91,24 @@ export default function SignUpPage() {
       });
 
       if (verifyError) {
-        setError(clerkError(verifyError, "That code didn't work."));
+        setError(
+          clerkError(
+            verifyError,
+            dict["auth.codeDidntWork"] || "That code didn't work."
+          )
+        );
         setLoading(false);
         return;
       }
 
       await su.finalize({ navigate: () => router.push(`/${locale}/learn`) });
     } catch (err) {
-      setError(clerkError(err, "That code didn't work."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.codeDidntWork"] || "That code didn't work."
+        )
+      );
       setLoading(false);
     }
   };
@@ -101,8 +127,11 @@ export default function SignUpPage() {
   if (step === "verify") {
     return (
       <AuthShell
-        title="Check your email 📬"
-        subtitle={`We sent a 6-digit code to ${email}.`}
+        title={dict["auth.checkYourEmail"] || "Check your email 📬"}
+        subtitle={
+          dict["auth.sentCodeTo"]?.replace("{email}", email) ||
+          `We sent a 6-digit code to ${email}.`
+        }
         footer={
           <button
             type="button"
@@ -112,7 +141,7 @@ export default function SignUpPage() {
             }}
             className="font-bold text-indigo-600 hover:underline"
           >
-            Use a different email
+            {dict["auth.useDifferentEmail"] || "Use a different email"}
           </button>
         }
       >
@@ -122,7 +151,9 @@ export default function SignUpPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="code">Verification code</Label>
+            <Label htmlFor="code">
+              {dict["auth.verificationCode"] || "Verification code"}
+            </Label>
             <Input
               id="code"
               inputMode="numeric"
@@ -153,7 +184,7 @@ export default function SignUpPage() {
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              "Verify & launch 🚀"
+              dict["auth.verifyAndLaunch"] || "Verify & launch 🚀"
             )}
           </Button>
         </form>
@@ -163,33 +194,37 @@ export default function SignUpPage() {
 
   return (
     <AuthShell
-      title="Join the adventure! 🌟"
-      subtitle="Create an account to start exploring."
+      title={dict["auth.signUpTitle"] || "Join the adventure! 🌟"}
+      subtitle={
+        dict["auth.signUpSubtitle"] || "Create an account to start exploring."
+      }
       footer={
         <>
-          Already have an account?{" "}
+          {dict["auth.alreadyHaveAccount"] || "Already have an account?"}{" "}
           <Link
             href={`/${locale}/sign-in`}
             className="font-bold text-indigo-600 hover:underline"
           >
-            Sign in
+            {dict["auth.signIn"] || "Sign in"}
           </Link>
         </>
       }
     >
-      <GoogleButton label="Sign up with Google" />
+      <GoogleButton
+        label={dict["auth.signUpWithGoogle"] || "Sign up with Google"}
+      />
 
       <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-100" />
         <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-          or
+          {dict["common.or"] || "or"}
         </span>
         <div className="h-px flex-1 bg-slate-100" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{dict["auth.email"] || "Email"}</Label>
           <Input
             id="email"
             type="email"
@@ -203,7 +238,9 @@ export default function SignUpPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">
+            {dict["auth.password"] || "Password"}
+          </Label>
           <Input
             id="password"
             type="password"
@@ -211,7 +248,9 @@ export default function SignUpPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
+            placeholder={
+              dict["auth.atLeast8Characters"] || "At least 8 characters"
+            }
             className={authInputClass}
           />
         </div>
@@ -235,7 +274,7 @@ export default function SignUpPage() {
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            "Create account"
+            dict["auth.createAccount"] || "Create account"
           )}
         </Button>
       </form>

@@ -29,6 +29,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { createChildAccount, removeChildAccount } from "@/actions/family";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type Child = {
   userId: string;
@@ -57,6 +58,7 @@ const formatDuration = (totalSeconds: number) => {
 };
 
 export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) => {
+  const dict = useDictionary();
   const [children] = useState(initialChildren);
   const [isPending, startTransition] = useTransition();
 
@@ -70,33 +72,33 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
   const handleAddChild = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.pin.length !== 4 || isNaN(Number(formData.pin))) {
-      toast.error("PIN must be exactly 4 digits");
+      toast.error(dict["parent.pinMustBe4Digits"] || "PIN must be exactly 4 digits");
       return;
     }
 
     startTransition(async () => {
       try {
         await createChildAccount(formData.name, formData.username, formData.pin, lang);
-        toast.success("Child account created successfully!");
+        toast.success(dict["parent.accountCreated"] || "Child account created successfully!");
         setIsAdding(false);
         setFormData({ name: "", username: "", pin: "" });
         window.location.reload(); // refresh server data
       } catch (error: any) {
-        toast.error(error.message || "Failed to create account. Username might be taken.");
+        toast.error(error.message || dict["parent.failedToCreate"] || "Failed to create account. Username might be taken.");
       }
     });
   };
 
   const handleRemoveChild = async (childId: string) => {
-    if (!confirm("Are you sure you want to completely remove this child account? This cannot be undone.")) return;
+    if (!confirm(dict["parent.confirmRemoveChild"] || "Are you sure you want to completely remove this child account? This cannot be undone.")) return;
 
     startTransition(async () => {
       try {
         await removeChildAccount(childId, lang);
-        toast.success("Child account removed.");
+        toast.success(dict["parent.childRemoved"] || "Child account removed.");
         window.location.reload();
       } catch (error: any) {
-        toast.error(error.message || "Failed to remove child.");
+        toast.error(error.message || dict["parent.failedToRemove"] || "Failed to remove child.");
       }
     });
   };
@@ -104,8 +106,8 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
   const copyUsername = (username: string) => {
     navigator.clipboard
       .writeText(username)
-      .then(() => toast.success("Username copied"))
-      .catch(() => toast.error("Couldn't copy"));
+      .then(() => toast.success(dict["parent.usernameCopied"] || "Username copied"))
+      .catch(() => toast.error(dict["parent.couldntCopy"] || "Couldn't copy"));
   };
 
   return (
@@ -114,7 +116,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
-            Manage Children
+            {dict["parent.manageChildren"] || "Manage Children"}
             {children.length > 0 && (
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-sm font-black text-emerald-700">
                 {children.length}
@@ -122,7 +124,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
             )}
           </h1>
           <p className="mt-1 text-sm text-slate-500 sm:text-base">
-            Create and manage profiles for your kids.
+            {dict["parent.createManageProfiles"] || "Create and manage profiles for your kids."}
           </p>
         </div>
         {!isAdding && (
@@ -130,7 +132,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
             onClick={() => setIsAdding(true)}
             className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
           >
-            <UserPlus className="mr-2 h-5 w-5" /> Add Child
+            <UserPlus className="mr-2 h-5 w-5" /> {dict["parent.addChild"] || "Add Child"}
           </Button>
         )}
       </div>
@@ -138,31 +140,31 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
       {/* Add form */}
       {isAdding && (
         <div className="rounded-3xl border-2 border-b-4 border-emerald-100 border-b-emerald-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="mb-6 text-xl font-bold text-slate-800">Create New Profile</h2>
+          <h2 className="mb-6 text-xl font-bold text-slate-800">{dict["parent.createNewProfile"] || "Create New Profile"}</h2>
           <form onSubmit={handleAddChild} className="max-w-md space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Display Name</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">{dict["parent.displayName"] || "Display Name"}</label>
               <Input
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Leo"
+                placeholder={dict["parent.displayNamePlaceholder"] || "e.g. Leo"}
                 className="h-12 rounded-xl border-2 bg-slate-50 px-4"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Unique Username</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">{dict["parent.uniqueUsername"] || "Unique Username"}</label>
               <Input
                 required
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                placeholder="e.g. leo2026"
+                placeholder={dict["parent.usernamePlaceholder"] || "e.g. leo2026"}
                 className="h-12 rounded-xl border-2 bg-slate-50 px-4"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pin" className="text-sm font-bold text-slate-700">
-                4-Digit Login PIN
+                {dict["parent.loginPin"] || "4-Digit Login PIN"}
               </Label>
               <div className="flex justify-start">
                 <InputOTP
@@ -188,7 +190,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
                 disabled={isPending}
                 className="h-12 flex-1 rounded-xl border-b-4 border-emerald-800 bg-emerald-600 text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
               >
-                {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+                {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : (dict["parent.createAccount"] || "Create Account")}
               </Button>
               <Button
                 type="button"
@@ -197,15 +199,15 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
                 onClick={() => setIsAdding(false)}
                 className="h-12 rounded-xl"
               >
-                Cancel
+                {dict["common.cancel"] || "Cancel"}
               </Button>
             </div>
           </form>
           <div className="mt-6 flex max-w-md items-start gap-3 rounded-2xl bg-amber-50 p-4 text-amber-800">
             <ShieldAlert className="h-6 w-6 shrink-0" />
             <p className="text-sm font-medium">
-              Save the username and PIN! Your child will use them to log in on their device via the{" "}
-              <strong>Kids Login</strong> portal.
+              {dict["parent.savePinNoteBefore"] || "Save the username and PIN! Your child will use them to log in on their device via the"}{" "}
+              <strong>{dict["parent.kidsLogin"] || "Kids Login"}</strong> {dict["parent.savePinNoteAfter"] || "portal."}
             </p>
           </div>
         </div>
@@ -217,15 +219,15 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
             <Users className="h-8 w-8" />
           </div>
-          <h3 className="mb-1 text-lg font-bold text-slate-700">No children yet</h3>
+          <h3 className="mb-1 text-lg font-bold text-slate-700">{dict["parent.noChildrenYet"] || "No children yet"}</h3>
           <p className="mx-auto mb-6 max-w-sm text-sm font-medium text-slate-400">
-            Add a profile for each of your kids. They&apos;ll log in with a username and a 4-digit PIN.
+            {dict["parent.noChildrenYetDesc"] || "Add a profile for each of your kids. They'll log in with a username and a 4-digit PIN."}
           </p>
           <Button
             onClick={() => setIsAdding(true)}
             className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
           >
-            <UserPlus className="mr-2 h-5 w-5" /> Add your first child
+            <UserPlus className="mr-2 h-5 w-5" /> {dict["parent.addFirstChild"] || "Add your first child"}
           </Button>
         </div>
       ) : (
@@ -239,7 +241,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
               <button
                 disabled={isPending}
                 onClick={() => handleRemoveChild(child.userId)}
-                title="Remove child"
+                title={dict["parent.removeChild"] || "Remove child"}
                 className="absolute right-3 top-3 rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
@@ -263,7 +265,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
                   {child.username ? (
                     <button
                       onClick={() => copyUsername(child.username!)}
-                      title="Copy username"
+                      title={dict["parent.copyUsername"] || "Copy username"}
                       className="mt-0.5 flex max-w-full items-center gap-1 text-xs font-bold text-emerald-600 transition-colors hover:text-emerald-700"
                     >
                       <AtSign className="h-3 w-3 shrink-0" />
@@ -272,7 +274,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
                     </button>
                   ) : (
                     <span className="mt-0.5 block text-xs font-medium text-slate-400">
-                      No username
+                      {dict["parent.noUsername"] || "No username"}
                     </span>
                   )}
                 </div>
@@ -280,17 +282,17 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
 
               {/* Quick stats */}
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <Stat icon={<Star className="h-4 w-4 fill-current text-indigo-500" />} value={child.points} label="Stardust" />
-                <Stat icon={<Flame className="h-4 w-4 fill-current text-orange-500" />} value={child.streak} label="Streak" />
-                <Stat icon={<Heart className="h-4 w-4 fill-current text-rose-500" />} value={child.hearts} label="Hearts" />
-                <Stat icon={<Clock className="h-4 w-4 text-emerald-500" />} value={formatDuration(child.totalSeconds)} label="Time" />
+                <Stat icon={<Star className="h-4 w-4 fill-current text-indigo-500" />} value={child.points} label={dict["parent.stardust"] || "Stardust"} />
+                <Stat icon={<Flame className="h-4 w-4 fill-current text-orange-500" />} value={child.streak} label={dict["parent.streak"] || "Streak"} />
+                <Stat icon={<Heart className="h-4 w-4 fill-current text-rose-500" />} value={child.hearts} label={dict["parent.hearts"] || "Hearts"} />
+                <Stat icon={<Clock className="h-4 w-4 text-emerald-500" />} value={formatDuration(child.totalSeconds)} label={dict["parent.time"] || "Time"} />
               </div>
 
               {/* Active course */}
               <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
                 <BookOpen className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                 <span className="truncate">
-                  {child.activeCourse?.title ?? "No active course"}
+                  {child.activeCourse?.title ?? dict["parent.noActiveCourse"] ?? "No active course"}
                 </span>
               </div>
 
@@ -301,7 +303,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
                 className="mt-4 w-full rounded-xl font-bold"
               >
                 <Link href={`/${lang}/family/children/${child.userId}`}>
-                  View Progress <ArrowRight className="ml-1.5 h-4 w-4" />
+                  {dict["parent.viewProgress"] || "View Progress"} <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </Button>
             </div>

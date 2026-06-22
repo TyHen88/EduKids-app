@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { updateProfile } from "@/actions/profile";
 import { uploadImage } from "@/actions/lesson-block";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -63,6 +63,7 @@ export const ParentProfileEditor = ({
 }: Props) => {
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
   const { signOut } = useClerk();
   const { user } = useUser();
   
@@ -93,9 +94,9 @@ export const ParentProfileEditor = ({
       if (url) {
         setImage(url);
       }
-      toast.success("Photo uploaded!");
+      toast.success(dict["profile.photoUploaded"] || "Photo uploaded!");
     } catch {
-      toast.error("Couldn't upload that photo.");
+      toast.error(dict["profile.photoUploadError"] || "Couldn't upload that photo.");
     } finally {
       setUploading(false);
     }
@@ -110,13 +111,13 @@ export const ParentProfileEditor = ({
     formData.append("file", file);
 
     setUploadingCover(true);
-    const toastId = toast.loading("Uploading cover image...");
+    const toastId = toast.loading(dict["profile.uploadingCover"] || "Uploading cover image...");
     try {
       const url = await uploadImage(formData);
       setFamilyCover(url);
-      toast.success("Cover image uploaded successfully!", { id: toastId });
+      toast.success(dict["profile.coverUploaded"] || "Cover image uploaded successfully!", { id: toastId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+      toast.error(err instanceof Error ? err.message : (dict["myCourses.uploadFailed"] || "Upload failed."), { id: toastId });
     } finally {
       setUploadingCover(false);
     }
@@ -136,10 +137,10 @@ export const ParentProfileEditor = ({
         locale
       )
         .then(() => {
-          toast.success("Profile saved!");
+          toast.success(dict["profile.profileSaved"] || "Profile saved!");
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() => toast.error(dict["common.somethingWentWrong"] || "Something went wrong."));
     });
   };
 
@@ -152,7 +153,7 @@ export const ParentProfileEditor = ({
     <div className="mx-auto w-full max-w-2xl space-y-6 pb-12">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-black tracking-tight text-slate-800">
-          Settings & Profile
+          {dict["profile.settingsProfile"] || "Settings & Profile"}
         </h1>
       </div>
 
@@ -167,7 +168,7 @@ export const ParentProfileEditor = ({
           {(PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || (!PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS] && familyCover)) && (
             <Image
               src={PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || familyCover}
-              alt="Family Cover"
+              alt={dict["profile.familyCoverAlt"] || "Family Cover"}
               fill
               className="object-cover"
             />
@@ -177,7 +178,7 @@ export const ParentProfileEditor = ({
             <div className="absolute inset-0 bg-black/25" />
           )}
           <div className="absolute top-4 right-4 bg-black/35 backdrop-blur-md rounded-full px-4 py-1 text-[10px] font-black text-white uppercase tracking-wider relative z-10">
-            {familyName || "My Family"}
+            {familyName || dict["profile.myFamily"] || "My Family"}
           </div>
         </div>
 
@@ -195,13 +196,13 @@ export const ParentProfileEditor = ({
           </div>
 
           <div className="flex flex-col gap-1">
-            <h2 className="text-xl font-black text-slate-800">{familyName || "My Family"}</h2>
+            <h2 className="text-xl font-black text-slate-800">{familyName || dict["profile.myFamily"] || "My Family"}</h2>
             {familyMotto ? (
               <p className="text-xs font-semibold text-slate-500 italic">
                 "{familyMotto}"
               </p>
             ) : (
-              <p className="text-xs font-bold text-slate-400">No family motto set yet.</p>
+              <p className="text-xs font-bold text-slate-400">{dict["profile.noMotto"] || "No family motto set yet."}</p>
             )}
             <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-slate-400">
               <span>{name}</span>
@@ -215,7 +216,7 @@ export const ParentProfileEditor = ({
       {/* Edit Form Card */}
       <div className="space-y-6 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-8 shadow-sm">
         <h2 className="text-lg font-black tracking-tight text-slate-800">
-          Edit Profile
+          {dict["profile.editProfile"] || "Edit Profile"}
         </h2>
 
         {/* Avatar Upload */}
@@ -223,7 +224,7 @@ export const ParentProfileEditor = ({
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-slate-200 bg-slate-50">
             <Image
               src={image}
-              alt="Avatar"
+              alt={dict["profile.avatarAlt"] || "Avatar"}
               fill
               className="object-cover"
               sizes="64px"
@@ -241,7 +242,7 @@ export const ParentProfileEditor = ({
               ) : (
                 <Upload className="h-4 w-4" />
               )}
-              Upload photo
+              {dict["profile.uploadPhoto"] || "Upload photo"}
             </button>
             <input
               ref={fileInputRef}
@@ -256,14 +257,14 @@ export const ParentProfileEditor = ({
         {/* Display name */}
         <div className="space-y-1.5">
           <label htmlFor="name" className="block text-sm font-bold text-slate-700">
-            Display name
+            {dict["profile.displayName"] || "Display name"}
           </label>
           <input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={24}
-            placeholder="Parent"
+            placeholder={dict["profile.displayNamePlaceholder"] || "Parent"}
             className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
@@ -271,20 +272,20 @@ export const ParentProfileEditor = ({
         <div className="border-t-2 border-slate-100 my-4" />
 
         <h3 className="text-base font-black tracking-tight text-slate-800">
-          Family Branding Settings
+          {dict["profile.familyBranding"] || "Family Branding Settings"}
         </h3>
 
         {/* Family Name */}
         <div className="space-y-1.5">
           <label htmlFor="familyName" className="block text-sm font-bold text-slate-700">
-            Family Name
+            {dict["profile.familyName"] || "Family Name"}
           </label>
           <input
             id="familyName"
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
             maxLength={32}
-            placeholder="e.g. The Henty Family"
+            placeholder={dict["profile.familyNamePlaceholder"] || "e.g. The Henty Family"}
             className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
@@ -292,14 +293,14 @@ export const ParentProfileEditor = ({
         {/* Family Motto */}
         <div className="space-y-1.5">
           <label htmlFor="familyMotto" className="block text-sm font-bold text-slate-700">
-            Family Motto
+            {dict["profile.familyMotto"] || "Family Motto"}
           </label>
           <input
             id="familyMotto"
             value={familyMotto}
             onChange={(e) => setFamilyMotto(e.target.value)}
             maxLength={80}
-            placeholder="e.g. Keep exploring and learning together! 🚀"
+            placeholder={dict["profile.familyMottoPlaceholder"] || "e.g. Keep exploring and learning together! 🚀"}
             className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
@@ -307,7 +308,7 @@ export const ParentProfileEditor = ({
         {/* Cover selector */}
         <div className="space-y-3">
           <label className="block text-sm font-bold text-slate-700">
-            Cover Banner Wallpaper
+            {dict["profile.coverWallpaper"] || "Cover Banner Wallpaper"}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {Object.entries(PRESET_COVERS).map(([key, preset]) => (
@@ -324,13 +325,13 @@ export const ParentProfileEditor = ({
                 {preset.imageSrc && (
                   <Image
                     src={preset.imageSrc}
-                    alt={preset.name}
+                    alt={(dict as Record<string, string>)[`profile.cover.${key}`] || preset.name}
                     fill
                     className="object-cover opacity-40"
                     sizes="120px"
                   />
                 )}
-                <span className="relative z-10">{preset.name}</span>
+                <span className="relative z-10">{(dict as Record<string, string>)[`profile.cover.${key}`] || preset.name}</span>
               </button>
             ))}
           </div>
@@ -347,7 +348,7 @@ export const ParentProfileEditor = ({
               ) : (
                 <Upload className="h-4 w-4" />
               )}
-              Upload custom cover image
+              {dict["profile.uploadCustomCover"] || "Upload custom cover image"}
             </button>
             <input
               ref={coverFileInputRef}
@@ -367,7 +368,7 @@ export const ParentProfileEditor = ({
           {pending ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            "Save changes"
+            dict["myCourses.saveChanges"] || "Save changes"
           )}
         </button>
       </div>
@@ -382,7 +383,7 @@ export const ParentProfileEditor = ({
           <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
           <>
-            <LogOut className="h-5 w-5" /> Sign out
+            <LogOut className="h-5 w-5" /> {dict["profile.signOut"] || "Sign out"}
           </>
         )}
       </button>

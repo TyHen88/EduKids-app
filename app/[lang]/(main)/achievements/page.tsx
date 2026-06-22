@@ -1,10 +1,18 @@
 import { Star, ShieldCheck } from "lucide-react";
 
 import { getBadges, getUserBadges, getUserProgress } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 import { BadgesGrid } from "./badges-grid";
 
-const AchievementsPage = async () => {
+type Props = {
+  params: Promise<{ lang: string }>;
+};
+
+const AchievementsPage = async ({ params }: Props) => {
+  const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
+
   const [badges, userBadges, userProgress] = await Promise.all([
     getBadges(),
     getUserBadges(),
@@ -21,17 +29,18 @@ const AchievementsPage = async () => {
         <Star className="absolute left-1/2 top-10 h-2 w-2 fill-current text-white/40" />
         <div className="relative text-center md:text-left">
           <h1 className="mb-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Galaxy Collection 🌌
+            {dict["achievements.galaxyCollection"] || "Galaxy Collection"} 🌌
           </h1>
           <p className="text-lg font-bold text-indigo-100">
-            Finish lessons to collect star cards across the galaxy!
+            {dict["achievements.subtitle"] ||
+              "Finish lessons to collect star cards across the galaxy!"}
           </p>
         </div>
 
         <div className="relative flex items-center gap-8 rounded-2xl border border-white/20 bg-white/15 p-6 backdrop-blur-md">
           <div className="text-center">
             <div className="mb-1 text-xs font-bold uppercase tracking-wider text-indigo-100">
-              Collected
+              {dict["achievements.collected"] || "Collected"}
             </div>
             <div className="flex items-center justify-center gap-2 text-4xl font-black">
               {earnedIds.length}
@@ -41,7 +50,7 @@ const AchievementsPage = async () => {
           <div className="h-12 w-px bg-white/20" />
           <div className="text-center">
             <div className="mb-1 text-xs font-bold uppercase tracking-wider text-indigo-100">
-              Stardust
+              {dict["achievements.stardust"] || "Stardust"}
             </div>
             <div className="flex items-center justify-center gap-2 text-4xl font-black">
               {userProgress?.points ?? 0}{" "}
@@ -53,12 +62,13 @@ const AchievementsPage = async () => {
 
       <h2 className="mb-6 flex items-center gap-3 px-2 text-xl font-black tracking-tight text-slate-800">
         <ShieldCheck className="h-6 w-6 text-indigo-500" />
-        Your Star Cards
+        {dict["achievements.yourStarCards"] || "Your Star Cards"}
       </h2>
 
       {badges.length === 0 ? (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          No star cards have been created yet.
+          {dict["achievements.noStarCards"] ||
+            "No star cards have been created yet."}
         </div>
       ) : (
         <BadgesGrid badges={badges} earnedIds={earnedIds} />

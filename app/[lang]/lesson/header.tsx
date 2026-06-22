@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 
 import { Progress } from "@/components/ui/progress";
 import { useExitModal } from "@/store/use-exit-modal";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type HeaderProps = {
   percentage: number;
@@ -15,6 +16,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export const Header = ({ percentage }: HeaderProps) => {
   const { open } = useExitModal();
+  const dict = useDictionary();
   const [elapsed, setElapsed] = useState(0);
 
   // Count up from when the lesson is opened.
@@ -39,7 +41,7 @@ export const Header = ({ percentage }: HeaderProps) => {
       <button
         onClick={open}
         className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-        aria-label="Exit lesson"
+        aria-label={dict["lesson.exitLesson"] || "Exit lesson"}
       >
         <X className="h-6 w-6" />
       </button>
@@ -48,7 +50,7 @@ export const Header = ({ percentage }: HeaderProps) => {
 
       <div
         className="flex shrink-0 items-center gap-2 text-lg font-black tabular-nums text-indigo-600"
-        title="Time elapsed"
+        title={dict["lesson.timeElapsed"] || "Time elapsed"}
       >
         <Clock className="h-6 w-6 shrink-0" />
         <span>

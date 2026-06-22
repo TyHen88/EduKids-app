@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { updateProfile } from "@/actions/profile";
 import { getBuddy } from "@/lib/buddy";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 type EarnedBadge = { id: number; name: string; icon: string };
 
@@ -62,6 +62,7 @@ export const ProfileEditor = ({
 }: Props) => {
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
   const { signOut } = useClerk();
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,9 +95,11 @@ export const ProfileEditor = ({
         setCustomImages((prev) => [url, ...prev.filter((u) => u !== url)]);
         setImage(url);
       }
-      toast.success("Photo uploaded!");
+      toast.success(dict["profile.photoUploaded"] || "Photo uploaded!");
     } catch {
-      toast.error("Couldn't upload that photo.");
+      toast.error(
+        dict["profile.photoUploadError"] || "Couldn't upload that photo."
+      );
     } finally {
       setUploading(false);
     }
@@ -111,10 +114,14 @@ export const ProfileEditor = ({
         locale
       )
         .then(() => {
-          toast.success("Profile saved!");
+          toast.success(dict["profile.profileSaved"] || "Profile saved!");
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() =>
+          toast.error(
+            dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        );
     });
   };
 
@@ -124,9 +131,24 @@ export const ProfileEditor = ({
   };
 
   const stats = [
-    { icon: Star, color: "text-indigo-600", label: "Stardust", value: points },
-    { icon: Flame, color: "text-orange-500", label: "Streak", value: streak },
-    { icon: Heart, color: "text-rose-500", label: "Hearts", value: hearts },
+    {
+      icon: Star,
+      color: "text-indigo-600",
+      label: dict["profile.stardust"] || "Stardust",
+      value: points,
+    },
+    {
+      icon: Flame,
+      color: "text-orange-500",
+      label: dict["profile.streak"] || "Streak",
+      value: streak,
+    },
+    {
+      icon: Heart,
+      color: "text-rose-500",
+      label: dict["profile.hearts"] || "Hearts",
+      value: hearts,
+    },
   ];
 
   return (
@@ -180,14 +202,14 @@ export const ProfileEditor = ({
       {/* Edit card */}
       <div className="space-y-6 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="text-lg font-black tracking-tight text-slate-800">
-          Customize your explorer
+          {dict["profile.customizeExplorer"] || "Customize your explorer"}
         </h2>
 
         {/* Avatar picker */}
         <div>
           <div className="mb-3 flex items-center justify-between">
             <label className="block text-sm font-bold text-slate-700">
-              Choose your avatar
+              {dict["profile.chooseAvatar"] || "Choose your avatar"}
             </label>
             <button
               type="button"
@@ -200,7 +222,7 @@ export const ProfileEditor = ({
               ) : (
                 <Upload className="h-3.5 w-3.5" />
               )}
-              Upload photo
+              {dict["profile.uploadPhoto"] || "Upload photo"}
             </button>
             <input
               ref={fileInputRef}
@@ -227,7 +249,7 @@ export const ProfileEditor = ({
                 >
                   <Image
                     src={url}
-                    alt="Avatar option"
+                    alt={dict["profile.avatarOption"] || "Avatar option"}
                     fill
                     className="object-cover p-1"
                     sizes="64px"
@@ -246,14 +268,14 @@ export const ProfileEditor = ({
         {/* Display name */}
         <div className="space-y-1.5">
           <label htmlFor="name" className="block text-sm font-bold text-slate-700">
-            Display name
+            {dict["profile.displayName"] || "Display name"}
           </label>
           <input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={24}
-            placeholder="Explorer"
+            placeholder={dict["profile.explorer"] || "Explorer"}
             className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-indigo-400 focus:outline-none"
           />
         </div>
@@ -264,7 +286,7 @@ export const ProfileEditor = ({
             htmlFor="buddyName"
             className="block text-sm font-bold text-slate-700"
           >
-            Buddy name{" "}
+            {dict["profile.buddyName"] || "Buddy name"}{" "}
             <span className="font-medium text-slate-400">
               ({buddy.stage.emoji} {buddy.stage.name})
             </span>
@@ -287,7 +309,7 @@ export const ProfileEditor = ({
           {pending ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            "Save changes"
+            dict["profile.saveChanges"] || "Save changes"
           )}
         </button>
       </div>
@@ -295,11 +317,12 @@ export const ProfileEditor = ({
       {/* Badges */}
       <div className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="mb-4 text-lg font-black tracking-tight text-slate-800">
-          Star cards ({badges.length})
+          {dict["profile.starCards"] || "Star cards"} ({badges.length})
         </h2>
         {badges.length === 0 ? (
           <p className="text-sm font-medium text-slate-400">
-            Finish lessons to collect star cards!
+            {dict["profile.starCardsEmpty"] ||
+              "Finish lessons to collect star cards!"}
           </p>
         ) : (
           <div className="flex flex-wrap gap-3">
@@ -329,7 +352,7 @@ export const ProfileEditor = ({
           <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
           <>
-            <LogOut className="h-5 w-5" /> Sign out
+            <LogOut className="h-5 w-5" /> {dict["common.signOut"] || "Sign out"}
           </>
         )}
       </button>

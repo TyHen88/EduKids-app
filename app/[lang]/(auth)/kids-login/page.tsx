@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { hasUserProfile } from "@/actions/onboarding";
 
 const KidsLoginPage = () => {
@@ -23,6 +23,7 @@ const KidsLoginPage = () => {
   const { signOut } = useClerk();
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
 
   const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
@@ -32,7 +33,7 @@ const KidsLoginPage = () => {
     e.preventDefault();
     if (!signIn) return;
     if (pin.length !== 4) {
-      toast.error("PIN must be 4 digits");
+      toast.error(dict["auth.pinMustBe4Digits"] || "PIN must be 4 digits");
       return;
     }
 
@@ -57,7 +58,8 @@ const KidsLoginPage = () => {
         if (!profileExists) {
           await signOut();
           toast.error(
-            "This account isn't set up in this app. Please ask your parent to add you."
+            dict["auth.accountNotSetUp"] ||
+              "This account isn't set up in this app. Please ask your parent to add you."
           );
           setIsLoading(false);
           return;
@@ -65,11 +67,11 @@ const KidsLoginPage = () => {
 
         router.push(`/${locale}/learn`);
       } else {
-        toast.error((error as any).errors?.[0]?.message || error.message || "Invalid username or PIN");
+        toast.error((error as any).errors?.[0]?.message || error.message || dict["auth.invalidUsernameOrPin"] || "Invalid username or PIN");
         setIsLoading(false);
       }
     } catch (err: any) {
-      toast.error(err.message || "Invalid username or PIN");
+      toast.error(err.message || dict["auth.invalidUsernameOrPin"] || "Invalid username or PIN");
       setIsLoading(false);
     }
   };
@@ -82,17 +84,17 @@ const KidsLoginPage = () => {
             <div className="relative mx-auto mb-4 h-24 w-24">
               <Image
                 src="/mascot.svg"
-                alt="EduKids Logo"
+                alt={dict["auth.eduKidsLogo"] || "EduKids Logo"}
                 fill
                 className="object-contain"
               />
             </div>
           </Link>
           <h1 className="text-4xl font-black tracking-tight text-slate-800">
-            Kids Login
+            {dict["auth.kidsLogin"] || "Kids Login"}
           </h1>
           <p className="mt-2 text-lg font-bold text-slate-500">
-            Welcome back!
+            {dict["auth.welcomeBack"] || "Welcome back!"}
           </p>
         </div>
 
@@ -102,20 +104,20 @@ const KidsLoginPage = () => {
         >
           <div className="space-y-2">
             <label className="block text-center text-sm font-bold uppercase tracking-wider text-slate-600">
-              Username
+              {dict["auth.username"] || "Username"}
             </label>
             <Input
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. sophia123"
+              placeholder={dict["auth.usernamePlaceholder"] || "e.g. sophia123"}
               className="h-14 rounded-xl border-2 border-slate-200 bg-slate-50 px-6 text-center text-lg font-bold text-slate-800 placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-0 transition-colors"
             />
           </div>
 
           <div className="space-y-3">
             <label className="block text-center text-sm font-bold uppercase tracking-wider text-slate-600">
-              4-Digit PIN
+              {dict["auth.fourDigitPin"] || "4-Digit PIN"}
             </label>
             <div className="flex justify-center">
               <InputOTP 
@@ -147,7 +149,8 @@ const KidsLoginPage = () => {
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 <span className="flex items-center">
-                  Sign In <PlayCircle className="ml-2 h-6 w-6" />
+                  {dict["auth.signIn"] || "Sign In"}{" "}
+                  <PlayCircle className="ml-2 h-6 w-6" />
                 </span>
               )}
             </Button>
@@ -158,7 +161,7 @@ const KidsLoginPage = () => {
               href={`/${locale}`}
               className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
             >
-              ← Back to Main Page
+              ← {dict["auth.backToMainPage"] || "Back to Main Page"}
             </Link>
           </div>
         </form>

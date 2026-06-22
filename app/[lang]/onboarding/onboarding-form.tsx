@@ -8,13 +8,14 @@ import { GraduationCap, Users, ArrowRight, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { createUserWithRole } from "@/actions/onboarding";
 
 type Role = "learner" | "parent";
 
 const OnboardingForm = () => {
   const locale = useLocale();
+  const dict = useDictionary();
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -36,8 +37,10 @@ const OnboardingForm = () => {
   const roles = [
     {
       id: "learner" as Role,
-      title: "I'm a learner",
-      description: "I want to explore courses, earn stardust, and go on learning adventures!",
+      title: dict["onboarding.learnerTitle"] || "I'm a learner",
+      description:
+        dict["onboarding.learnerDescription"] ||
+        "I want to explore courses, earn stardust, and go on learning adventures!",
       icon: GraduationCap,
       emoji: "🧑‍🎓",
       gradient: "from-indigo-500 to-purple-600",
@@ -47,8 +50,10 @@ const OnboardingForm = () => {
     },
     {
       id: "parent" as Role,
-      title: "I'm a parent",
-      description: "I want to create accounts for my children, assign courses, and monitor their progress.",
+      title: dict["onboarding.parentTitle"] || "I'm a parent",
+      description:
+        dict["onboarding.parentDescription"] ||
+        "I want to create accounts for my children, assign courses, and monitor their progress.",
       icon: Users,
       emoji: "👨‍👩‍👧‍👦",
       gradient: "from-emerald-500 to-teal-600",
@@ -84,10 +89,12 @@ const OnboardingForm = () => {
             />
           </div>
           <h1 className="mb-2 text-3xl font-black tracking-tight text-slate-800 sm:text-4xl">
-            Welcome to EduKids! <Sparkles className="ml-1 inline h-7 w-7 text-yellow-500" />
+            {dict["onboarding.welcomeTitle"] || "Welcome to EduKids!"}{" "}
+            <Sparkles className="ml-1 inline h-7 w-7 text-yellow-500" />
           </h1>
           <p className="text-lg font-medium text-slate-500">
-            Tell us who you are so we can customize your experience.
+            {dict["onboarding.welcomeSubtitle"] ||
+              "Tell us who you are so we can customize your experience."}
           </p>
         </div>
 
@@ -149,10 +156,11 @@ const OnboardingForm = () => {
             )}
           >
             {isPending ? (
-              "Setting up..."
+              dict["onboarding.settingUp"] || "Setting up..."
             ) : (
               <>
-                Continue <ArrowRight className="ml-2 h-5 w-5" />
+                {dict["common.continue"] || "Continue"}{" "}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}
           </Button>

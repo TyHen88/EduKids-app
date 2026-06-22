@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { feedBuddy } from "@/actions/cosmic";
 import { getBuddy, FEED_COST } from "@/lib/buddy";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type Props = {
   buddyName: string;
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [pop, setPop] = useState(0);
@@ -29,14 +31,23 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
       feedBuddy(lang)
         .then((res) => {
           if (res?.error === "stardust") {
-            toast.error("Not enough Stardust to feed your buddy.");
+            toast.error(
+              dict["learn.notEnoughStardust"] ||
+                "Not enough Stardust to feed your buddy."
+            );
             return;
           }
           setPop((p) => p + 1);
-          toast.success(`${buddyName} loved that! +${res?.gainedXp} XP`);
+          toast.success(
+            `${buddyName} ${dict["learn.buddyLovedThat"] || "loved that!"} +${res?.gainedXp} XP`
+          );
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() =>
+          toast.error(
+            dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        );
     });
   };
 
@@ -47,7 +58,7 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
       <Sparkles className="absolute bottom-6 right-10 h-3 w-3 text-purple-300" />
 
       <div className="mb-3 flex items-center gap-2 text-base font-black tracking-tight text-slate-800 sm:mb-4 sm:text-lg">
-        <span>Your Buddy</span>
+        <span>{dict["learn.yourBuddy"] || "Your Buddy"}</span>
       </div>
 
       <div className="flex items-center gap-4 sm:gap-5">
@@ -82,7 +93,9 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
               />
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              {buddy.isMaxStage ? "MAX" : `${buddy.xpToNext} XP`}
+              {buddy.isMaxStage
+                ? dict["learn.max"] || "MAX"
+                : `${buddy.xpToNext} XP`}
             </span>
           </div>
 
@@ -92,7 +105,7 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
             className="mt-4 flex items-center gap-1.5 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-4 py-2.5 text-sm font-black text-white shadow transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Star className="h-4 w-4 fill-current" />
-            Feed ({FEED_COST})
+            {dict["learn.feed"] || "Feed"} ({FEED_COST})
           </button>
         </div>
       </div>

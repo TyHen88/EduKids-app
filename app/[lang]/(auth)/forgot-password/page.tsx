@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { clerkError } from "@/lib/clerk-error";
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export default function ForgotPasswordPage() {
   const { signIn } = useSignIn();
@@ -20,6 +20,7 @@ export default function ForgotPasswordPage() {
   const signInRef = useRef(signIn);
   const router = useRouter();
   const locale = useLocale();
+  const dict = useDictionary();
 
   const [step, setStep] = useState<"email" | "code" | "password">("email");
   const [email, setEmail] = useState("");
@@ -37,7 +38,12 @@ export default function ForgotPasswordPage() {
     try {
       const { error: createError } = await signIn.create({ identifier: email });
       if (createError) {
-        setError(clerkError(createError, "Couldn't find that account."));
+        setError(
+          clerkError(
+            createError,
+            dict["auth.couldntFindAccount"] || "Couldn't find that account."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -45,7 +51,13 @@ export default function ForgotPasswordPage() {
       const { error: sendError } =
         await signIn.resetPasswordEmailCode.sendCode();
       if (sendError) {
-        setError(clerkError(sendError, "Couldn't send the reset code."));
+        setError(
+          clerkError(
+            sendError,
+            dict["auth.couldntSendResetCode"] ||
+              "Couldn't send the reset code."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -53,7 +65,12 @@ export default function ForgotPasswordPage() {
       signInRef.current = signIn;
       setStep("code");
     } catch (err) {
-      setError(clerkError(err, "Couldn't find that account."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.couldntFindAccount"] || "Couldn't find that account."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -71,7 +88,12 @@ export default function ForgotPasswordPage() {
           code: theCode,
         });
       if (verifyError) {
-        setError(clerkError(verifyError, "That code didn't work."));
+        setError(
+          clerkError(
+            verifyError,
+            dict["auth.codeDidntWork"] || "That code didn't work."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -79,7 +101,12 @@ export default function ForgotPasswordPage() {
       setStep("password");
       setLoading(false);
     } catch (err) {
-      setError(clerkError(err, "That code didn't work."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.codeDidntWork"] || "That code didn't work."
+        )
+      );
       setLoading(false);
     }
   };
@@ -107,42 +134,54 @@ export default function ForgotPasswordPage() {
       const { error: submitError } =
         await si.resetPasswordEmailCode.submitPassword({ password });
       if (submitError) {
-        setError(clerkError(submitError, "Couldn't set your new password."));
+        setError(
+          clerkError(
+            submitError,
+            dict["auth.couldntSetPassword"] ||
+              "Couldn't set your new password."
+          )
+        );
         setLoading(false);
         return;
       }
 
       await si.finalize({ navigate: () => router.push(`/${locale}/learn`) });
     } catch (err) {
-      setError(clerkError(err, "Couldn't set your new password."));
+      setError(
+        clerkError(
+          err,
+          dict["auth.couldntSetPassword"] || "Couldn't set your new password."
+        )
+      );
       setLoading(false);
     }
   };
 
   const subtitle =
     step === "email"
-      ? "We'll email you a code to reset it."
+      ? dict["auth.resetEmailSubtitle"] || "We'll email you a code to reset it."
       : step === "code"
-        ? `Enter the code we sent to ${email}.`
-        : "Choose a new password.";
+        ? dict["auth.resetCodeSubtitle"]?.replace("{email}", email) ||
+          `Enter the code we sent to ${email}.`
+        : dict["auth.resetChoosePassword"] || "Choose a new password.";
 
   return (
     <AuthShell
-      title="Reset your password 🔑"
+      title={dict["auth.resetTitle"] || "Reset your password 🔑"}
       subtitle={subtitle}
       footer={
         <Link
           href={`/${locale}/sign-in`}
           className="font-bold text-indigo-600 hover:underline"
         >
-          Back to sign in
+          {dict["auth.backToSignIn"] || "Back to sign in"}
         </Link>
       }
     >
       {step === "email" && (
         <form onSubmit={onSendCode} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{dict["auth.email"] || "Email"}</Label>
             <Input
               id="email"
               type="email"
@@ -171,7 +210,7 @@ export default function ForgotPasswordPage() {
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              "Send reset code"
+              dict["auth.sendResetCode"] || "Send reset code"
             )}
           </Button>
         </form>
@@ -184,7 +223,9 @@ export default function ForgotPasswordPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="code">Reset code</Label>
+            <Label htmlFor="code">
+              {dict["auth.resetCode"] || "Reset code"}
+            </Label>
             <Input
               id="code"
               inputMode="numeric"
@@ -215,7 +256,7 @@ export default function ForgotPasswordPage() {
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              "Verify code"
+              dict["auth.verifyCode"] || "Verify code"
             )}
           </Button>
         </form>
@@ -228,7 +269,9 @@ export default function ForgotPasswordPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="password">New password</Label>
+            <Label htmlFor="password">
+              {dict["auth.newPassword"] || "New password"}
+            </Label>
             <Input
               id="password"
               type="password"
@@ -237,7 +280,9 @@ export default function ForgotPasswordPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder={
+                dict["auth.atLeast8Characters"] || "At least 8 characters"
+              }
               className={authInputClass}
             />
           </div>
@@ -258,7 +303,7 @@ export default function ForgotPasswordPage() {
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              "Reset & sign in"
+              dict["auth.resetAndSignIn"] || "Reset & sign in"
             )}
           </Button>
         </form>

@@ -7,6 +7,7 @@ import { Gift, Flame, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { openDailyChest } from "@/actions/cosmic";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type Props = {
   available: boolean;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export const DailyChest = ({ available, streak, lang }: Props) => {
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [reward, setReward] = useState<number | null>(null);
@@ -26,7 +28,10 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
         .then((res) => {
           if (res?.error === "claimed") {
             setClaimed(true);
-            toast.info("Already opened today — come back tomorrow!");
+            toast.info(
+              dict["learn.chestAlreadyOpened"] ||
+                "Already opened today — come back tomorrow!"
+            );
             return;
           }
           if (res?.ok) {
@@ -36,7 +41,11 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
             setTimeout(() => router.refresh(), 1400);
           }
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() =>
+          toast.error(
+            dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        );
     });
   };
 
@@ -44,10 +53,11 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
     <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-b-4 border-amber-100 border-b-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
       <div className="mb-3 flex items-center justify-between sm:mb-4">
         <h2 className="text-base font-black tracking-tight text-slate-800 sm:text-lg">
-          Daily Chest
+          {dict["learn.dailyChest"] || "Daily Chest"}
         </h2>
         <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-600">
-          <Flame className="h-3.5 w-3.5 fill-current" /> {streak} day
+          <Flame className="h-3.5 w-3.5 fill-current" /> {streak}{" "}
+          {dict["learn.day"] || "day"}
         </span>
       </div>
 
@@ -65,7 +75,7 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
                 <Star className="h-9 w-9 fill-current" /> +{reward}
               </div>
               <p className="text-sm font-bold text-slate-500">
-                Stardust collected!
+                {dict["learn.stardustCollected"] || "Stardust collected!"}
               </p>
             </motion.div>
           ) : (
@@ -95,7 +105,9 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
                 }
               />
               <span className="text-sm font-bold text-slate-500">
-                {claimed ? "Come back tomorrow!" : "Tap to open!"}
+                {claimed
+                  ? dict["learn.comeBackTomorrow"] || "Come back tomorrow!"
+                  : dict["learn.tapToOpen"] || "Tap to open!"}
               </span>
             </motion.button>
           )}

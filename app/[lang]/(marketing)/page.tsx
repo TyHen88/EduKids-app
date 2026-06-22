@@ -19,7 +19,7 @@ export default async function MarketingPage({ params }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-[988px] flex-1 flex-col items-center justify-center gap-2 p-4 lg:flex-row">
       <div className="relative mb-8 h-[240px] w-[240px] lg:mb-0 lg:h-[424px] lg:w-[424px]">
-        <Image src="/hero.svg" alt="Hero" fill />
+        <Image src="/hero.svg" alt={dict["marketing.heroAlt"] || "Hero"} fill />
       </div>
 
       <div className="flex flex-col items-center gap-y-8">
@@ -59,7 +59,9 @@ export default async function MarketingPage({ params }: Props) {
 
               <div className="flex w-full items-center gap-4 py-2">
                 <div className="h-px flex-1 bg-slate-200" />
-                <span className="text-xs font-bold uppercase text-slate-400">or</span>
+                <span className="text-xs font-bold uppercase text-slate-400">
+                  {dict["common.or"] || "or"}
+                </span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
@@ -70,7 +72,7 @@ export default async function MarketingPage({ params }: Props) {
                 asChild
               >
                 <Link href={`/${lang}/kids-login`}>
-                  Kids Login
+                  {dict["auth.kidsLogin"] || "Kids Login"}
                 </Link>
               </Button>
             </Show>

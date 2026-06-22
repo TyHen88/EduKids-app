@@ -34,6 +34,7 @@ import {
 } from "@/actions/course";
 import { uploadImage } from "@/actions/lesson-block";
 import type { AdminCourse } from "@/db/queries";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
 
@@ -52,6 +53,7 @@ export const CourseManager = ({
   courses: AdminCourse[];
   lang: string;
 }) => {
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -103,13 +105,23 @@ export const CourseManager = ({
     formData.append("file", file);
 
     setUploading(true);
-    const toastId = toast.loading("Uploading course image...");
+    const toastId = toast.loading(
+      dict["admin.uploadingCourseImage"] || "Uploading course image..."
+    );
     try {
       const url = await uploadImage(formData);
       set("imageSrc", url);
-      toast.success("Image uploaded successfully!", { id: toastId });
+      toast.success(
+        dict["admin.imageUploaded"] || "Image uploaded successfully!",
+        { id: toastId }
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : dict["admin.uploadFailed"] || "Upload failed.",
+        { id: toastId }
+      );
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -118,7 +130,7 @@ export const CourseManager = ({
 
   const onSubmit = () => {
     if (!form.title.trim()) {
-      toast.error("Title is required.");
+      toast.error(dict["admin.titleRequired"] || "Title is required.");
       return;
     }
 
@@ -129,18 +141,29 @@ export const CourseManager = ({
 
       action
         .then(() => {
-          toast.success(editingId ? "Course updated." : "Course created.");
+          toast.success(
+            editingId
+              ? dict["admin.courseUpdated"] || "Course updated."
+              : dict["admin.courseCreated"] || "Course created."
+          );
           setOpen(false);
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() =>
+          toast.error(
+            dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        );
     });
   };
 
   const onDelete = (course: AdminCourse) => {
     if (
       !window.confirm(
-        `Delete "${course.title}"? This removes its units, lessons and all progress.`
+        `${dict["admin.deleteCoursePrefix"] || "Delete"} "${course.title}"? ${
+          dict["admin.deleteCourseConfirm"] ||
+          "This removes its units, lessons and all progress."
+        }`
       )
     )
       return;
@@ -148,43 +171,58 @@ export const CourseManager = ({
     startTransition(() => {
       deleteCourse(course.id, lang)
         .then(() => {
-          toast.success("Course deleted.");
+          toast.success(dict["admin.courseDeleted"] || "Course deleted.");
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() =>
+          toast.error(
+            dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        );
     });
   };
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
         <Button variant="primary" onClick={openCreate} disabled={pending}>
-          <Plus className="mr-1 h-5 w-5" /> Create Course
+          <Plus className="mr-1 h-5 w-5" />{" "}
+          {dict["admin.createCourse"] || "Create Course"}
         </Button>
       </div>
 
       {/* Filters Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-5 rounded-[24px] border-2 border-slate-100 shadow-sm">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Source</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            {dict["admin.filterSource"] || "Source"}
+          </label>
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value as any)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="ALL">All Sources</option>
-            <option value="SYSTEM">System Courses</option>
-            <option value="MY_COURSE">My Courses</option>
+            <option value="ALL">{dict["admin.allSources"] || "All Sources"}</option>
+            <option value="SYSTEM">
+              {dict["admin.systemCourses"] || "System Courses"}
+            </option>
+            <option value="MY_COURSE">
+              {dict["admin.myCourses"] || "My Courses"}
+            </option>
           </select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            {dict["admin.filterCategory"] || "Category"}
+          </label>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="ALL">All Categories</option>
+            <option value="ALL">
+              {dict["admin.allCategories"] || "All Categories"}
+            </option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -192,27 +230,39 @@ export const CourseManager = ({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Difficulty</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            {dict["admin.filterDifficulty"] || "Difficulty"}
+          </label>
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="ALL">All Difficulties</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            <option value="ALL">
+              {dict["admin.allDifficulties"] || "All Difficulties"}
+            </option>
+            <option value="Beginner">
+              {dict["admin.beginner"] || "Beginner"}
+            </option>
+            <option value="Intermediate">
+              {dict["admin.intermediate"] || "Intermediate"}
+            </option>
+            <option value="Advanced">
+              {dict["admin.advanced"] || "Advanced"}
+            </option>
           </select>
         </div>
       </div>
 
       {courses.length === 0 ? (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          No courses yet. Create your first one!
+          {dict["admin.noCoursesCreateFirst"] ||
+            "No courses yet. Create your first one!"}
         </div>
       ) : filteredCourses.length === 0 ? (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
-          No courses match your filter criteria.
+          {dict["admin.noCoursesMatchFilter"] ||
+            "No courses match your filter criteria."}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -262,7 +312,9 @@ export const CourseManager = ({
                 </div>
 
                 <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                  {course.description || "No description."}
+                  {course.description ||
+                    dict["admin.noDescription"] ||
+                    "No description."}
                 </p>
 
                 <div className="mt-auto flex items-center justify-between gap-2 pt-3">
@@ -281,7 +333,8 @@ export const CourseManager = ({
                     href={`/${lang}/admin/courses/${course.id}`}
                     className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
                   >
-                    <Settings2 className="h-3.5 w-3.5" /> Content
+                    <Settings2 className="h-3.5 w-3.5" />{" "}
+                    {dict["admin.content"] || "Content"}
                   </Link>
                 </div>
               </div>
@@ -294,33 +347,39 @@ export const CourseManager = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {editingId ? "Edit course" : "Create course"}
+              {editingId
+                ? dict["admin.editCourse"] || "Edit course"
+                : dict["admin.createCourseTitle"] || "Create course"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{dict["admin.fieldTitle"] || "Title"}</Label>
               <Input
                 id="title"
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
-                placeholder="e.g. Science Explorer"
+                placeholder={dict["admin.titlePlaceholder"] || "e.g. Science Explorer"}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">
+                {dict["admin.fieldCategory"] || "Category"}
+              </Label>
               <Input
                 id="category"
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
-                placeholder="e.g. Science"
+                placeholder={dict["admin.categoryPlaceholder"] || "e.g. Science"}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="imageSrc">Image path or URL</Label>
+              <Label htmlFor="imageSrc">
+                {dict["admin.imagePathOrUrl"] || "Image path or URL"}
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="imageSrc"
@@ -331,7 +390,7 @@ export const CourseManager = ({
                 />
                 <label className="cursor-pointer bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl px-3 py-2 text-xs font-bold shrink-0 hover:bg-indigo-100 transition flex items-center gap-1">
                   <Upload className="h-3.5 w-3.5" />
-                  Upload
+                  {dict["common.upload"] || "Upload"}
                   <input
                     type="file"
                     accept="image/*"
@@ -344,7 +403,7 @@ export const CourseManager = ({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Difficulty</Label>
+              <Label>{dict["admin.fieldDifficulty"] || "Difficulty"}</Label>
               <div className="flex gap-2">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -358,19 +417,25 @@ export const CourseManager = ({
                         : "border-slate-200 text-slate-500 hover:bg-slate-50")
                     }
                   >
-                    {d}
+                    {dict[
+                      `admin.${d.toLowerCase()}` as keyof typeof dict
+                    ] || d}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">
+                {dict["admin.fieldDescription"] || "Description"}
+              </Label>
               <textarea
                 id="description"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
-                placeholder="What will kids learn?"
+                placeholder={
+                  dict["admin.descriptionPlaceholder"] || "What will kids learn?"
+                }
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -383,10 +448,12 @@ export const CourseManager = ({
               onClick={() => setOpen(false)}
               disabled={pending || uploading}
             >
-              Cancel
+              {dict["common.cancel"] || "Cancel"}
             </Button>
             <Button variant="primary" onClick={onSubmit} disabled={pending || uploading}>
-              {editingId ? "Save changes" : "Create"}
+              {editingId
+                ? dict["admin.saveChanges"] || "Save changes"
+                : dict["common.create"] || "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>

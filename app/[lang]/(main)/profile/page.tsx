@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 
 import { getUserBadges, getUserProgress } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 import { ProfileEditor } from "./profile-editor";
 
@@ -9,7 +10,8 @@ type Props = {
 };
 
 const ProfilePage = async ({ params }: Props) => {
-  await params;
+  const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
 
   const [userProgress, userBadges, user] = await Promise.all([
     getUserProgress(),
@@ -21,7 +23,12 @@ const ProfilePage = async ({ params }: Props) => {
 
   return (
     <ProfileEditor
-      initialName={userProgress?.userName || user?.firstName || "Explorer"}
+      initialName={
+        userProgress?.userName ||
+        user?.firstName ||
+        dict["profile.explorer"] ||
+        "Explorer"
+      }
       initialImage={userProgress?.userImageSrc || "/mascot.svg"}
       initialBuddyName={userProgress?.buddyName || "Cosmo"}
       email={email}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { UserPlus, UserMinus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendFriendRequest, removeFriend, loadMoreUsers } from "@/actions/connection";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type UserType = {
   userId: string;
@@ -21,6 +22,7 @@ type UserListProps = {
 };
 
 export const UserList = ({ initialUsers, friendIds: initialFriendIds, sentRequestIds: initialSentRequestIds, searchQuery }: UserListProps) => {
+  const dict = useDictionary();
   const [users, setUsers] = useState<UserType[]>(initialUsers);
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set(initialFriendIds));
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set(initialSentRequestIds));
@@ -100,7 +102,11 @@ export const UserList = ({ initialUsers, friendIds: initialFriendIds, sentReques
   };
 
   if (users.length === 0) {
-    return <p className="text-slate-500 text-center py-4">No users found.</p>;
+    return (
+      <p className="text-slate-500 text-center py-4">
+        {dict["friends.noUsersFound"] || "No users found."}
+      </p>
+    );
   }
 
   return (
@@ -137,15 +143,18 @@ export const UserList = ({ initialUsers, friendIds: initialFriendIds, sentReques
             >
               {isFriend ? (
                 <>
-                  <UserMinus className="h-4 w-4 mr-2" /> Unfriend
+                  <UserMinus className="h-4 w-4 mr-2" />{" "}
+                  {dict["friends.unfriend"] || "Unfriend"}
                 </>
               ) : isRequested ? (
                 <>
-                  <Clock className="h-4 w-4 mr-2" /> Requested
+                  <Clock className="h-4 w-4 mr-2" />{" "}
+                  {dict["friends.requested"] || "Requested"}
                 </>
               ) : (
                 <>
-                  <UserPlus className="h-4 w-4 mr-2" /> Add Friend
+                  <UserPlus className="h-4 w-4 mr-2" />{" "}
+                  {dict["friends.addFriend"] || "Add Friend"}
                 </>
               )}
             </Button>
@@ -155,7 +164,7 @@ export const UserList = ({ initialUsers, friendIds: initialFriendIds, sentReques
       
       {hasMore && (
         <div ref={loaderRef} className="py-4 text-center text-slate-400 text-sm">
-          Loading more...
+          {dict["common.loadingMore"] || "Loading more..."}
         </div>
       )}
     </div>

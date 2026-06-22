@@ -32,6 +32,7 @@ import {
   deleteParentCourse,
 } from "@/actions/parent-course";
 import { uploadImage } from "@/actions/lesson-block";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 import type { CourseInput } from "@/actions/course";
 import type { ParentCourse } from "@/db/queries";
 
@@ -52,6 +53,7 @@ export const ParentCourseManager = ({
   courses: ParentCourse[];
   lang: string;
 }) => {
+  const dict = useDictionary();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -89,13 +91,13 @@ export const ParentCourseManager = ({
     formData.append("file", file);
 
     setUploading(true);
-    const toastId = toast.loading("Uploading course image...");
+    const toastId = toast.loading(dict["myCourses.uploadingCourseImage"] || "Uploading course image...");
     try {
       const url = await uploadImage(formData);
       set("imageSrc", url);
-      toast.success("Image uploaded successfully!", { id: toastId });
+      toast.success(dict["myCourses.imageUploaded"] || "Image uploaded successfully!", { id: toastId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+      toast.error(err instanceof Error ? err.message : (dict["myCourses.uploadFailed"] || "Upload failed."), { id: toastId });
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -104,7 +106,7 @@ export const ParentCourseManager = ({
 
   const onSubmit = () => {
     if (!form.title.trim()) {
-      toast.error("Title is required.");
+      toast.error(dict["myCourses.titleRequired"] || "Title is required.");
       return;
     }
 
@@ -115,18 +117,18 @@ export const ParentCourseManager = ({
 
       action
         .then(() => {
-          toast.success(editingId ? "Course updated." : "Course created.");
+          toast.success(editingId ? (dict["myCourses.courseUpdated"] || "Course updated.") : (dict["myCourses.courseCreated"] || "Course created."));
           setOpen(false);
           router.refresh();
         })
-        .catch((e: any) => toast.error(e?.message || "Something went wrong."));
+        .catch((e: any) => toast.error(e?.message || dict["common.somethingWentWrong"] || "Something went wrong."));
     });
   };
 
   const onDelete = (course: ParentCourse) => {
     if (
       !window.confirm(
-        `Delete "${course.title}"? This removes all its content.`
+        `${dict["myCourses.deleteConfirmPrefix"] || "Delete"} "${course.title}"? ${dict["myCourses.deleteConfirmSuffix"] || "This removes all its content."}`
       )
     )
       return;
@@ -134,10 +136,10 @@ export const ParentCourseManager = ({
     startTransition(() => {
       deleteParentCourse(course.id, lang)
         .then(() => {
-          toast.success("Course deleted.");
+          toast.success(dict["myCourses.courseDeleted"] || "Course deleted.");
           router.refresh();
         })
-        .catch(() => toast.error("Something went wrong."));
+        .catch(() => toast.error(dict["common.somethingWentWrong"] || "Something went wrong."));
     });
   };
 
@@ -149,16 +151,16 @@ export const ParentCourseManager = ({
           onClick={openCreate}
           disabled={pending}
         >
-          <Plus className="mr-1 h-5 w-5" /> Create Course
+          <Plus className="mr-1 h-5 w-5" /> {dict["myCourses.createCourse"] || "Create Course"}
         </Button>
       </div>
 
       {courses.length === 0 ? (
         <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-12 text-center shadow-sm">
           <BookOpen className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-          <h3 className="mb-1 text-lg font-bold text-slate-700">No courses yet</h3>
+          <h3 className="mb-1 text-lg font-bold text-slate-700">{dict["myCourses.noCoursesYet"] || "No courses yet"}</h3>
           <p className="text-sm font-medium text-slate-400">
-            Create a private course exclusively for your children.
+            {dict["myCourses.noCoursesHint"] || "Create a private course exclusively for your children."}
           </p>
         </div>
       ) : (
@@ -184,7 +186,7 @@ export const ParentCourseManager = ({
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-slate-800">{course.title}</h3>
                       <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                        <Lock className="h-2.5 w-2.5" /> Private
+                        <Lock className="h-2.5 w-2.5" /> {dict["myCourses.private"] || "Private"}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -199,7 +201,7 @@ export const ParentCourseManager = ({
                       onClick={() => openEdit(course)}
                       disabled={pending}
                       className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50"
-                      title="Edit"
+                      title={dict["common.edit"] || "Edit"}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -207,7 +209,7 @@ export const ParentCourseManager = ({
                       onClick={() => onDelete(course)}
                       disabled={pending}
                       className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
-                      title="Delete"
+                      title={dict["common.delete"] || "Delete"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -227,7 +229,7 @@ export const ParentCourseManager = ({
                     href={`/${lang}/family/my-courses/${course.id}`}
                     className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
                   >
-                    <Settings2 className="h-3.5 w-3.5" /> Content
+                    <Settings2 className="h-3.5 w-3.5" /> {dict["myCourses.content"] || "Content"}
                   </Link>
                 </div>
               </div>
@@ -240,33 +242,33 @@ export const ParentCourseManager = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {editingId ? "Edit course" : "Create private course"}
+              {editingId ? (dict["myCourses.editCourse"] || "Edit course") : (dict["myCourses.createPrivateCourse"] || "Create private course")}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{dict["myCourses.titleLabel"] || "Title"}</Label>
               <Input
                 id="title"
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
-                placeholder="e.g. My Math Course"
+                placeholder={dict["myCourses.titlePlaceholder"] || "e.g. My Math Course"}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{dict["myCourses.categoryLabel"] || "Category"}</Label>
               <Input
                 id="category"
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
-                placeholder="e.g. Math"
+                placeholder={dict["myCourses.categoryPlaceholder"] || "e.g. Math"}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="imageSrc">Image upload or URL</Label>
+              <Label htmlFor="imageSrc">{dict["myCourses.imageUploadOrUrl"] || "Image upload or URL"}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="imageSrc"
@@ -277,7 +279,7 @@ export const ParentCourseManager = ({
                 />
                 <label className="cursor-pointer bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-3 py-2 text-xs font-bold shrink-0 hover:bg-emerald-100 transition flex items-center gap-1">
                   <Upload className="h-3.5 w-3.5" />
-                  Upload
+                  {dict["common.upload"] || "Upload"}
                   <input
                     type="file"
                     accept="image/*"
@@ -290,7 +292,7 @@ export const ParentCourseManager = ({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Difficulty</Label>
+              <Label>{dict["myCourses.difficultyLabel"] || "Difficulty"}</Label>
               <div className="flex gap-2">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -304,19 +306,19 @@ export const ParentCourseManager = ({
                         : "border-slate-200 text-slate-500 hover:bg-slate-50")
                     }
                   >
-                    {d}
+                    {(dict as Record<string, string>)[`difficulty.${d.toLowerCase()}`] || d}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{dict["myCourses.descriptionLabel"] || "Description"}</Label>
               <textarea
                 id="description"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
-                placeholder="What will your children learn?"
+                placeholder={dict["myCourses.descriptionPlaceholder"] || "What will your children learn?"}
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -329,14 +331,14 @@ export const ParentCourseManager = ({
               onClick={() => setOpen(false)}
               disabled={pending || uploading}
             >
-              Cancel
+              {dict["common.cancel"] || "Cancel"}
             </Button>
             <Button
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
               onClick={onSubmit}
               disabled={pending || uploading}
             >
-              {editingId ? "Save changes" : "Create"}
+              {editingId ? (dict["myCourses.saveChanges"] || "Save changes") : (dict["common.create"] || "Create")}
             </Button>
           </DialogFooter>
         </DialogContent>

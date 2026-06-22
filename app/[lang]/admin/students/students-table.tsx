@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Search, Flame, Heart, Star, Trophy } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useDictionary } from "@/app/[lang]/lang-provider";
 
 export type StudentRow = {
   userId: string;
@@ -18,6 +19,7 @@ export type StudentRow = {
 };
 
 export const StudentsTable = ({ students }: { students: StudentRow[] }) => {
+  const dict = useDictionary();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -33,7 +35,7 @@ export const StudentsTable = ({ students }: { students: StudentRow[] }) => {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search students..."
+          placeholder={dict["admin.searchStudents"] || "Search students..."}
           className="rounded-2xl border-2 border-slate-200 pl-9"
         />
       </div>
@@ -43,12 +45,22 @@ export const StudentsTable = ({ students }: { students: StudentRow[] }) => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="px-6 py-4">Student</th>
-                <th className="px-4 py-4">Active Course</th>
-                <th className="px-4 py-4 text-center">Gems</th>
-                <th className="px-4 py-4 text-center">Hearts</th>
-                <th className="px-4 py-4 text-center">Streak</th>
-                <th className="px-6 py-4 text-center">Badges</th>
+                <th className="px-6 py-4">{dict["admin.colStudent"] || "Student"}</th>
+                <th className="px-4 py-4">
+                  {dict["admin.colActiveCourse"] || "Active Course"}
+                </th>
+                <th className="px-4 py-4 text-center">
+                  {dict["admin.colGems"] || "Gems"}
+                </th>
+                <th className="px-4 py-4 text-center">
+                  {dict["admin.colHearts"] || "Hearts"}
+                </th>
+                <th className="px-4 py-4 text-center">
+                  {dict["admin.colStreak"] || "Streak"}
+                </th>
+                <th className="px-6 py-4 text-center">
+                  {dict["admin.colBadges"] || "Badges"}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -113,8 +125,10 @@ export const StudentsTable = ({ students }: { students: StudentRow[] }) => {
                     className="px-6 py-12 text-center font-medium text-slate-400"
                   >
                     {students.length === 0
-                      ? "No students have enrolled yet."
-                      : "No students match your search."}
+                      ? dict["admin.noStudentsEnrolled"] ||
+                        "No students have enrolled yet."
+                      : dict["admin.noStudentsMatch"] ||
+                        "No students match your search."}
                   </td>
                 </tr>
               )}

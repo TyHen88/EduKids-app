@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserList } from "@/components/user-list";
 import { cn } from "@/lib/utils";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -24,6 +25,7 @@ type Props = {
 
 const FriendsPage = async ({ params, searchParams }: Props) => {
   const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
   const { q } = await searchParams;
   const searchQuery = typeof q === "string" ? q : "";
 
@@ -59,10 +61,11 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
         </div>
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-800">
-            Friends
+            {dict["friends.title"] || "Friends"}
           </h1>
           <p className="text-slate-500 font-medium">
-            Find friends, accept requests, and compete on the leaderboard!
+            {dict["friends.subtitle"] ||
+              "Find friends, accept requests, and compete on the leaderboard!"}
           </p>
         </div>
       </div>
@@ -72,23 +75,27 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
           {/* Search Section */}
           <section className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-xl font-black text-slate-800 flex items-center gap-2">
-              <Search className="h-5 w-5 text-indigo-500" /> Find Friends
+              <Search className="h-5 w-5 text-indigo-500" />{" "}
+              {dict["friends.findFriends"] || "Find Friends"}
             </h2>
             <form className="flex gap-2 mb-6" method="GET">
               <Input
                 name="q"
                 defaultValue={searchQuery}
-                placeholder="Search by name..."
+                placeholder={dict["friends.searchByName"] || "Search by name..."}
                 className="rounded-xl border-2 border-slate-200 bg-slate-50 h-12 px-4"
               />
               <Button type="submit" variant="secondary" className="h-12 rounded-xl">
-                Search
+                {dict["friends.search"] || "Search"}
               </Button>
             </form>
 
             <div className="space-y-4">
               <h3 className="font-bold text-slate-500 uppercase tracking-wider text-xs">
-                {searchQuery ? "Search Results" : "Registered Explorers"}
+                {searchQuery
+                  ? dict["friends.searchResults"] || "Search Results"
+                  : dict["friends.registeredExplorers"] ||
+                    "Registered Explorers"}
               </h3>
               <UserList
                 initialUsers={searchResults}
@@ -105,10 +112,13 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
           {/* Friend Requests */}
           <section className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-blue-500" /> Friend Requests
+              <UserPlus className="h-5 w-5 text-blue-500" />{" "}
+              {dict["friends.friendRequests"] || "Friend Requests"}
             </h3>
             {pendingRequests.length === 0 ? (
-              <p className="text-sm text-slate-500">No pending requests.</p>
+              <p className="text-sm text-slate-500">
+                {dict["friends.noPendingRequests"] || "No pending requests."}
+              </p>
             ) : (
               <div className="space-y-4">
                 {pendingRequests.map((user) => (
@@ -128,7 +138,8 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                         }}
                       >
                         <Button size="sm" variant="secondary" className="w-full h-8 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-600 hover:bg-indigo-200">
-                          <Check className="h-4 w-4 mr-1" /> Accept
+                          <Check className="h-4 w-4 mr-1" />{" "}
+                          {dict["friends.accept"] || "Accept"}
                         </Button>
                       </form>
                       <form
@@ -139,7 +150,8 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                         }}
                       >
                         <Button size="sm" variant="ghost" className="w-full h-8 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100">
-                          <X className="h-4 w-4 mr-1" /> Decline
+                          <X className="h-4 w-4 mr-1" />{" "}
+                          {dict["friends.decline"] || "Decline"}
                         </Button>
                       </form>
                     </div>
@@ -152,10 +164,13 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
           {/* Friends List */}
           <section className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-indigo-500" /> Friends ({friends.length})
+              <Users className="h-5 w-5 text-indigo-500" />{" "}
+              {dict["friends.title"] || "Friends"} ({friends.length})
             </h3>
             {friends.length === 0 ? (
-              <p className="text-sm text-slate-500">You have no friends yet.</p>
+              <p className="text-sm text-slate-500">
+                {dict["friends.noFriendsYet"] || "You have no friends yet."}
+              </p>
             ) : (
               <div className="space-y-3">
                 {friends.map((user) => (
@@ -171,7 +186,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                       }}
                     >
                       <Button size="sm" variant="ghost" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-2 h-7 rounded-lg text-xs font-bold">
-                        Unfriend
+                        {dict["friends.unfriend"] || "Unfriend"}
                       </Button>
                     </form>
                   </div>
@@ -181,18 +196,21 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
           </section>
           <section className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" /> Friends Leaderboard
+              <Star className="h-5 w-5 text-yellow-500" />{" "}
+              {dict["friends.leaderboard"] || "Friends Leaderboard"}
             </h3>
             {topFriends.length <= 1 ? (
               <div className="text-center py-4">
                 <Image
                   src="/mascot.svg"
-                  alt="Mascot"
+                  alt={dict["friends.mascot"] || "Mascot"}
                   width={60}
                   height={60}
                   className="mx-auto mb-2 opacity-50 grayscale"
                 />
-                <p className="text-slate-500 font-bold mb-1 text-sm">No friends yet!</p>
+                <p className="text-slate-500 font-bold mb-1 text-sm">
+                  {dict["friends.noFriendsYetExcl"] || "No friends yet!"}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -232,7 +250,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                           />
                         </div>
                         <p className="font-bold text-slate-800 text-sm truncate max-w-[80px]">
-                          {isYou ? "You" : user.userName}
+                          {isYou ? dict["friends.you"] || "You" : user.userName}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 font-black text-indigo-600 text-xs shrink-0">

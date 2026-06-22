@@ -4,6 +4,7 @@ import { Users, Heart } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { getTopFriends, getIsChild } from "@/db/queries";
+import { getDictionary } from "@/app/[lang]/dictionaries";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -11,6 +12,7 @@ type Props = {
 
 const MyFamilyPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const dict = await getDictionary(lang as "km" | "en");
 
   const [topFriends, isChild] = await Promise.all([
     getTopFriends(),
@@ -29,7 +31,8 @@ const MyFamilyPage = async ({ params }: Props) => {
     <div className="mx-auto w-full max-w-2xl px-4 pb-12 pt-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-slate-800">
-          <Heart className="h-6 w-6 text-rose-500 fill-rose-500" /> My Family
+          <Heart className="h-6 w-6 text-rose-500 fill-rose-500" />{" "}
+          {dict["myFamily.title"] || "My Family"}
         </h1>
       </div>
 
@@ -37,7 +40,7 @@ const MyFamilyPage = async ({ params }: Props) => {
         {parent && (
           <section>
             <h2 className="mb-3 text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
-              Parent
+              {dict["myFamily.parent"] || "Parent"}
             </h2>
             <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center gap-4">
@@ -53,7 +56,7 @@ const MyFamilyPage = async ({ params }: Props) => {
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">{parent.userName}</h3>
                   <div className="mt-1 text-xs font-black uppercase tracking-widest text-indigo-500">
-                    Family Manager
+                    {dict["myFamily.familyManager"] || "Family Manager"}
                   </div>
                 </div>
               </div>
@@ -64,7 +67,7 @@ const MyFamilyPage = async ({ params }: Props) => {
         {siblings.length > 0 && (
           <section>
             <h2 className="mb-3 text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
-              Siblings
+              {dict["myFamily.siblings"] || "Siblings"}
             </h2>
             <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-4">
@@ -85,7 +88,7 @@ const MyFamilyPage = async ({ params }: Props) => {
                     <div>
                       <h4 className="text-lg font-bold text-slate-800">{sibling.userName}</h4>
                       <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Explorer
+                        {dict["myFamily.explorer"] || "Explorer"}
                       </div>
                     </div>
                   </div>
@@ -98,8 +101,13 @@ const MyFamilyPage = async ({ params }: Props) => {
         {topFriends.length === 0 && (
           <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-12 text-center text-slate-500 shadow-sm">
             <Users className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <h3 className="mb-2 text-xl font-bold text-slate-700">No family linked yet!</h3>
-            <p className="text-sm font-medium">Ask your parents to link your account to theirs.</p>
+            <h3 className="mb-2 text-xl font-bold text-slate-700">
+              {dict["myFamily.noFamilyLinked"] || "No family linked yet!"}
+            </h3>
+            <p className="text-sm font-medium">
+              {dict["myFamily.noFamilyHint"] ||
+                "Ask your parents to link your account to theirs."}
+            </p>
           </div>
         )}
       </div>
