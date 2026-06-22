@@ -14,6 +14,9 @@ type BannerProps = {
 
 const BANNER_KEY = "hide-romduolkids-banner";
 
+// Temporarily disabled. Flip back to `true` to re-enable the announcement.
+const BANNER_ENABLED = false;
+
 const Banner = ({ hide, setHide }: BannerProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -39,7 +42,7 @@ const Banner = ({ hide, setHide }: BannerProps) => {
     localStorage.setItem(BANNER_KEY, "1");
   };
 
-  if (hide || isScrolled) return null;
+  if (!BANNER_ENABLED || hide || isScrolled) return null;
 
   return (
     <div

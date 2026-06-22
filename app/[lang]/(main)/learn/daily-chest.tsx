@@ -41,9 +41,9 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
   };
 
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-[32px] border-2 border-b-4 border-amber-100 border-b-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-black tracking-tight text-slate-800">
+    <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-b-4 border-amber-100 border-b-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
+      <div className="mb-3 flex items-center justify-between sm:mb-4">
+        <h2 className="text-base font-black tracking-tight text-slate-800 sm:text-lg">
           Daily Chest
         </h2>
         <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-600">
@@ -51,7 +51,7 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 py-2 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-1 text-center sm:gap-3 sm:py-2">
         <AnimatePresence mode="wait">
           {reward !== null ? (
             <motion.div
@@ -90,8 +90,8 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
               <Gift
                 className={
                   claimed
-                    ? "h-16 w-16 text-slate-300"
-                    : "h-16 w-16 text-amber-500 drop-shadow"
+                    ? "h-12 w-12 text-slate-300 sm:h-16 sm:w-16"
+                    : "h-12 w-12 text-amber-500 drop-shadow sm:h-16 sm:w-16"
                 }
               />
               <span className="text-sm font-bold text-slate-500">

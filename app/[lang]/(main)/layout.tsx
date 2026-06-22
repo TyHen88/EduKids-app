@@ -47,6 +47,7 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
         initialNotifications={notifications}
         initialUnreadCount={unreadCount}
         isChild={isChild}
+        hasActiveCourse={!!userProgress?.activeCourseId}
       >
         {children}
       </MainShell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 
 import { upsertLessonBlockProgress } from "@/actions/lesson-block-progress";
+import { saveLessonTime } from "@/actions/lesson-time";
 import { reduceHearts } from "@/actions/user-progress";
 import { MAX_HEARTS } from "@/constants";
 import { lessonBlockOptions, lessonBlocks } from "@/db/schema";
@@ -83,6 +84,31 @@ export const Quiz = ({
   const block = blocks[activeIndex];
   const options = block?.lessonBlockOptions ?? [];
 
+  // Track time spent + wrong answers (per question block), recorded once when
+  // the lesson finishes.
+  const startTimeRef = useRef(Date.now());
+  const wrongByBlockRef = useRef<
+    Record<number, { count: number; optionIds: number[] }>
+  >({});
+  const timeSavedRef = useRef(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!block && !timeSavedRef.current) {
+      timeSavedRef.current = true;
+      const seconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      setElapsedSeconds(seconds);
+      const wrongDetail = Object.entries(wrongByBlockRef.current).map(
+        ([blockId, v]) => ({
+          blockId: Number(blockId),
+          count: v.count,
+          optionIds: v.optionIds,
+        })
+      );
+      void saveLessonTime(lessonId, seconds, wrongDetail);
+    }
+  }, [block, lessonId]);
+
   const onSelect = (id: number) => {
     if (status !== "none") return;
 
@@ -154,6 +180,20 @@ export const Quiz = ({
             void incorrectControls.play();
             setStatus("wrong");
             setCombo(0);
+            // Record this wrong answer for the specific question block, along
+            // with the option the child chose (only reachable for SELECT/ASSIST).
+            {
+              const entry =
+                wrongByBlockRef.current[block.id] ?? { count: 0, optionIds: [] };
+              entry.count += 1;
+              if (
+                selectedOption != null &&
+                !entry.optionIds.includes(selectedOption)
+              ) {
+                entry.optionIds.push(selectedOption);
+              }
+              wrongByBlockRef.current[block.id] = entry;
+            }
 
             if (!response?.error) setHearts((prev) => Math.max(prev - 1, 0));
           })
@@ -197,10 +237,7 @@ export const Quiz = ({
 
           <div className="flex w-full items-center gap-x-4">
             <ResultCard variant="points" value={blocks.length * 10} />
-            <ResultCard
-              variant="hearts"
-              value={userSubscription?.isActive ? Infinity : hearts}
-            />
+            <ResultCard variant="time" value={elapsedSeconds} />
           </div>
         </motion.div>
 
@@ -227,11 +264,7 @@ export const Quiz = ({
     <>
       {incorrectAudio}
       {correctAudio}
-      <Header
-        hearts={hearts}
-        percentage={percentage}
-        hasActiveSubscription={!!userSubscription?.isActive}
-      />
+      <Header percentage={percentage} />
 
       {/* In-lesson combo streak */}
       <AnimatePresence>

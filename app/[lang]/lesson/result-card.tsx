@@ -1,6 +1,6 @@
 "use client";
 
-import { InfinityIcon } from "lucide-react";
+import { Clock } from "lucide-react";
 import Image from "next/image";
 import { motion } from "motion/react";
 
@@ -9,12 +9,14 @@ import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type ResultCardProps = {
   value: number;
-  variant: "points" | "hearts";
+  variant: "points" | "time";
 };
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
 export const ResultCard = ({ value, variant }: ResultCardProps) => {
-  const imageSrc = variant === "points" ? "/points.svg" : "/heart.svg";
   const dict = useDictionary();
+  const isPoints = variant === "points";
 
   return (
     <motion.div
@@ -23,40 +25,36 @@ export const ResultCard = ({ value, variant }: ResultCardProps) => {
       transition={{ type: "spring", stiffness: 300, damping: 18 }}
       className={cn(
         "w-full rounded-2xl border-2",
-        variant === "points" && "border-indigo-500 bg-indigo-500",
-        variant === "hearts" && "border-rose-500 bg-rose-500"
+        isPoints ? "border-indigo-500 bg-indigo-500" : "border-emerald-500 bg-emerald-500"
       )}
     >
       <div
         className={cn(
           "rounded-t-xl p-1.5 text-center text-xs font-bold uppercase tracking-wide text-white",
-          variant === "points" && "bg-indigo-500",
-          variant === "hearts" && "bg-rose-500"
+          isPoints ? "bg-indigo-500" : "bg-emerald-500"
         )}
       >
-        {variant === "hearts"
-          ? dict["lesson.heartsLeft"] || "Hearts Left"
-          : dict["lesson.totalXP"] || "Total XP"}
+        {isPoints
+          ? dict["lesson.totalXP"] || "Total XP"
+          : dict["lesson.timeSpent"] || "Time"}
       </div>
 
       <div
         className={cn(
-          "flex items-center justify-center rounded-2xl bg-white p-6 text-lg font-black",
-          variant === "points" && "text-indigo-600",
-          variant === "hearts" && "text-rose-500"
+          "flex items-center justify-center gap-1.5 rounded-2xl bg-white p-6 text-lg font-black",
+          isPoints ? "text-indigo-600" : "text-emerald-600"
         )}
       >
-        <Image
-          src={imageSrc}
-          alt={variant}
-          height={30}
-          width={30}
-          className="mr-1.5"
-        />
-        {value === Infinity ? (
-          <InfinityIcon className="h-6 w-6 stroke-[3]" />
+        {isPoints ? (
+          <>
+            <Image src="/points.svg" alt="points" height={30} width={30} />
+            {value}
+          </>
         ) : (
-          value
+          <>
+            <Clock className="h-6 w-6" />
+            {pad(Math.floor(value / 60))}:{pad(value % 60)}
+          </>
         )}
       </div>
     </motion.div>

@@ -19,6 +19,14 @@ const config = {
       },
     },
     extend: {
+      screens: {
+        // "Real desktop" = wider than any tablet in landscape. The widest iPad
+        // (12.9" Pro) is 1366px in landscape, so 1400px keeps ALL tablets on the
+        // floating menu bar regardless of orientation. We can't use a
+        // pointer/hover media query here because iPadOS Safari runs in
+        // desktop-class mode and reports `pointer: fine` (it pretends to be a Mac).
+        desktop: { raw: "(min-width: 1400px)" },
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

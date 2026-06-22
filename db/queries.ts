@@ -1,11 +1,12 @@
 import { cache } from "react";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
 
 import db from "./drizzle";
 import {
   lessonBlockProgress,
+  lessonTime,
   courses,
   lessons,
   units,
@@ -52,6 +53,26 @@ export const getUserProgress = cache(async () => {
   });
 
   return data;
+});
+
+// The signed-in user's leaderboard rank by points (ties share a rank).
+// Returns { rank, total, points } or null when not signed in / no profile.
+export const getUserRank = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const me = await db.query.userProgress.findFirst({
+    where: eq(userProgress.userId, userId),
+    columns: { points: true },
+  });
+  if (!me) return null;
+
+  const everyone = await db.query.userProgress.findMany({
+    columns: { points: true },
+  });
+
+  const rank = everyone.filter((u) => u.points > me.points).length + 1;
+  return { rank, total: everyone.length, points: me.points };
 });
 
 export const getUnits = cache(async () => {
@@ -442,7 +463,12 @@ export const getCoursesWithProgress = cache(
     }
 
     const data = await db.query.courses.findMany({
-      where: childCourseIds ? inArray(courses.id, childCourseIds) : undefined,
+      // Children see exactly their assigned courses (which may include their
+      // own parent's private ones). Everyone else sees only PUBLIC courses —
+      // a parent's private course must never appear in another user's backpack.
+      where: childCourseIds
+        ? inArray(courses.id, childCourseIds)
+        : isNull(courses.createdBy),
       orderBy: (courses, { asc }) => [asc(courses.id)],
       with: {
         units: {
@@ -669,7 +695,45 @@ export const getChildren = cache(async () => {
     },
   });
 
-  return data.map((fm) => fm.child);
+  const children = data.map((fm) => fm.child);
+  if (children.length === 0)
+    return children.map((c) => ({
+      ...c,
+      username: null as string | null,
+      totalSeconds: 0,
+    }));
+
+  // Total learning time per child (sum of all recorded lesson times).
+  const times = await db.query.lessonTime.findMany({
+    where: inArray(
+      lessonTime.userId,
+      children.map((c) => c.userId)
+    ),
+  });
+  const secondsByUser = new Map<string, number>();
+  for (const t of times) {
+    secondsByUser.set(t.userId, (secondsByUser.get(t.userId) ?? 0) + t.seconds);
+  }
+
+  // The login username lives in Clerk (not in our DB), so enrich each child
+  // with it for display. Degrade gracefully if Clerk is unreachable.
+  let usernameById = new Map<string, string | null>();
+  try {
+    const client = await clerkClient();
+    const list = await client.users.getUserList({
+      userId: children.map((c) => c.userId),
+      limit: 100,
+    });
+    usernameById = new Map(list.data.map((u) => [u.id, u.username]));
+  } catch {
+    // ignore — fall back to no username
+  }
+
+  return children.map((c) => ({
+    ...c,
+    username: usernameById.get(c.userId) ?? null,
+    totalSeconds: secondsByUser.get(c.userId) ?? 0,
+  }));
 });
 
 export const getChildProgress = cache(async (childId: string) => {
@@ -694,6 +758,184 @@ export const getChildProgress = cache(async (childId: string) => {
   });
 
   return data;
+});
+
+// All courses assigned to a child, each decorated with the child's progress
+// (completed/total lessons, %) and time spent (per lesson + course total).
+// Scoped to the parent's own children for safety.
+export const getChildCourses = cache(async (childId: string) => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const isFamily = await db.query.familyMembers.findFirst({
+    where: and(
+      eq(familyMembers.parentId, userId),
+      eq(familyMembers.childId, childId)
+    ),
+  });
+  if (!isFamily) return [];
+
+  const assignments = await db.query.courseAssignments.findMany({
+    where: eq(courseAssignments.childId, childId),
+  });
+  const courseIds = assignments.map((a) => a.courseId);
+  if (courseIds.length === 0) return [];
+
+  // Time spent per lesson by this child (seconds + last update).
+  const times = await db.query.lessonTime.findMany({
+    where: eq(lessonTime.userId, childId),
+  });
+  const timeByLesson = new Map(
+    times.map((t) => [
+      t.lessonId,
+      {
+        seconds: t.seconds,
+        wrongAnswers: t.wrongAnswers,
+        wrongDetail: t.wrongDetail ?? [],
+        updatedAt: t.updatedAt,
+      },
+    ])
+  );
+
+  const data = await db.query.courses.findMany({
+    where: inArray(courses.id, courseIds),
+    orderBy: (courses, { asc }) => [asc(courses.id)],
+    with: {
+      units: {
+        orderBy: (units, { asc }) => [asc(units.order)],
+        with: {
+          lessons: {
+            orderBy: (lessons, { asc }) => [asc(lessons.order)],
+            with: {
+              lessonBlocks: {
+                orderBy: (lessonBlocks, { asc }) => [asc(lessonBlocks.order)],
+                with: {
+                  lessonBlockOptions: true,
+                  lessonBlockProgress: {
+                    where: eq(lessonBlockProgress.userId, childId),
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const isQuestion = (type: string) => type === "SELECT" || type === "ASSIST";
+
+  return data.map((course) => {
+    let courseQuestions = 0;
+    let courseAnswered = 0;
+
+    const units = course.units.map((u) => ({
+      id: u.id,
+      title: u.title,
+      lessons: u.lessons.map((lesson) => {
+        const completed =
+          lesson.lessonBlocks.length > 0 &&
+          lesson.lessonBlocks.every((b) =>
+            b.lessonBlockProgress.some((p) => p.completed)
+          );
+
+        const lt = timeByLesson.get(lesson.id);
+        const blockById = new Map(lesson.lessonBlocks.map((b) => [b.id, b]));
+
+        // Question-block accounting (reading blocks excluded) → feeds the score.
+        const questionBlocks = lesson.lessonBlocks.filter((b) => isQuestion(b.type));
+        const answeredQuestions = questionBlocks.filter((b) =>
+          b.lessonBlockProgress.some((p) => p.completed)
+        ).length;
+        courseQuestions += questionBlocks.length;
+        courseAnswered += answeredQuestions;
+
+        // Which questions were wrong — with the question text, the correct
+        // answer, and what the child actually chose.
+        const wrongQuestions = (lt?.wrongDetail ?? [])
+          .filter((d) => d.count > 0)
+          .map((d) => {
+            const b = blockById.get(d.blockId);
+            const opts = b?.lessonBlockOptions ?? [];
+            const correctAnswer = opts.find((o) => o.correct)?.text ?? null;
+            const chosenAnswers = (d.optionIds ?? [])
+              .map((id) => opts.find((o) => o.id === id)?.text)
+              .filter((t): t is string => Boolean(t));
+            return {
+              blockId: d.blockId,
+              count: d.count,
+              question: b?.question || (b ? `Question ${b.order}` : "Question"),
+              correctAnswer,
+              chosenAnswers,
+            };
+          })
+          .sort((a, b) => b.count - a.count);
+
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          completed,
+          seconds: lt?.seconds ?? 0,
+          wrongAnswers: lt?.wrongAnswers ?? 0,
+          wrongQuestions,
+        };
+      }),
+    }));
+
+    const allLessons = units.flatMap((u) => u.lessons);
+    const totalLessons = allLessons.length;
+    const completedLessons = allLessons.filter((l) => l.completed).length;
+    const progress =
+      totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+    const totalSeconds = allLessons.reduce((s, l) => s + l.seconds, 0);
+    const totalWrong = allLessons.reduce((s, l) => s + l.wrongAnswers, 0);
+    const lessonsWithTime = allLessons.filter((l) => l.seconds > 0).length;
+    const avgSeconds =
+      lessonsWithTime === 0 ? 0 : Math.round(totalSeconds / lessonsWithTime);
+
+    // Score = first-try accuracy on answered questions (correct vs. all
+    // attempts). null until the child has answered at least one question.
+    const attempts = courseAnswered + totalWrong;
+    const score = attempts === 0 ? null : Math.round((courseAnswered / attempts) * 100);
+    const grade =
+      score === null
+        ? null
+        : score >= 90
+          ? "A"
+          : score >= 80
+            ? "B"
+            : score >= 70
+              ? "C"
+              : score >= 60
+                ? "D"
+                : "F";
+
+    // Most recent lesson-time update across this course's lessons.
+    let lastActiveAt: Date | null = null;
+    for (const l of allLessons) {
+      const t = timeByLesson.get(l.id);
+      if (t && (!lastActiveAt || t.updatedAt > lastActiveAt)) lastActiveAt = t.updatedAt;
+    }
+
+    return {
+      id: course.id,
+      title: course.title,
+      imageSrc: course.imageSrc,
+      category: course.category,
+      totalLessons,
+      completedLessons,
+      progress,
+      totalSeconds,
+      totalWrong,
+      avgSeconds,
+      totalQuestions: courseQuestions,
+      answeredQuestions: courseAnswered,
+      score,
+      grade,
+      lastActiveAt,
+      units,
+    };
+  });
 });
 
 export const getCourseAssignments = cache(async () => {

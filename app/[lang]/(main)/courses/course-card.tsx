@@ -1,12 +1,20 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { PlayCircle, CheckCircle2, Check } from "lucide-react";
+import { PlayCircle, CheckCircle2, Check, Info } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { upsertUserProgress } from "@/actions/user-progress";
 import type { CourseWithProgress } from "@/db/queries";
 
@@ -18,8 +26,15 @@ type CourseCardProps = {
 export const CourseCard = ({ course, lang }: CourseCardProps) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [showEmptyInfo, setShowEmptyInfo] = useState(false);
 
   const onSelect = () => {
+    // Don't let the user open a book that has no lessons yet.
+    if (course.totalLessons === 0) {
+      setShowEmptyInfo(true);
+      return;
+    }
+
     if (course.isActive) {
       router.push(`/${lang}/path`);
       return;
@@ -34,12 +49,12 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
 
   return (
     <div className="group flex flex-col rounded-[32px] border-2 border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-      <div className="relative mb-6 h-48 overflow-hidden rounded-2xl border-2 border-slate-50">
+      <div className="relative mb-6 h-48 overflow-hidden rounded-2xl border-2 border-slate-50 bg-slate-50">
         <Image
           src={course.imageSrc}
           alt={course.title}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-contain transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, 400px"
         />
         <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-md">
@@ -111,6 +126,30 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
           </button>
         </div>
       </div>
+
+      <Dialog open={showEmptyInfo} onOpenChange={setShowEmptyInfo}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <Info className="h-7 w-7" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">
+              No lessons yet
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-center text-sm font-medium text-slate-500">
+            <span className="font-bold text-slate-700">{course.title}</span>
+          </p>
+          <DialogFooter>
+            <Button
+              className="w-full rounded-xl border-b-4 border-indigo-800 bg-indigo-600 font-bold text-white hover:bg-indigo-700 active:translate-y-1 active:border-b-0"
+              onClick={() => setShowEmptyInfo(false)}
+            >
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

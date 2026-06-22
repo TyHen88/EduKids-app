@@ -1,24 +1,33 @@
 "use client";
 
-import { InfinityIcon, X } from "lucide-react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import { Clock, X } from "lucide-react";
 import { motion } from "motion/react";
 
 import { Progress } from "@/components/ui/progress";
 import { useExitModal } from "@/store/use-exit-modal";
 
 type HeaderProps = {
-  hearts: number;
   percentage: number;
-  hasActiveSubscription: boolean;
 };
 
-export const Header = ({
-  hearts,
-  percentage,
-  hasActiveSubscription,
-}: HeaderProps) => {
+const pad = (n: number) => String(n).padStart(2, "0");
+
+export const Header = ({ percentage }: HeaderProps) => {
   const { open } = useExitModal();
+  const [elapsed, setElapsed] = useState(0);
+
+  // Count up from when the lesson is opened.
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const minutes = pad(Math.floor(elapsed / 60));
+  const seconds = pad(elapsed % 60);
 
   return (
     <motion.header
@@ -37,26 +46,15 @@ export const Header = ({
 
       <Progress value={percentage} />
 
-      <motion.div
-        key={hearts}
-        initial={{ scale: 1.3 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 400, damping: 15 }}
-        className="flex items-center text-lg font-black text-rose-500"
+      <div
+        className="flex shrink-0 items-center gap-2 text-lg font-black tabular-nums text-indigo-600"
+        title="Time elapsed"
       >
-        <Image
-          src="/heart.svg"
-          height={28}
-          width={28}
-          alt="Heart"
-          className="mr-2"
-        />
-        {hasActiveSubscription ? (
-          <InfinityIcon className="h-6 w-6 shrink-0 stroke-[3]" />
-        ) : (
-          hearts
-        )}
-      </motion.div>
+        <Clock className="h-6 w-6 shrink-0" />
+        <span>
+          {minutes}:{seconds}
+        </span>
+      </div>
     </motion.header>
   );
 };

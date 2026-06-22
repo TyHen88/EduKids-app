@@ -170,8 +170,14 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
                 )}
               >
                 <div>
-                  <div className="relative mb-4 h-32 w-full overflow-hidden rounded-2xl bg-slate-100">
-                    <Image src={course.imageSrc} alt={course.title} fill className="object-cover" />
+                  <div className="relative mb-4 h-44 w-full overflow-hidden rounded-2xl bg-slate-100">
+                    <Image
+                      src={course.imageSrc}
+                      alt={course.title}
+                      fill
+                      className="object-contain"
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    />
                   </div>
                   <h3 className="mb-2 text-xl font-black text-slate-800">{course.title}</h3>
                   <p className="text-sm font-medium text-slate-500 line-clamp-2">{course.description}</p>

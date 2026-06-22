@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   serial,
@@ -128,6 +129,33 @@ export const lessonBlockProgressRelations = relations(lessonBlockProgress, ({ on
   block: one(lessonBlocks, {
     fields: [lessonBlockProgress.blockId],
     references: [lessonBlocks.id],
+  }),
+}));
+
+// Time (in seconds) a user spent on a lesson, recorded when the lesson is
+// completed. One row per (userId, lessonId) — re-doing a lesson overwrites it.
+export const lessonTime = pgTable("lesson_time", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  lessonId: integer("lesson_id")
+    .references(() => lessons.id, { onDelete: "cascade" })
+    .notNull(),
+  seconds: integer("seconds").notNull().default(0),
+  // Wrong answers on question blocks (SELECT/ASSIST) during the lesson.
+  // Reading blocks (TEXT/IMAGE) can never be "wrong", so they're excluded.
+  wrongAnswers: integer("wrong_answers").notNull().default(0),
+  // Per-question breakdown: which blocks were answered wrong, how often, and
+  // which (wrong) option ids the child chose.
+  wrongDetail: jsonb("wrong_detail").$type<
+    { blockId: number; count: number; optionIds: number[] }[]
+  >(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const lessonTimeRelations = relations(lessonTime, ({ one }) => ({
+  lesson: one(lessons, {
+    fields: [lessonTime.lessonId],
+    references: [lessons.id],
   }),
 }));
 

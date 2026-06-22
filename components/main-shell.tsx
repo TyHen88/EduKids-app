@@ -33,6 +33,7 @@ type MainShellProps = {
   initialNotifications?: any[];
   initialUnreadCount?: number;
   isChild?: boolean;
+  hasActiveCourse?: boolean;
   children: ReactNode;
 };
 
@@ -46,14 +47,22 @@ export const MainShell = ({
   initialNotifications = [],
   initialUnreadCount = 0,
   isChild = false,
+  hasActiveCourse = false,
   children,
 }: MainShellProps) => {
   const locale = useLocale();
   const pathname = usePathname();
 
   const studentLinks = [
-    { name: "Home", href: `/${locale}/learn`, icon: Home },
-    { name: "Star Map", href: `/${locale}/path`, icon: MapIcon },
+    // Home (dashboard) and Star Map (learning path) only make sense once a
+    // course has been started — hide them until then so the user starts in
+    // their Backpack.
+    ...(hasActiveCourse
+      ? [
+          { name: "Home", href: `/${locale}/learn`, icon: Home },
+          { name: "Star Map", href: `/${locale}/path`, icon: MapIcon },
+        ]
+      : []),
     { name: "Backpack", href: `/${locale}/courses`, icon: Backpack },
     ...(isChild
       ? [{ name: "Family", href: `/${locale}/my-family`, icon: Heart }]
@@ -80,8 +89,8 @@ export const MainShell = ({
           <span className="hidden lg:inline">EduKids</span>
         </Link>
 
-        {/* Top nav (tablet/desktop) */}
-        <nav className="mx-4 hidden shrink-0 items-center space-x-1 rounded-3xl border border-slate-100 bg-slate-50 p-1.5 sm:space-x-2 md:flex">
+        {/* Top nav (real desktop only — wide + mouse) */}
+        <nav className="mx-4 hidden shrink-0 items-center space-x-1 rounded-3xl border border-slate-100 bg-slate-50 p-1.5 sm:space-x-2 desktop:flex">
           {studentLinks.map((link) => {
             const isActive = isLinkActive(link.href);
             return (
@@ -185,20 +194,23 @@ export const MainShell = ({
         </div>
       </header>
 
-      <main className="w-full flex-1 overflow-y-auto px-4 pb-28 pt-6 sm:px-8 md:pb-8">
+      <main className="w-full flex-1 overflow-y-auto px-4 pt-6 sm:px-8 desktop:pb-8">
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="mx-auto h-full w-full max-w-7xl"
+          // Bottom clearance lives on the content (not on the scrolling <main>)
+          // because iOS Safari ignores padding-bottom on a scroll container.
+          // min-h-full lets it grow so the padding is part of the scroll height.
+          className="mx-auto min-h-full w-full max-w-7xl pb-36 desktop:pb-0"
         >
           {children}
         </motion.div>
       </main>
 
-      {/* Bottom nav (mobile) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex justify-center p-4 md:hidden">
+      {/* Bottom float nav (everything except real desktop) */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex justify-center p-4 desktop:hidden">
         <nav className="pointer-events-auto mx-auto flex w-full max-w-[400px] items-center justify-between rounded-[32px] border border-b-4 border-slate-200 bg-white/90 px-6 py-3 text-center shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-xl">
           {studentLinks.map((link) => {
             const isActive = isLinkActive(link.href);

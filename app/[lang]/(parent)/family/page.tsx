@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Users, BookOpen, Star, Flame, Heart, ArrowRight } from "lucide-react";
+import { Users, BookOpen, Star, Flame, Heart, ArrowRight, Crown, Sparkles } from "lucide-react";
 
 import { getChildren, getUserProgress } from "@/db/queries";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,10 @@ const FamilyDashboardPage = async ({ params }: Props) => {
   ]);
 
   const totalPoints = children.reduce((acc, child) => acc + child.points, 0);
+
+  // Top-ranked child by Stardust (only meaningful with 2+ kids who have points).
+  const topChild = [...children].sort((a, b) => b.points - a.points)[0];
+  const showCongrats = children.length >= 2 && !!topChild && topChild.points > 0;
 
   const familyName = userProgress?.familyName || "My Family";
   const familyCover = userProgress?.familyCover || "emerald";
@@ -118,6 +122,52 @@ const FamilyDashboardPage = async ({ params }: Props) => {
         </div>
       </div>
 
+      {/* Top Star congratulations */}
+      {showCongrats && (
+        <div className="relative overflow-hidden rounded-[32px] border-2 border-b-4 border-amber-200 border-b-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-sm">
+          <Sparkles className="pointer-events-none absolute right-6 top-5 h-6 w-6 text-amber-300" />
+          <Sparkles className="pointer-events-none absolute bottom-6 right-24 h-4 w-4 text-yellow-300" />
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="relative h-16 w-16 overflow-hidden rounded-full border-4 border-amber-200 bg-white">
+                <Image
+                  src={topChild.userImageSrc}
+                  alt={topChild.userName}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              </div>
+              <span className="absolute -right-1 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-white shadow-md">
+                <Crown className="h-4 w-4 fill-current" />
+              </span>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-amber-600">
+                <Crown className="h-3.5 w-3.5" /> Top Star
+              </div>
+              <h3 className="truncate text-xl font-black text-slate-800">
+                🎉 Congratulations, {topChild.userName}!
+              </h3>
+              <p className="text-sm font-semibold text-slate-500">
+                Leading the family with {topChild.points} Stardust. Keep it up!
+              </p>
+            </div>
+
+            <div className="ml-auto hidden shrink-0 text-right sm:block">
+              <div className="flex items-center gap-1 text-3xl font-black text-amber-500">
+                <Star className="h-6 w-6 fill-current" />
+                {topChild.points}
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-amber-600/80">
+                Stardust
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-tight text-slate-800">
@@ -149,14 +199,31 @@ const FamilyDashboardPage = async ({ params }: Props) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {children.map((child) => (
+            {children.map((child) => {
+              const isTop = showCongrats && child.userId === topChild.userId;
+              return (
               <div
                 key={child.userId}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border-2 border-slate-100 bg-white shadow-sm transition-all hover:border-emerald-200 hover:shadow-md"
+                className={cn(
+                  "group relative flex flex-col justify-between overflow-hidden rounded-[32px] border-2 bg-white shadow-sm transition-all hover:shadow-md",
+                  isTop
+                    ? "border-amber-200 ring-2 ring-amber-100"
+                    : "border-slate-100 hover:border-emerald-200"
+                )}
               >
+                {isTop && (
+                  <span className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                    <Crown className="h-3 w-3 fill-current" /> Top Star
+                  </span>
+                )}
                 <div className="p-6">
                   <div className="mb-4 flex items-center gap-4">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-slate-100 bg-slate-50">
+                    <div
+                      className={cn(
+                        "relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 bg-slate-50",
+                        isTop ? "border-amber-200" : "border-slate-100"
+                      )}
+                    >
                       <Image
                         src={child.userImageSrc}
                         alt={child.userName}
@@ -199,7 +266,8 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -86,7 +86,7 @@ export const Card = ({
         {type === "ASSIST" && <div aria-hidden />}
         <p
           className={cn(
-            "text-sm font-bold text-slate-700 lg:text-base",
+            "text-lg font-black text-slate-800 lg:text-2xl",
             selected && "text-indigo-700",
             selected && status === "correct" && "text-emerald-600",
             selected && status === "wrong" && "text-rose-600"
@@ -95,15 +95,17 @@ export const Card = ({
           {text}
         </p>
 
+        {/* Keyboard shortcut index — intentionally small/muted so it isn't
+            mistaken for the answer value. */}
         <div
           className={cn(
-            "flex h-[22px] w-[22px] items-center justify-center rounded-lg border-2 text-xs font-bold text-slate-400 lg:h-[30px] lg:w-[30px] lg:text-[15px]",
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold text-slate-300 lg:h-6 lg:w-6 lg:text-xs",
             "border-slate-200",
-            selected && "border-indigo-300 text-indigo-600",
+            selected && "border-indigo-200 text-indigo-400",
             selected &&
               status === "correct" &&
-              "border-emerald-500 text-emerald-500",
-            selected && status === "wrong" && "border-rose-500 text-rose-500"
+              "border-emerald-300 text-emerald-400",
+            selected && status === "wrong" && "border-rose-300 text-rose-400"
           )}
         >
           {shortcut}

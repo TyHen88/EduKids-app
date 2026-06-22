@@ -41,16 +41,16 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[32px] border-2 border-b-4 border-indigo-100 border-b-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-b-4 border-indigo-100 border-b-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
       {/* twinkles */}
       <Sparkles className="absolute right-4 top-4 h-5 w-5 text-indigo-300" />
       <Sparkles className="absolute bottom-6 right-10 h-3 w-3 text-purple-300" />
 
-      <div className="mb-4 flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
+      <div className="mb-3 flex items-center gap-2 text-base font-black tracking-tight text-slate-800 sm:mb-4 sm:text-lg">
         <span>Your Buddy</span>
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4 sm:gap-5">
         <motion.div
           key={pop}
           initial={pop ? { scale: 1.4, rotate: -8 } : false}
@@ -59,7 +59,7 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
             y: { repeat: Infinity, duration: 2.6, ease: "easeInOut" },
             scale: { type: "spring", stiffness: 300, damping: 12 },
           }}
-          className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-indigo-100 text-5xl shadow-inner"
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-white bg-indigo-100 text-3xl shadow-inner sm:h-24 sm:w-24 sm:text-5xl"
         >
           {buddy.stage.emoji}
         </motion.div>

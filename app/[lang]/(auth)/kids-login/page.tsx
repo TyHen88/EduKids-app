@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useClerk } from "@clerk/nextjs";
 import { Loader2, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -16,9 +16,11 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useLocale } from "@/app/[lang]/lang-provider";
+import { hasUserProfile } from "@/actions/onboarding";
 
 const KidsLoginPage = () => {
   const { signIn } = useSignIn();
+  const { signOut } = useClerk();
   const router = useRouter();
   const locale = useLocale();
 
@@ -46,6 +48,21 @@ const KidsLoginPage = () => {
 
       if (!error) {
         await signIn.finalize();
+
+        // The Clerk user may exist (Clerk is shared across environments) while
+        // this account has no profile in the currently configured database.
+        // Don't drift such an "orphaned" login into the new-user onboarding —
+        // reject it clearly instead.
+        const profileExists = await hasUserProfile();
+        if (!profileExists) {
+          await signOut();
+          toast.error(
+            "This account isn't set up in this app. Please ask your parent to add you."
+          );
+          setIsLoading(false);
+          return;
+        }
+
         router.push(`/${locale}/learn`);
       } else {
         toast.error((error as any).errors?.[0]?.message || error.message || "Invalid username or PIN");
