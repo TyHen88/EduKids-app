@@ -45,7 +45,13 @@ const revalidate = (courseId: number, lang: string) => {
 // --- Block Types --------------------------------------------------------------
 
 export type BlockInput =
-  | { type: "TEXT"; order: number; body: string }
+  | {
+      type: "TEXT";
+      order: number;
+      body: string;
+      imageSrc?: string;
+      imagePosition?: "left" | "right";
+    }
   | { type: "IMAGE"; order: number; imageSrc: string; caption?: string }
   | {
       type: "SELECT" | "ASSIST";
@@ -84,8 +90,15 @@ export const createLessonBlock = async (
       type: data.type,
       order: data.order,
       body: data.type === "TEXT" ? data.body : null,
-      imageSrc: data.type === "IMAGE" ? data.imageSrc : null,
+      imageSrc:
+        data.type === "IMAGE"
+          ? data.imageSrc
+          : data.type === "TEXT"
+          ? data.imageSrc?.trim() || null
+          : null,
       caption: data.type === "IMAGE" ? (data.caption ?? null) : null,
+      imagePosition:
+        data.type === "TEXT" ? (data.imagePosition ?? "left") : null,
       question: (data.type === "SELECT" || data.type === "ASSIST") ? data.question : null,
     })
     .returning({ id: lessonBlocks.id });
@@ -118,8 +131,15 @@ export const updateLessonBlock = async (
       type: data.type,
       order: data.order,
       body: data.type === "TEXT" ? data.body : null,
-      imageSrc: data.type === "IMAGE" ? data.imageSrc : null,
+      imageSrc:
+        data.type === "IMAGE"
+          ? data.imageSrc
+          : data.type === "TEXT"
+          ? data.imageSrc?.trim() || null
+          : null,
       caption: data.type === "IMAGE" ? (data.caption ?? null) : null,
+      imagePosition:
+        data.type === "TEXT" ? (data.imagePosition ?? "left") : null,
       question: (data.type === "SELECT" || data.type === "ASSIST") ? data.question : null,
     })
     .where(eq(lessonBlocks.id, id));
@@ -257,6 +277,15 @@ export const reorderLessonBlocks = async (
   revalidate(courseId, lang);
 };
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
+
 export const uploadImage = async (formData: FormData) => {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized.");
@@ -264,21 +293,22 @@ export const uploadImage = async (formData: FormData) => {
   const file = formData.get("file") as File;
   if (!file) throw new Error("No file uploaded.");
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error("Image is too large (max 5 MB).");
+  }
+  if (file.type && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error("Unsupported file type. Please upload an image.");
+  }
 
-  const fs = await import("fs/promises");
-  const path = await import("path");
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
+  const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(uploadDir, { recursive: true });
+  const { put } = await import("@vercel/blob");
+  const { url } = await put(filename, file, {
+    access: "public",
+    contentType: file.type || undefined,
+  });
 
-  const ext = path.extname(file.name) || ".png";
-  const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-  const filePath = path.join(uploadDir, filename);
-
-  await fs.writeFile(filePath, buffer);
-
-  return `/uploads/${filename}`;
+  return url;
 };
 

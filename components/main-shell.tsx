@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
 import { NotificationBell } from "@/components/notification-bell";
+import { LanguageToggle } from "@/components/language-toggle";
 
 type MainShellProps = {
   points: number;
@@ -167,10 +168,12 @@ export const MainShell = ({
             </Link>
           )}
 
+          <LanguageToggle />
+
           <div className="ml-1 sm:ml-2">
-            <NotificationBell 
-              initialNotifications={initialNotifications} 
-              initialUnreadCount={initialUnreadCount} 
+            <NotificationBell
+              initialNotifications={initialNotifications}
+              initialUnreadCount={initialUnreadCount}
             />
           </div>
 

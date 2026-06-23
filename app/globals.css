@@ -100,6 +100,17 @@ body,
   scrollbar-width: none; /* Firefox */
 }
 
+/* ── App font stacks (self-hosted via next/font in app/[lang]/layout.tsx) ──
+   Both stacks list Nunito (Latin) and Battambang (Khmer) so each character set
+   resolves to its proper font regardless of the active locale. Without this,
+   Khmer text on English pages falls back to a random system Khmer font. */
+.font-app-latin {
+  font-family: var(--font-nunito), var(--font-battambang), sans-serif;
+}
+.font-app-khmer {
+  font-family: var(--font-battambang), var(--font-nunito), sans-serif;
+}
+
 /* ── Khmer font helpers (loaded via Google Fonts in app/[lang]/layout.tsx) ── */
 .khmer-regular {
   font-family: "Khmer", sans-serif;

@@ -22,6 +22,7 @@ const PathPage = async ({ params }: Props) => {
   const flat = units.flatMap((unit) =>
     unit.lessons.map((lesson) => ({
       lesson,
+      unitTitle: unit.title,
       isLastInUnit: unit.lessons[unit.lessons.length - 1]?.id === lesson.id,
     }))
   );
@@ -29,7 +30,7 @@ const PathPage = async ({ params }: Props) => {
   // First uncompleted lesson is "unlocked"; everything after it is "locked".
   let unlockedAssigned = false;
 
-  const nodes: PathNode[] = flat.map(({ lesson, isLastInUnit }, i) => {
+  const nodes: PathNode[] = flat.map(({ lesson, unitTitle, isLastInUnit }, i) => {
     const isLastOverall = i === flat.length - 1;
 
     let status: PathNode["status"];
@@ -51,6 +52,7 @@ const PathPage = async ({ params }: Props) => {
     return {
       id: lesson.id,
       title: lesson.title,
+      unitTitle,
       type,
       status,
       href: status === "locked" ? null : `/${lang}/lesson/${lesson.id}`,

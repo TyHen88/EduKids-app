@@ -3,28 +3,57 @@
 import { useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { useLocale } from "@/app/[lang]/lang-provider";
+import { clerkError } from "@/lib/clerk-error";
+import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export const GoogleButton = ({ label }: { label: string }) => {
   const { signIn } = useSignIn();
   const locale = useLocale();
+  const dict = useDictionary();
   const [loading, setLoading] = useState(false);
 
   // OAuth via signIn works for both new and returning users — Clerk creates the
   // account on first Google login when sign-up is enabled.
   const onClick = async () => {
+    // Clerk's client may not be ready yet on a fast click — calling sso() before
+    // it loads resolves with an error and leaves the button spinning forever.
+    if (!signIn || loading) return;
+
     setLoading(true);
     try {
       const origin = window.location.origin;
-      await signIn.sso({
+      // The Future API RESOLVES with { error } instead of throwing. On success it
+      // performs a full-page redirect to Google, so this never returns; if it does
+      // return, SSO failed to start (e.g. already signed in, stale attempt) and we
+      // must reset loading and surface the error — otherwise the spinner hangs.
+      const { error } = await signIn.sso({
         strategy: "oauth_google",
         // Where Google returns to (our callback page that finalizes the session)
         redirectCallbackUrl: `${origin}/${locale}/sso-callback`,
         // Final destination after the callback completes
         redirectUrl: `/${locale}/learn`,
       });
-    } catch {
+
+      if (error) {
+        toast.error(
+          clerkError(
+            error,
+            dict["auth.couldntSignInWithGoogle"] ||
+              "Couldn't sign in with Google. Please try again."
+          )
+        );
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error(
+        clerkError(
+          err,
+          dict["auth.couldntSignInWithGoogle"] ||
+            "Couldn't sign in with Google. Please try again."
+        )
+      );
       setLoading(false);
     }
   };

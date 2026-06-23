@@ -12,6 +12,9 @@ declare global {
 
       // clerk admin user id(s) (separated by comma(,) and space( )). Ex: "user_123, user_456, user_789"
       CLERK_ADMIN_IDS: string;
+
+      // vercel blob read/write token (from the Vercel dashboard Blob store)
+      BLOB_READ_WRITE_TOKEN: string;
     }
   }
 }

@@ -42,10 +42,15 @@ export const CourseCard = ({ course, lang }: CourseCardProps) => {
       return;
     }
 
-    startTransition(() => {
-      upsertUserProgress(course.id, lang).catch(() =>
-        toast.error(dict["common.somethingWentWrong"] || "Something went wrong.")
-      );
+    startTransition(async () => {
+      try {
+        await upsertUserProgress(course.id, lang);
+        router.push(`/${lang}/learn`);
+      } catch {
+        toast.error(
+          dict["common.somethingWentWrong"] || "Something went wrong."
+        );
+      }
     });
   };
 

@@ -82,9 +82,11 @@ export const lessonBlocks = pgTable("lesson_blocks", {
   order: integer("order").notNull(),
   // TEXT blocks
   body: text("body"),
-  // IMAGE blocks
+  // IMAGE blocks (imageSrc is also reused for an optional image on TEXT blocks)
   imageSrc: text("image_src"),
   caption: text("caption"),
+  // For TEXT blocks with an optional image: "left" | "right" relative to the text
+  imagePosition: text("image_position"),
   // SELECT / ASSIST blocks
   question: text("question"),
 });
@@ -164,6 +166,9 @@ export const userProgress = pgTable("user_progress", {
   userName: text("user_name").notNull().default("User"),
   userImageSrc: text("user_image_src").notNull().default("/mascot.svg"),
   role: text("role").notNull().default("learner"), // "learner" | "parent"
+  // false = deactivated by an admin. Deactivated users are also banned in Clerk
+  // (cannot sign in). Kept here for admin display/filtering. See actions/admin-users.ts.
+  isActive: boolean("is_active").notNull().default(true),
   activeCourseId: integer("active_course_id").references(() => courses.id, {
     onDelete: "cascade",
   }),

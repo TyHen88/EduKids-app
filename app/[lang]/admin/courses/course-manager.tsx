@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,8 @@ import {
   Layers,
   Settings2,
   Upload,
+  ShieldCheck,
+  UserCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,10 +35,12 @@ import {
   type CourseInput,
 } from "@/actions/course";
 import { uploadImage } from "@/actions/lesson-block";
+import { Pagination } from "@/components/ui/pagination";
 import type { AdminCourse } from "@/db/queries";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
 const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
+const PAGE_SIZE = 6;
 
 const empty: CourseInput = {
   title: "",
@@ -75,6 +79,24 @@ export const CourseManager = ({
     if (difficultyFilter !== "ALL" && course.difficulty !== difficultyFilter) return false;
     return true;
   });
+
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
+
+  // Reset to the first page whenever a filter changes the result set.
+  useEffect(() => {
+    setPage(1);
+  }, [sourceFilter, categoryFilter, difficultyFilter]);
+
+  // Clamp the page if the list shrinks (e.g. after deleting a course).
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
+  const paginatedCourses = filteredCourses.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -266,7 +288,7 @@ export const CourseManager = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {filteredCourses.map((course) => (
+          {paginatedCourses.map((course) => (
             <div
               key={course.id}
               className="flex gap-4 rounded-[24px] border-2 border-slate-100 bg-white p-4 shadow-sm transition-colors hover:border-indigo-100"
@@ -288,6 +310,20 @@ export const CourseManager = ({
                       {course.title}
                     </h3>
                     <p className="text-xs text-slate-500">{course.category}</p>
+                    {course.createdBy === null ? (
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-600">
+                        <ShieldCheck className="h-3 w-3" />
+                        {dict["admin.createdBySystem"] || "System"}
+                      </span>
+                    ) : (
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
+                        <UserCircle className="h-3 w-3" />
+                        {dict["admin.createdBy"] || "By"}{" "}
+                        {course.creatorName ||
+                          dict["admin.unknownCreator"] ||
+                          "Unknown"}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1">
                     <Button
@@ -340,6 +376,18 @@ export const CourseManager = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {filteredCourses.length > 0 && (
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-sm font-medium text-slate-400">
+            {dict["admin.showing"] || "Showing"}{" "}
+            {(page - 1) * PAGE_SIZE + 1}–
+            {Math.min(page * PAGE_SIZE, filteredCourses.length)}{" "}
+            {dict["common.of"] || "of"} {filteredCourses.length}
+          </p>
+          <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
         </div>
       )}
 

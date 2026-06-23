@@ -18,7 +18,7 @@ const AdminDashboardPage = async ({
 
   const cards = [
     {
-      label: dict["admin.totalStudents"] || "Total Students",
+      label: dict["admin.totalUsers"] || "Total Users",
       value: stats.students.toLocaleString(),
       icon: Users,
       color: "text-indigo-600",

@@ -24,6 +24,9 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
   // New user with no profile → onboarding
   if (!userProgress) redirect(`/${lang}/onboarding`);
 
+  // Deactivated users are blocked from the app
+  if (!userProgress.isActive) redirect(`/${lang}/deactivated`);
+
   // Parent users should use the parent dashboard
   if (userProgress.role === "parent") redirect(`/${lang}/family`);
 

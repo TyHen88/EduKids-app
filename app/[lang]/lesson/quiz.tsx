@@ -9,6 +9,7 @@ import { useAudio, useWindowSize, useMount } from "react-use";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
 import { upsertLessonBlockProgress } from "@/actions/lesson-block-progress";
 import { saveLessonTime } from "@/actions/lesson-time";
 import { reduceHearts } from "@/actions/user-progress";
@@ -141,9 +142,34 @@ export const Quiz = ({
 
     if (!isNonInteractive && !selectedOption) return;
 
+    // Reading blocks (TEXT/IMAGE) are not graded — there's no right or wrong.
+    // Just record progress and move on, with no correct/wrong feedback, no
+    // sound, no combo and no hearts change. (Unlike quizzes/challenges below.)
+    if (isNonInteractive) {
+      startTransition(() => {
+        upsertLessonBlockProgress(block.id)
+          .then((response) => {
+            if (response?.error === "hearts") {
+              openHeartsModal();
+              return;
+            }
+
+            setPercentage((prev) => prev + 100 / blocks.length);
+            setActiveIndex((current) => current + 1);
+          })
+          .catch(() =>
+            toast.error(
+              dict["common.somethingWentWrong"] ||
+                "Something went wrong. Please try again."
+            )
+          );
+      });
+      return;
+    }
+
     const correctOption = options.find((option) => option.correct);
 
-    if (isNonInteractive || (correctOption && correctOption.id === selectedOption)) {
+    if (correctOption && correctOption.id === selectedOption) {
       startTransition(() => {
         upsertLessonBlockProgress(block.id)
           .then((response) => {
@@ -241,7 +267,10 @@ export const Quiz = ({
           </h1>
 
           <div className="flex w-full items-center gap-x-4">
-            <ResultCard variant="points" value={blocks.length * 10} />
+            {/* Review/practice runs don't award points — only show time. */}
+            {initialPercentage !== 100 && (
+              <ResultCard variant="points" value={blocks.length * 10} />
+            )}
             <ResultCard variant="time" value={elapsedSeconds} />
           </div>
         </motion.div>
@@ -292,7 +321,14 @@ export const Quiz = ({
 
       <div className="flex-1">
         <div className="flex h-full items-center justify-center">
-          <div className="flex w-full flex-col gap-y-12 px-6 lg:min-h-[350px] lg:w-[600px] lg:px-0">
+          <div
+            className={cn(
+              "flex w-full flex-col gap-y-12 px-3 lg:min-h-[350px] lg:px-0",
+              // Reading pages use the full width for comfortable reading;
+              // quizzes/challenges keep the narrower centered column.
+              isNonInteractive ? "lg:w-[1000px]" : "lg:w-[600px]"
+            )}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeIndex}
@@ -319,6 +355,7 @@ export const Quiz = ({
                       body={block.body}
                       imageSrc={block.imageSrc}
                       caption={block.caption}
+                      imagePosition={block.imagePosition}
                     />
                   ) : (
                     <Challenge
@@ -341,6 +378,7 @@ export const Quiz = ({
         disabled={pending || (!isNonInteractive && !selectedOption)}
         status={status}
         onCheck={onContinue}
+        reading={isNonInteractive}
       />
     </>
   );

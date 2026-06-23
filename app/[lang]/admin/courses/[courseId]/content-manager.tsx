@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import NextImage from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
@@ -64,6 +65,7 @@ type Block = {
   body: string | null;
   imageSrc: string | null;
   caption: string | null;
+  imagePosition: string | null;
   lessonBlockOptions: Option[];
 };
 
@@ -107,6 +109,7 @@ type Form = {
   body: string;
   caption: string;
   imageSrc: string;
+  imagePosition: "left" | "right";
   options: FormOption[];
 };
 
@@ -124,7 +127,90 @@ const emptyForm: Form = {
   body: "",
   caption: "",
   imageSrc: "",
+  imagePosition: "left",
   options: defaultOptions(),
+};
+
+// Image field that shows a live thumbnail preview once an image is set (instead
+// of just the URL/path), with Change/Remove controls. When empty it falls back
+// to a URL input + Upload button.
+type ImagePickerProps = {
+  value: string;
+  onChange: (url: string) => void;
+  onPickFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  uploadLabel: string;
+  changeLabel: string;
+  removeLabel: string;
+  altLabel: string;
+};
+
+const ImagePicker = ({
+  value,
+  onChange,
+  onPickFile,
+  placeholder,
+  uploadLabel,
+  changeLabel,
+  removeLabel,
+  altLabel,
+}: ImagePickerProps) => {
+  if (value) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <NextImage
+            src={value}
+            alt={altLabel}
+            fill
+            sizes="80px"
+            className="object-cover"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100">
+            <Upload className="h-3.5 w-3.5" />
+            {changeLabel}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onPickFile}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="flex items-center gap-1 text-xs font-bold text-rose-500 hover:underline"
+          >
+            <X className="h-3.5 w-3.5" />
+            {removeLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="bg-white flex-1 text-xs h-9"
+      />
+      <label className="cursor-pointer bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl px-3 py-1.5 text-xs font-bold shrink-0 hover:bg-indigo-100 transition flex items-center gap-1.5">
+        <Upload className="h-3.5 w-3.5" />
+        {uploadLabel}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onPickFile}
+        />
+      </label>
+    </div>
+  );
 };
 
 export const ContentManager = ({
@@ -307,7 +393,13 @@ export const ContentManager = ({
     } else if (kind === "block") {
       const data: BlockInput =
         form.type === "TEXT"
-          ? { type: "TEXT", order: form.order, body: form.body }
+          ? {
+              type: "TEXT",
+              order: form.order,
+              body: form.body,
+              imageSrc: form.imageSrc,
+              imagePosition: form.imagePosition,
+            }
           : form.type === "IMAGE"
           ? { type: "IMAGE", order: form.order, imageSrc: form.imageSrc, caption: form.caption }
           : {
@@ -533,20 +625,69 @@ export const ContentManager = ({
           )}
 
           {form.type === "TEXT" && (
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-600">
-                {dict["admin.bodyText"] || "Body Text"}
-              </Label>
-              <textarea
-                value={form.body}
-                onChange={(e) => setField("body", e.target.value)}
-                className="w-full min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-indigo-500"
-                placeholder={
-                  dict["admin.bodyTextPlaceholder"] ||
-                  "Enter the lesson reading material here..."
-                }
-              />
-            </div>
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-600">
+                  {dict["admin.bodyText"] || "Body Text"}
+                </Label>
+                <textarea
+                  value={form.body}
+                  onChange={(e) => setField("body", e.target.value)}
+                  className="w-full min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-indigo-500"
+                  placeholder={
+                    dict["admin.bodyTextPlaceholder"] ||
+                    "Enter the lesson reading material here..."
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-600">
+                  {dict["admin.imageOptional"] || "Image (optional)"}
+                </Label>
+                <ImagePicker
+                  value={form.imageSrc}
+                  onChange={(url) => setField("imageSrc", url)}
+                  onPickFile={(e) =>
+                    handleImageUpload(e, (url) => setField("imageSrc", url))
+                  }
+                  placeholder={
+                    dict["admin.imageUrlOrUpload"] || "Image URL or upload"
+                  }
+                  uploadLabel={dict["common.upload"] || "Upload"}
+                  changeLabel={dict["admin.changeImage"] || "Change"}
+                  removeLabel={dict["admin.removeImage"] || "Remove"}
+                  altLabel={dict["admin.imagePreview"] || "Image preview"}
+                />
+              </div>
+
+              {form.imageSrc && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600">
+                    {dict["admin.imagePosition"] || "Image position"}
+                  </Label>
+                  <div className="flex gap-2">
+                    {(["left", "right"] as const).map((pos) => (
+                      <button
+                        key={pos}
+                        type="button"
+                        onClick={() => setField("imagePosition", pos)}
+                        className={cn(
+                          "flex-1 rounded-xl border px-3 py-2 text-xs font-bold transition",
+                          form.imagePosition === pos
+                            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                        )}
+                      >
+                        {pos === "left"
+                          ? dict["admin.imageLeft"] || "Image left of text"
+                          : dict["admin.imageRight"] || "Image right of text"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {form.type === "IMAGE" && (
@@ -555,26 +696,20 @@ export const ContentManager = ({
                 <Label className="text-xs font-bold text-slate-600">
                   {dict["admin.image"] || "Image"}
                 </Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    value={form.imageSrc}
-                    onChange={(e) => setField("imageSrc", e.target.value)}
-                    placeholder={
-                      dict["admin.imageUrlOrUpload"] || "Image URL or upload"
-                    }
-                    className="bg-white flex-1 text-xs h-9"
-                  />
-                  <label className="cursor-pointer bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl px-3 py-1.5 text-xs font-bold shrink-0 hover:bg-indigo-100 transition flex items-center gap-1.5">
-                    <Upload className="h-3.5 w-3.5" />
-                    {dict["common.upload"] || "Upload"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, (url) => setField("imageSrc", url))}
-                    />
-                  </label>
-                </div>
+                <ImagePicker
+                  value={form.imageSrc}
+                  onChange={(url) => setField("imageSrc", url)}
+                  onPickFile={(e) =>
+                    handleImageUpload(e, (url) => setField("imageSrc", url))
+                  }
+                  placeholder={
+                    dict["admin.imageUrlOrUpload"] || "Image URL or upload"
+                  }
+                  uploadLabel={dict["common.upload"] || "Upload"}
+                  changeLabel={dict["admin.changeImage"] || "Change"}
+                  removeLabel={dict["admin.removeImage"] || "Remove"}
+                  altLabel={dict["admin.imagePreview"] || "Image preview"}
+                />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-bold text-slate-600">
@@ -784,6 +919,10 @@ export const ContentManager = ({
                                           body: block.body || "",
                                           caption: block.caption || "",
                                           imageSrc: block.imageSrc || "",
+                                          imagePosition:
+                                            block.imagePosition === "right"
+                                              ? "right"
+                                              : "left",
                                           options: block.lessonBlockOptions.map((o) => ({
                                             id: o.id,
                                             text: o.text,
@@ -826,8 +965,31 @@ export const ContentManager = ({
 
                                 {/* Text Content (Viewing Mode) */}
                                 {blockOpen && block.type === "TEXT" && !isEditingThisBlock && (
-                                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 pl-10 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
-                                    {block.body}
+                                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 pl-10">
+                                    {block.imageSrc ? (
+                                      <div
+                                        className={cn(
+                                          "flex flex-col gap-4 sm:items-start",
+                                          block.imagePosition === "right"
+                                            ? "sm:flex-row-reverse"
+                                            : "sm:flex-row"
+                                        )}
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={block.imageSrc}
+                                          alt=""
+                                          className="w-full shrink-0 rounded-lg border border-slate-200 bg-white object-contain sm:w-1/2"
+                                        />
+                                        <div className="flex-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
+                                          {block.body}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
+                                        {block.body}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 

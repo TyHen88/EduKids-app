@@ -12,8 +12,12 @@ import { getDictionary, defaultLocale, locales } from "./dictionaries";
 import { DictionaryProvider } from "./lang-provider";
 import "../globals.css";
 
-const nunito = Nunito({ subsets: ["latin"] });
-const battambang = Battambang({ subsets: ["khmer"], weight: ["400", "700"] });
+const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito" });
+const battambang = Battambang({
+  subsets: ["khmer"],
+  weight: ["400", "700"],
+  variable: "--font-battambang",
+});
 
 export const viewport: Viewport = { themeColor: "#D97706" };
 export const metadata: Metadata = siteConfig;
@@ -31,8 +35,10 @@ export default async function RootLayout({
 }) {
   const { lang } = await params;
   const dict = await getDictionary(lang as any);
-  // km pages render in Battambang (self-hosted via next/font); en pages use Nunito.
-  const fontClass = lang === "km" ? battambang.className : nunito.className;
+  // Both fonts are exposed as CSS variables on <html>. The body font stack puts
+  // Latin (Nunito) and Khmer (Battambang) in one chain so Khmer text always
+  // renders in Battambang even on English pages (Nunito has no Khmer glyphs).
+  const fontClass = lang === "km" ? "font-app-khmer" : "font-app-latin";
   return (
     <ClerkProvider
       appearance={{
@@ -45,7 +51,7 @@ export default async function RootLayout({
       signUpFallbackRedirectUrl={`/${lang}/learn`}
       afterSignOutUrl={`/${lang}`}
     >
-      <html lang={lang}>
+      <html lang={lang} className={`${nunito.variable} ${battambang.variable}`}>
         <body className={fontClass}>
           <DictionaryProvider dictionary={dict} lang={lang as any}>
             <Toaster theme="light" richColors closeButton />

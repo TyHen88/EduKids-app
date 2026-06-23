@@ -17,6 +17,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
+import { LanguageToggle } from "@/components/language-toggle";
 
 type ParentShellProps = {
   userImageSrc: string;
@@ -88,6 +89,8 @@ export const ParentShell = ({
         </nav>
 
         <div className="flex shrink-0 items-center space-x-2 sm:space-x-4">
+          <LanguageToggle />
+
           <Link
             href={`/${locale}/family/profile`}
             title={userName}

@@ -21,6 +21,9 @@ const ParentLayout = async ({ children, params }: ParentLayoutProps) => {
 
   if (!userProgress) redirect(`/${lang}/onboarding`);
 
+  // Deactivated users are blocked from the app
+  if (!userProgress.isActive) redirect(`/${lang}/deactivated`);
+
   if (userProgress.role !== "parent") redirect(`/${lang}/learn`);
 
   return (

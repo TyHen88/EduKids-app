@@ -3,7 +3,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { MAX_HEARTS, POINTS_TO_REFILL } from "@/constants";
 import db from "@/db/drizzle";
@@ -24,8 +23,13 @@ export const upsertUserProgress = async (courseId: number, lang = "km") => {
 
   if (!course) throw new Error("Course not found.");
 
-  if (!course.units.length || !course.units[0].lessons.length)
-    throw new Error("Course is empty.");
+  // A course is playable if ANY unit has at least one lesson. The old check only
+  // looked at the first unit, so a course whose first unit was empty (but had
+  // lessons in a later unit) threw "Course is empty." — surfacing as a
+  // "Something went wrong." toast in the Backpack even though the card was
+  // enabled (the card counts lessons across all units).
+  const hasLessons = course.units.some((unit) => unit.lessons.length > 0);
+  if (!hasLessons) throw new Error("Course is empty.");
 
   const existingUserProgress = await getUserProgress();
 
@@ -38,22 +42,20 @@ export const upsertUserProgress = async (courseId: number, lang = "km") => {
         userImageSrc: user.imageUrl || "/mascot.svg",
       })
       .where(eq(userProgress.userId, userId));
-
-    revalidatePath(`/${lang}/courses`);
-    revalidatePath(`/${lang}/learn`);
-    redirect(`/${lang}/learn`);
+  } else {
+    await db.insert(userProgress).values({
+      userId,
+      activeCourseId: courseId,
+      userName: user.firstName || "User",
+      userImageSrc: user.imageUrl || "/mascot.svg",
+    });
   }
 
-  await db.insert(userProgress).values({
-    userId,
-    activeCourseId: courseId,
-    userName: user.firstName || "User",
-    userImageSrc: user.imageUrl || "/mascot.svg",
-  });
-
+  // Navigation is done by the caller via useRouter. We must NOT redirect() here:
+  // redirect() works by throwing NEXT_REDIRECT, which the client's .catch() would
+  // swallow as a generic error (showing the "Something went wrong." toast).
   revalidatePath(`/${lang}/courses`);
   revalidatePath(`/${lang}/learn`);
-  redirect(`/${lang}/learn`);
 };
 
 export const reduceHearts = async (blockId: number) => {

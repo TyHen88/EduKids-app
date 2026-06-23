@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getAdminCourseTree } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
 
+import { AdminPageTitle } from "./admin-page-title";
 import { ContentManager } from "./content-manager";
 
 type Props = {
@@ -20,6 +21,7 @@ const AdminCourseContentPage = async ({ params }: Props) => {
 
   return (
     <div className="space-y-8 pb-12">
+      <AdminPageTitle title={course.title} />
       <div>
         <Link
           href={`/${lang}/admin/courses`}

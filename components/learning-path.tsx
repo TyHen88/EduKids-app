@@ -10,6 +10,7 @@ import {
   FileQuestion,
   BookOpen,
   Star,
+  RotateCcw,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -18,7 +19,8 @@ import { useDictionary } from "@/app/[lang]/lang-provider";
 
 export type PathNode = {
   id: number;
-  title: string;
+  title: string; // lesson title
+  unitTitle: string;
   type: "lesson" | "quiz" | "exam";
   status: "locked" | "unlocked" | "completed";
   href: string | null;
@@ -242,9 +244,19 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
                         {typeLabel(node.type)}
                       </div>
 
+                      <span
+                        className={cn(
+                          "block text-xs font-semibold leading-tight sm:text-sm",
+                          isLocked ? "text-slate-400" : "text-slate-500",
+                          isEven ? "text-right" : "text-left"
+                        )}
+                      >
+                        {node.unitTitle}
+                      </span>
+
                       <h3
                         className={cn(
-                          "mb-2 text-sm font-bold leading-tight sm:mb-3 sm:text-base",
+                          "mb-2 text-base font-bold leading-tight sm:mb-3 sm:text-lg",
                           isLocked ? "text-slate-400" : "text-slate-800",
                           isEven ? "text-right" : "text-left"
                         )}
@@ -268,14 +280,26 @@ export const LearningPath = ({ nodes, courseTitle }: LearningPathProps) => {
                       )}
 
                       {isCompleted && (
-                        <div
-                          className={cn(
-                            "mt-1 hidden items-center justify-center gap-1.5 text-[10px] font-bold text-emerald-600 sm:flex sm:justify-start sm:text-xs",
-                            isEven ? "sm:justify-end" : "sm:justify-start"
+                        <div className="flex flex-col gap-2">
+                          <div
+                            className={cn(
+                              "hidden items-center gap-1.5 text-[10px] font-bold text-emerald-600 sm:flex sm:text-xs",
+                              isEven ? "sm:justify-end" : "sm:justify-start"
+                            )}
+                          >
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500 sm:h-4 sm:w-4" />{" "}
+                            {dict["path.finished"] || "Finished"}
+                          </div>
+
+                          {node.href && (
+                            <Link
+                              href={node.href}
+                              className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 sm:py-2.5"
+                            >
+                              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                              {dict["path.review"] || "Review"}
+                            </Link>
                           )}
-                        >
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500 sm:h-4 sm:w-4" />{" "}
-                          {dict["path.finished"] || "Finished"}
                         </div>
                       )}
                     </div>

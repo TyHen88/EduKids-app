@@ -13,9 +13,17 @@ type FooterProps = {
   status: "correct" | "wrong" | "none" | "completed";
   disabled?: boolean;
   lessonId?: number;
+  // Reading blocks (TEXT/IMAGE) aren't graded — show "Next" instead of "Check".
+  reading?: boolean;
 };
 
-export const Footer = ({ onCheck, status, disabled, lessonId }: FooterProps) => {
+export const Footer = ({
+  onCheck,
+  status,
+  disabled,
+  lessonId,
+  reading,
+}: FooterProps) => {
   useKey("Enter", onCheck, {}, [onCheck]);
   const isMobile = useMedia("(max-width: 1024px)");
   const dict = useDictionary();
@@ -89,9 +97,11 @@ export const Footer = ({ onCheck, status, disabled, lessonId }: FooterProps) => 
             className="ml-auto"
             onClick={onCheck}
             size={isMobile ? "sm" : "lg"}
-            variant="secondary"
+            variant={reading ? "primary" : "secondary"}
           >
-            {dict["lesson.check"] || "Check"}
+            {reading
+              ? dict["lesson.next"] || "Next"
+              : dict["lesson.check"] || "Check"}
           </Button>
         )}
 

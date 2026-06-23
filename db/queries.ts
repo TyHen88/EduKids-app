@@ -4,6 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
 
 import db from "./drizzle";
+import { getAdminIds } from "@/lib/admin";
 import {
   lessonBlockProgress,
   lessonTime,
@@ -555,8 +556,13 @@ export const getUserBadges = cache(async () => {
 // --- Admin dashboard stats (gate access at the page/layout level) ------------
 
 export const getAdminStats = cache(async () => {
+  const adminIds = getAdminIds();
   const [students, courseCount, lessonCount, completions] = await Promise.all([
-    db.$count(userProgress),
+    // exclude admin operators from the user count (matches the Users list)
+    db.$count(
+      userProgress,
+      adminIds.length ? not(inArray(userProgress.userId, adminIds)) : undefined
+    ),
     db.$count(courses),
     db.$count(lessons),
     db.$count(lessonBlockProgress, eq(lessonBlockProgress.completed, true)),
@@ -571,18 +577,32 @@ export const getAllStudents = cache(async () => {
     with: {
       activeCourse: true,
       userBadges: true,
+      // family link where this user is the child → who their parent is
+      parentsAsChild: {
+        with: { parent: true },
+      },
     },
   });
 
-  return data.map((student) => ({
+  // Admins are platform operators, not learners/parents — keep them out of the
+  // user list and its parent/learner counts.
+  const adminIds = new Set(getAdminIds());
+
+  return data
+    .filter((student) => !adminIds.has(student.userId))
+    .map((student) => ({
     userId: student.userId,
     userName: student.userName,
     userImageSrc: student.userImageSrc,
+    role: student.role, // "learner" | "parent"
+    isActive: student.isActive,
     points: student.points,
     hearts: student.hearts,
     streak: student.streak,
     activeCourse: student.activeCourse?.title ?? null,
     badges: student.userBadges.length,
+    // null when the learner isn't linked to any parent account
+    parentName: student.parentsAsChild[0]?.parent?.userName ?? null,
   }));
 });
 
@@ -597,6 +617,8 @@ export type AdminCourse = {
   lessons: number;
   students: number;
   createdBy: string | null;
+  // Display name of the creator. null = system/admin course (createdBy is null).
+  creatorName: string | null;
 };
 
 export const getAdminCourseTree = cache(async (courseId: number) => {
@@ -628,13 +650,17 @@ export const getAdminCourseTree = cache(async (courseId: number) => {
 });
 
 export const getAdminCourses = cache(async (): Promise<AdminCourse[]> => {
-  const [data, enrollments] = await Promise.all([
+  const [data, users] = await Promise.all([
     db.query.courses.findMany({
       orderBy: (courses, { asc }) => [asc(courses.id)],
       with: { units: { with: { lessons: true } } },
     }),
-    db.query.userProgress.findMany({ columns: { activeCourseId: true } }),
+    db.query.userProgress.findMany({
+      columns: { userId: true, userName: true, activeCourseId: true },
+    }),
   ]);
+
+  const nameById = new Map(users.map((u) => [u.userId, u.userName]));
 
   return data.map((course) => ({
     id: course.id,
@@ -645,8 +671,9 @@ export const getAdminCourses = cache(async (): Promise<AdminCourse[]> => {
     difficulty: course.difficulty,
     units: course.units.length,
     lessons: course.units.reduce((acc, unit) => acc + unit.lessons.length, 0),
-    students: enrollments.filter((e) => e.activeCourseId === course.id).length,
+    students: users.filter((e) => e.activeCourseId === course.id).length,
     createdBy: course.createdBy,
+    creatorName: course.createdBy ? nameById.get(course.createdBy) ?? null : null,
   }));
 });
 
