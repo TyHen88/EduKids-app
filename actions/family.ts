@@ -1,10 +1,11 @@
 "use server";
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
+import { auth } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { userProgress, familyMembers, courseAssignments } from "@/db/schema";
 import { MAX_HEARTS } from "@/constants";
 
@@ -18,28 +19,29 @@ export const createChildAccount = async (
 
   if (!userId) throw new Error("Unauthorized");
 
-  // Create user in Clerk
-  let childUser;
-  try {
-    const securePassword = `${pin}-EduKids-Secret-Pin-!`;
-    
-    childUser = await (await clerkClient()).users.createUser({
-      firstName: name,
-      username: username,
-      emailAddress: [`${username}@dummy.edukids.com`],
-      password: securePassword,
-      skipPasswordChecks: true,
-      skipPasswordRequirement: true,
-    });
-  } catch (error: any) {
-    console.error("Clerk Create User Error:", JSON.stringify(error, null, 2));
-    if (error.errors && error.errors.length > 0) {
-      throw new Error(`Clerk Error: ${error.errors[0].message}`);
-    }
-    throw error;
+  // Create the child's auth user in Supabase via the admin API. The login
+  // identifier is the synthetic email `${username}@dummy.edukids.com` and the
+  // password is derived from the 4-digit PIN (see kids-login). email_confirm
+  // skips the verification email for these parent-managed accounts.
+  const admin = createAdminClient();
+  const securePassword = `${pin}-EduKids-Secret-Pin-!`;
+
+  const { data, error } = await admin.auth.admin.createUser({
+    email: `${username}@dummy.edukids.com`,
+    password: securePassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: name,
+      username,
+    },
+  });
+
+  if (error || !data.user) {
+    console.error("Supabase Create User Error:", error);
+    throw new Error(error?.message || "Failed to create child account.");
   }
 
-  const childId = childUser.id;
+  const childId = data.user.id;
 
   // Insert into our userProgress DB as "learner"
   await db.insert(userProgress).values({
@@ -77,11 +79,12 @@ export const removeChildAccount = async (childId: string, lang: string = "en") =
 
   if (!link) throw new Error("Not authorized to remove this child.");
 
-  // Delete from Clerk
+  // Delete the auth user from Supabase.
   try {
-    await (await clerkClient()).users.deleteUser(childId);
+    const admin = createAdminClient();
+    await admin.auth.admin.deleteUser(childId);
   } catch (error) {
-    console.error("Error deleting user from Clerk:", error);
+    console.error("Error deleting user from Supabase:", error);
   }
 
   // Delete family link and progress (progress deletes automatically due to cascade, but good to be explicit)

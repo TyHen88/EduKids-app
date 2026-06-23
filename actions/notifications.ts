@@ -1,7 +1,7 @@
 "use server";
 
 import webpush from "web-push";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
 import db from "@/db/drizzle";

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSignIn } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,12 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
-import { clerkError } from "@/lib/clerk-error";
+import { authError } from "@/lib/auth-error";
+import { createClient } from "@/lib/supabase/client";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export default function SignInPage() {
-  const { signIn } = useSignIn();
-  const router = useRouter();
   const locale = useLocale();
   const dict = useDictionary();
 
@@ -32,14 +29,15 @@ export default function SignInPage() {
     setError("");
 
     try {
-      const { error: signInError } = await signIn.password({
-        identifier: email,
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password,
       });
 
       if (signInError) {
         setError(
-          clerkError(
+          authError(
             signInError,
             dict["auth.wrongEmailOrPassword"] || "Wrong email or password."
           )
@@ -48,10 +46,11 @@ export default function SignInPage() {
         return;
       }
 
-      await signIn.finalize({ navigate: () => router.push(`/${locale}/learn`) });
+      window.location.assign(`/${locale}/learn`);
+      return;
     } catch (err) {
       setError(
-        clerkError(
+        authError(
           err,
           dict["auth.wrongEmailOrPassword"] || "Wrong email or password."
         )

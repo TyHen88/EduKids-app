@@ -1,16 +1,16 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
 import { userProgress } from "@/db/schema";
 
-// Whether the currently signed-in Clerk user has a profile row in THIS
-// database. Used to detect "orphaned identities" — e.g. a child that exists in
-// the shared Clerk instance but whose userProgress row lives in a different
-// Neon database than the one currently configured.
+// Whether the currently signed-in user has a profile row in THIS database.
+// Used to detect "orphaned identities" — e.g. a child that exists in the
+// Supabase auth project but whose userProgress row lives in a different Neon
+// database than the one currently configured.
 export const hasUserProfile = async (): Promise<boolean> => {
   const { userId } = await auth();
   if (!userId) return false;

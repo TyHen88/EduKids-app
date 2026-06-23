@@ -166,8 +166,9 @@ export const userProgress = pgTable("user_progress", {
   userName: text("user_name").notNull().default("User"),
   userImageSrc: text("user_image_src").notNull().default("/mascot.svg"),
   role: text("role").notNull().default("learner"), // "learner" | "parent"
-  // false = deactivated by an admin. Deactivated users are also banned in Clerk
-  // (cannot sign in). Kept here for admin display/filtering. See actions/admin-users.ts.
+  // false = deactivated by an admin. Enforcement is app-level only: the auth
+  // session stays valid but every authenticated layout redirects them to
+  // /deactivated (see lib/guard.ts, actions/admin-users.ts).
   isActive: boolean("is_active").notNull().default(true),
   activeCourseId: integer("active_course_id").references(() => courses.id, {
     onDelete: "cascade",

@@ -1,9 +1,8 @@
-import { ClerkLoaded, ClerkLoading, Show } from "@clerk/nextjs";
-import { Loader } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 import { getDictionary, Locale } from "../dictionaries";
 
 type Props = {
@@ -15,6 +14,8 @@ type Props = {
 export default async function MarketingPage({ params }: Props) {
   const { lang } = await params;
   const dict = await getDictionary(lang as Locale);
+  const { userId } = await auth();
+  const signedIn = !!userId;
 
   return (
     <div className="mx-auto flex w-full max-w-[988px] flex-1 flex-col items-center justify-center gap-2 p-4 lg:flex-row">
@@ -28,18 +29,14 @@ export default async function MarketingPage({ params }: Props) {
         </h1>
 
         <div className="flex w-full max-w-[330px] flex-col items-center gap-y-3">
-          <ClerkLoading>
-            <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
-          </ClerkLoading>
-
-          <ClerkLoaded>
-            <Show when="signed-in">
-              <Button size="lg" variant="secondary" className="w-full" asChild>
-                <Link href={`/${lang}/learn`}>{dict["marketing.continueLearning"]}</Link>
-              </Button>
-            </Show>
-
-            <Show when="signed-out">
+          {signedIn ? (
+            <Button size="lg" variant="secondary" className="w-full" asChild>
+              <Link href={`/${lang}/learn`}>
+                {dict["marketing.continueLearning"]}
+              </Link>
+            </Button>
+          ) : (
+            <>
               <Button size="lg" variant="secondary" className="w-full" asChild>
                 <Link href={`/${lang}/sign-up`}>
                   {dict["marketing.getStarted"]}
@@ -75,8 +72,8 @@ export default async function MarketingPage({ params }: Props) {
                   {dict["auth.kidsLogin"] || "Kids Login"}
                 </Link>
               </Button>
-            </Show>
-          </ClerkLoaded>
+            </>
+          )}
         </div>
       </div>
     </div>

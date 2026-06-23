@@ -2,7 +2,6 @@
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
 import {
   LogOut,
   Loader2,
@@ -12,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { updateProfile } from "@/actions/profile";
 import { uploadImage } from "@/actions/lesson-block";
+import { useSignOut } from "@/lib/use-sign-out";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { cn } from "@/lib/utils";
 
@@ -64,9 +64,8 @@ export const ParentProfileEditor = ({
   const router = useRouter();
   const locale = useLocale();
   const dict = useDictionary();
-  const { signOut } = useClerk();
-  const { user } = useUser();
-  
+  const signOut = useSignOut();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -85,12 +84,13 @@ export const ParentProfileEditor = ({
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !user) return;
+    if (!file) return;
 
     setUploading(true);
     try {
-      const res = await user.setProfileImage({ file });
-      const url = res.publicUrl || user.imageUrl;
+      const formData = new FormData();
+      formData.append("file", file);
+      const url = await uploadImage(formData);
       if (url) {
         setImage(url);
       }
@@ -146,7 +146,7 @@ export const ParentProfileEditor = ({
 
   const onSignOut = () => {
     setSigningOut(true);
-    void signOut({ redirectUrl: `/${locale}` });
+    void signOut();
   };
 
   return (

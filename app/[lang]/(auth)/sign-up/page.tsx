@@ -1,9 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSignUp } from "@clerk/nextjs";
 import { Loader2, MailCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,23 +9,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
-import { clerkError } from "@/lib/clerk-error";
+import { authError } from "@/lib/auth-error";
+import { createClient } from "@/lib/supabase/client";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 export default function SignUpPage() {
-  const { signUp } = useSignUp();
-  // Pin the resource instance that sent the email code for the verify step.
-  const signUpRef = useRef(signUp);
-  const router = useRouter();
   const locale = useLocale();
   const dict = useDictionary();
 
-  const [step, setStep] = useState<"form" | "verify">("form");
+  const [step, setStep] = useState<"form" | "sent">("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  // Where Supabase sends the user after they click the confirmation link. The
+  // sso-callback route exchanges the PKCE code for a session, then forwards to
+  // /learn (same route the Google login uses). This URL must be in Supabase's
+  // Auth → URL Configuration → Redirect URLs allowlist.
+  const confirmRedirectUrl = () =>
+    `${window.location.origin}/${locale}/sso-callback?next=${encodeURIComponent(
+      `/${locale}/learn`
+    )}`;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,13 +40,17 @@ export default function SignUpPage() {
     setError("");
 
     try {
-      const { error: createError } = await signUp.create({
-        emailAddress: email,
+      const supabase = createClient();
+      // Supabase creates the (unconfirmed) user and emails a confirmation LINK.
+      // Use Supabase's default "Confirm signup" template with {{ .ConfirmationURL }}.
+      const { error: createError } = await supabase.auth.signUp({
+        email,
         password,
+        options: { emailRedirectTo: confirmRedirectUrl() },
       });
       if (createError) {
         setError(
-          clerkError(
+          authError(
             createError,
             dict["auth.couldntCreateAccount"] || "Couldn't create your account."
           )
@@ -51,23 +59,10 @@ export default function SignUpPage() {
         return;
       }
 
-      const { error: sendError } = await signUp.verifications.sendEmailCode();
-      if (sendError) {
-        setError(
-          clerkError(
-            sendError,
-            dict["auth.couldntSendCode"] || "Couldn't send the code."
-          )
-        );
-        setLoading(false);
-        return;
-      }
-
-      signUpRef.current = signUp;
-      setStep("verify");
+      setStep("sent");
     } catch (err) {
       setError(
-        clerkError(
+        authError(
           err,
           dict["auth.couldntCreateAccount"] || "Couldn't create your account."
         )
@@ -77,60 +72,49 @@ export default function SignUpPage() {
     }
   };
 
-  const verify = async (theCode: string) => {
+  const onResend = async () => {
     if (loading) return;
 
     setLoading(true);
     setError("");
+    setResent(false);
 
     try {
-      const su = signUpRef.current;
-
-      const { error: verifyError } = await su.verifications.verifyEmailCode({
-        code: theCode,
+      const supabase = createClient();
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: confirmRedirectUrl() },
       });
-
-      if (verifyError) {
+      if (resendError) {
         setError(
-          clerkError(
-            verifyError,
-            dict["auth.codeDidntWork"] || "That code didn't work."
+          authError(
+            resendError,
+            dict["auth.couldntCreateAccount"] || "Couldn't create your account."
           )
         );
-        setLoading(false);
-        return;
+      } else {
+        setResent(true);
       }
-
-      await su.finalize({ navigate: () => router.push(`/${locale}/learn`) });
     } catch (err) {
       setError(
-        clerkError(
+        authError(
           err,
-          dict["auth.codeDidntWork"] || "That code didn't work."
+          dict["auth.couldntCreateAccount"] || "Couldn't create your account."
         )
       );
+    } finally {
       setLoading(false);
     }
   };
 
-  const onCodeChange = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 6);
-    setCode(digits);
-    if (digits.length === 6) void verify(digits); // auto-verify on paste/complete
-  };
-
-  const onVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    void verify(code);
-  };
-
-  if (step === "verify") {
+  if (step === "sent") {
     return (
       <AuthShell
         title={dict["auth.checkYourEmail"] || "Check your email 📬"}
         subtitle={
-          dict["auth.sentCodeTo"]?.replace("{email}", email) ||
-          `We sent a 6-digit code to ${email}.`
+          dict["auth.confirmLinkSentTo"]?.replace("{email}", email) ||
+          `We sent a confirmation link to ${email}.`
         }
         footer={
           <button
@@ -138,6 +122,7 @@ export default function SignUpPage() {
             onClick={() => {
               setStep("form");
               setError("");
+              setResent(false);
             }}
             className="font-bold text-indigo-600 hover:underline"
           >
@@ -145,28 +130,22 @@ export default function SignUpPage() {
           </button>
         }
       >
-        <form onSubmit={onVerify} className="space-y-4">
-          <div className="mb-2 flex justify-center text-indigo-500">
-            <MailCheck className="h-10 w-10" />
+        <div className="space-y-5 text-center">
+          <div className="flex justify-center text-indigo-500">
+            <MailCheck className="h-12 w-12" />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="code">
-              {dict["auth.verificationCode"] || "Verification code"}
-            </Label>
-            <Input
-              id="code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              autoFocus
-              required
-              value={code}
-              onChange={(e) => onCodeChange(e.target.value)}
-              placeholder="123456"
-              className={`${authInputClass} text-center text-lg tracking-[0.3em]`}
-            />
-          </div>
+          <p className="text-sm font-medium text-slate-600">
+            {dict["auth.clickLinkToConfirm"] ||
+              "Open the email and click the link to confirm your account. Then come back and sign in to start learning! 🚀"}
+          </p>
+
+          {resent && (
+            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600">
+              {dict["auth.linkResent"] ||
+                "We've sent the link again — check your inbox."}
+            </p>
+          )}
 
           {error && (
             <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600">
@@ -175,19 +154,20 @@ export default function SignUpPage() {
           )}
 
           <Button
-            type="submit"
-            variant="primary"
+            type="button"
+            onClick={onResend}
+            variant="primaryOutline"
             className="w-full"
             size="lg"
-            disabled={loading || code.length !== 6}
+            disabled={loading}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              dict["auth.verifyAndLaunch"] || "Verify & launch 🚀"
+              dict["auth.resendLink"] || "Resend confirmation link"
             )}
           </Button>
-        </form>
+        </div>
       </AuthShell>
     );
   }
@@ -260,9 +240,6 @@ export default function SignUpPage() {
             {error}
           </p>
         )}
-
-        {/* Clerk bot-protection mounts here when enabled */}
-        <div id="clerk-captcha" />
 
         <Button
           type="submit"

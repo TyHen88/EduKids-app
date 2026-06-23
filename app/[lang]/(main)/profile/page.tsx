@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@/lib/auth";
 
 import { getUserBadges, getUserProgress } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
@@ -19,7 +19,7 @@ const ProfilePage = async ({ params }: Props) => {
     currentUser(),
   ]);
 
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+  const email = user?.email ?? "";
 
   return (
     <ProfileEditor

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { MainShell } from "@/components/main-shell";
@@ -29,6 +29,9 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
 
   // Parent users should use the parent dashboard
   if (userProgress.role === "parent") redirect(`/${lang}/family`);
+
+  // Admins (userId in ADMIN_IDS) belong in the admin panel.
+  if (await getIsAdmin()) redirect(`/${lang}/admin`);
 
   const [isAdmin, notifications, unreadCount, isChild] = await Promise.all([
     getIsAdmin(),

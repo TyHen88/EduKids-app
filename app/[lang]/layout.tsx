@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { Nunito, Battambang } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config";
@@ -40,28 +39,16 @@ export default async function RootLayout({
   // renders in Battambang even on English pages (Nunito has no Khmer glyphs).
   const fontClass = lang === "km" ? "font-app-khmer" : "font-app-latin";
   return (
-    <ClerkProvider
-      appearance={{
-        layout: { logoImageUrl: "/favicon.ico" },
-        variables: { colorPrimary: "#4f46e5" },
-      }}
-      signInUrl={`/${lang}/sign-in`}
-      signUpUrl={`/${lang}/sign-up`}
-      signInFallbackRedirectUrl={`/${lang}/learn`}
-      signUpFallbackRedirectUrl={`/${lang}/learn`}
-      afterSignOutUrl={`/${lang}`}
-    >
-      <html lang={lang} className={`${nunito.variable} ${battambang.variable}`}>
-        <body className={fontClass}>
-          <DictionaryProvider dictionary={dict} lang={lang as any}>
-            <Toaster theme="light" richColors closeButton />
-            <ExitModal />
-            <HeartsModal />
-            <PracticeModal />
-            {children}
-          </DictionaryProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang={lang} className={`${nunito.variable} ${battambang.variable}`}>
+      <body className={fontClass}>
+        <DictionaryProvider dictionary={dict} lang={lang as any}>
+          <Toaster theme="light" richColors closeButton />
+          <ExitModal />
+          <HeartsModal />
+          <PracticeModal />
+          {children}
+        </DictionaryProvider>
+      </body>
+    </html>
   );
 }

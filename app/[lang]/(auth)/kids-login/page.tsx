@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useSignIn, useClerk } from "@clerk/nextjs";
 import { Loader2, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -15,13 +13,11 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { createClient } from "@/lib/supabase/client";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { hasUserProfile } from "@/actions/onboarding";
 
 const KidsLoginPage = () => {
-  const { signIn } = useSignIn();
-  const { signOut } = useClerk();
-  const router = useRouter();
   const locale = useLocale();
   const dict = useDictionary();
 
@@ -31,7 +27,6 @@ const KidsLoginPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signIn) return;
     if (pin.length !== 4) {
       toast.error(dict["auth.pinMustBe4Digits"] || "PIN must be 4 digits");
       return;
@@ -40,23 +35,24 @@ const KidsLoginPage = () => {
     setIsLoading(true);
 
     try {
+      const supabase = createClient();
       const securePassword = `${pin}-EduKids-Secret-Pin-!`;
-      
-      const { error } = await signIn.create({
-        identifier: username.includes("@") ? username : `${username}@dummy.edukids.com`,
+      const email = username.includes("@")
+        ? username
+        : `${username}@dummy.edukids.com`;
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
         password: securePassword,
       });
 
       if (!error) {
-        await signIn.finalize();
-
-        // The Clerk user may exist (Clerk is shared across environments) while
-        // this account has no profile in the currently configured database.
-        // Don't drift such an "orphaned" login into the new-user onboarding —
-        // reject it clearly instead.
+        // The auth user may exist while this account has no profile in the
+        // currently configured database. Don't drift such an "orphaned" login
+        // into the new-user onboarding — reject it clearly instead.
         const profileExists = await hasUserProfile();
         if (!profileExists) {
-          await signOut();
+          await supabase.auth.signOut();
           toast.error(
             dict["auth.accountNotSetUp"] ||
               "This account isn't set up in this app. Please ask your parent to add you."
@@ -65,13 +61,24 @@ const KidsLoginPage = () => {
           return;
         }
 
-        router.push(`/${locale}/learn`);
+        // Full navigation (not router.push) so the new session is picked up
+        // cleanly by the server components and middleware on the next request.
+        window.location.assign(`/${locale}/learn`);
+        return;
       } else {
-        toast.error((error as any).errors?.[0]?.message || error.message || dict["auth.invalidUsernameOrPin"] || "Invalid username or PIN");
+        toast.error(
+          error.message ||
+            dict["auth.invalidUsernameOrPin"] ||
+            "Invalid username or PIN"
+        );
         setIsLoading(false);
       }
     } catch (err: any) {
-      toast.error(err.message || dict["auth.invalidUsernameOrPin"] || "Invalid username or PIN");
+      toast.error(
+        err.message ||
+          dict["auth.invalidUsernameOrPin"] ||
+          "Invalid username or PIN"
+      );
       setIsLoading(false);
     }
   };
@@ -141,7 +148,7 @@ const KidsLoginPage = () => {
           <div className="pt-4">
             <Button
               type="submit"
-              disabled={isLoading || !signIn}
+              disabled={isLoading}
               variant="primary"
               className="h-14 w-full text-lg"
             >

@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { getUserProgress } from "@/db/queries";
@@ -21,7 +21,7 @@ const ParentProfilePage = async ({ params }: Props) => {
     redirect(`/${lang}/learn`);
   }
 
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+  const email = user?.email ?? "";
 
   return (
     <ParentProfileEditor

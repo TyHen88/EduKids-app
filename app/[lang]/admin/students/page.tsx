@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import { Users, UserCog, GraduationCap } from "lucide-react";
 
 import { getAllStudents } from "@/db/queries";

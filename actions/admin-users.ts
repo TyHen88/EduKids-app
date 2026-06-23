@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -10,10 +10,9 @@ import { getIsAdmin } from "@/lib/admin";
 
 /**
  * Activate or deactivate a user. Enforcement is app-level: deactivated users
- * keep their Clerk session but every authenticated layout redirects them to the
- * /deactivated page (see lib/guard.ts). We intentionally do NOT ban them in
- * Clerk — banning revokes the session and bounces them through Clerk's hosted
- * Account Portal, which we want to avoid.
+ * keep their auth session but every authenticated layout redirects them to the
+ * /deactivated page (see lib/guard.ts). We intentionally do NOT disable them in
+ * the auth provider — only flip the `isActive` flag here.
  */
 export const setUserActive = async (
   targetUserId: string,

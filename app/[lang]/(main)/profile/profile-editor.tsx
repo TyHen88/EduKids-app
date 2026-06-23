@@ -3,7 +3,6 @@
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
 import { motion } from "motion/react";
 import {
   Check,
@@ -19,7 +18,9 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { updateProfile } from "@/actions/profile";
+import { uploadImage } from "@/actions/lesson-block";
 import { getBuddy } from "@/lib/buddy";
+import { useSignOut } from "@/lib/use-sign-out";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
 type EarnedBadge = { id: number; name: string; icon: string };
@@ -63,8 +64,7 @@ export const ProfileEditor = ({
   const router = useRouter();
   const locale = useLocale();
   const dict = useDictionary();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const signOut = useSignOut();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [signingOut, setSigningOut] = useState(false);
@@ -85,12 +85,13 @@ export const ProfileEditor = ({
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !user) return;
+    if (!file) return;
 
     setUploading(true);
     try {
-      const res = await user.setProfileImage({ file });
-      const url = res.publicUrl || user.imageUrl;
+      const formData = new FormData();
+      formData.append("file", file);
+      const url = await uploadImage(formData);
       if (url) {
         setCustomImages((prev) => [url, ...prev.filter((u) => u !== url)]);
         setImage(url);
@@ -127,7 +128,7 @@ export const ProfileEditor = ({
 
   const onSignOut = () => {
     setSigningOut(true);
-    void signOut({ redirectUrl: `/${locale}` });
+    void signOut();
   };
 
   const stats = [

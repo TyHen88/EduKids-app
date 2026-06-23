@@ -1,9 +1,10 @@
 import { cache } from "react";
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
 
 import db from "./drizzle";
+import { auth } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminIds } from "@/lib/admin";
 import {
   lessonBlockProgress,
@@ -742,16 +743,22 @@ export const getChildren = cache(async () => {
     secondsByUser.set(t.userId, (secondsByUser.get(t.userId) ?? 0) + t.seconds);
   }
 
-  // The login username lives in Clerk (not in our DB), so enrich each child
-  // with it for display. Degrade gracefully if Clerk is unreachable.
-  let usernameById = new Map<string, string | null>();
+  // The login username lives in the auth provider (Supabase, in user_metadata),
+  // not in our DB, so enrich each child with it for display. Degrade gracefully
+  // if the auth API is unreachable.
+  const usernameById = new Map<string, string | null>();
   try {
-    const client = await clerkClient();
-    const list = await client.users.getUserList({
-      userId: children.map((c) => c.userId),
-      limit: 100,
-    });
-    usernameById = new Map(list.data.map((u) => [u.id, u.username]));
+    const admin = createAdminClient();
+    const results = await Promise.all(
+      children.map((c) => admin.auth.admin.getUserById(c.userId))
+    );
+    for (const { data } of results) {
+      const u = data.user;
+      if (u) {
+        const meta = u.user_metadata ?? {};
+        usernameById.set(u.id, meta.username ?? meta.user_name ?? null);
+      }
+    }
   } catch {
     // ignore — fall back to no username
   }

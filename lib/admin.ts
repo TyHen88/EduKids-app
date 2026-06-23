@@ -1,8 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 
-// stored in .env file as a string separated by comma(,) and space( )
+// stored in .env file as a string separated by comma(,) and space( ).
+// Values are Supabase auth user UUIDs.
 export const getAdminIds = (): string[] =>
-  (process.env.CLERK_ADMIN_IDS ?? "")
+  (process.env.ADMIN_IDS ?? "")
     .split(", ")
     .map((id) => id.trim())
     .filter(Boolean);

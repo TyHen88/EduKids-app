@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { currentUser } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
+import { currentUser } from "@/lib/auth";
+import { UserMenu } from "@/components/auth/user-menu";
 import { Heart, Coins, Globe, ShieldCheck, Settings as Cog } from "lucide-react";
 
 import { MAX_HEARTS, POINTS_TO_REFILL } from "@/constants";
@@ -21,13 +21,11 @@ const AdminSettingsPage = async ({
   const user = await currentUser();
 
   const adminCount =
-    process.env.CLERK_ADMIN_IDS?.split(", ").filter(Boolean).length ?? 0;
+    process.env.ADMIN_IDS?.split(", ").filter(Boolean).length ?? 0;
 
   const name =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    dict["admin.adminBadge"] ||
-    "Admin";
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? "—";
+    user?.firstName || dict["admin.adminBadge"] || "Admin";
+  const email = user?.email ?? "—";
 
   const configRows = [
     {
@@ -111,7 +109,7 @@ const AdminSettingsPage = async ({
             <span className="text-sm font-bold text-slate-500">
               {dict["admin.manageAccount"] || "Manage account"}
             </span>
-            <UserButton />
+            <UserMenu />
           </div>
         </div>
       </section>
@@ -152,7 +150,7 @@ const AdminSettingsPage = async ({
           <code>constants.ts</code>.{" "}
           {dict["admin.adminAccountsConfiguredVia"] ||
             "Admin accounts are configured via the"}{" "}
-          <code>CLERK_ADMIN_IDS</code>{" "}
+          <code>ADMIN_IDS</code>{" "}
           {dict["admin.environmentVariable"] || "environment variable."}
         </p>
       </section>

@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { getUserProgress } from "@/db/queries";
@@ -29,14 +29,12 @@ const OnboardingPage = async ({ params }: OnboardingPageProps) => {
   }
 
   // Defense-in-depth: a child account (parent-created) has no profile in THIS
-  // database only when the Clerk identity and the data live in different
+  // database only when the auth identity and the data live in different
   // environments. A kid must never be offered the role picker (they could pick
   // "parent" and self-escalate), so bounce them back to the kids login instead
   // of treating them as a brand-new signup.
   const user = await currentUser();
-  const isKidAccount = user?.emailAddresses?.some((e) =>
-    e.emailAddress.endsWith(KID_EMAIL_DOMAIN)
-  );
+  const isKidAccount = user?.email?.endsWith(KID_EMAIL_DOMAIN);
   if (isKidAccount) redirect(`/${lang}/kids-login`);
 
   return <OnboardingForm />;

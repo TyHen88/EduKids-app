@@ -5,7 +5,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/auth/user-menu";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 
@@ -142,7 +142,7 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
           </h1>
           <div className="flex items-center gap-3">
             <LanguageToggle />
-            <UserButton />
+            <UserMenu />
           </div>
         </header>
 
