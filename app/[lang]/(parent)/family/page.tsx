@@ -59,10 +59,10 @@ const FamilyDashboardPage = async ({ params }: Props) => {
   const familyMotto = userProgress?.familyMotto || "";
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 sm:space-y-8">
       {/* Premium Family Banner */}
       <div className={cn(
-        "relative overflow-hidden rounded-[32px] border-4 p-8 text-white shadow-md min-h-[160px] flex flex-col justify-end bg-slate-100",
+        "relative overflow-hidden rounded-[32px] border-4 p-5 text-white shadow-md min-h-[130px] flex flex-col justify-end bg-slate-100 sm:p-8 sm:min-h-[160px]",
         PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.classes
           ? `bg-gradient-to-br ${PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS].classes}`
           : "border-slate-100"
@@ -79,7 +79,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
           <div className="absolute inset-0 bg-black/35" />
         )}
         <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight drop-shadow-sm">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight drop-shadow-sm">
             {familyName}
           </h1>
           {familyMotto ? (
@@ -95,29 +95,29 @@ const FamilyDashboardPage = async ({ params }: Props) => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="flex items-center gap-4 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-indigo-100 bg-indigo-50 text-indigo-600">
-            <Users className="h-7 w-7" />
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
+        <div className="flex items-center gap-3 rounded-3xl border-2 border-slate-100 bg-white p-5 shadow-sm sm:gap-4 sm:rounded-[32px] sm:p-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 sm:h-14 sm:w-14 border-indigo-100 bg-indigo-50 text-indigo-600">
+            <Users className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
           <div>
             <div className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">
               {dict["parent.children"] || "Children"}
             </div>
-            <div className="text-3xl font-black text-slate-800">
+            <div className="text-2xl font-black text-slate-800 sm:text-3xl">
               {children.length}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-600">
-            <Star className="h-7 w-7" />
+        <div className="flex items-center gap-3 rounded-3xl border-2 border-slate-100 bg-white p-5 shadow-sm sm:gap-4 sm:rounded-[32px] sm:p-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 sm:h-14 sm:w-14 border-emerald-100 bg-emerald-50 text-emerald-600">
+            <Star className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
           <div>
             <div className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">
               {dict["parent.totalFamilyStardust"] || "Total Family Stardust"}
             </div>
-            <div className="text-3xl font-black text-slate-800">
+            <div className="text-2xl font-black text-slate-800 sm:text-3xl">
               {totalPoints}
             </div>
           </div>
@@ -126,12 +126,12 @@ const FamilyDashboardPage = async ({ params }: Props) => {
 
       {/* Top Star congratulations */}
       {showCongrats && (
-        <div className="relative overflow-hidden rounded-[32px] border-2 border-b-4 border-amber-200 border-b-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-[32px] border-2 border-b-4 border-amber-200 border-b-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 p-5 shadow-sm sm:p-6">
           <Sparkles className="pointer-events-none absolute right-6 top-5 h-6 w-6 text-amber-300" />
           <Sparkles className="pointer-events-none absolute bottom-6 right-24 h-4 w-4 text-yellow-300" />
           <div className="relative z-10 flex items-center gap-4">
             <div className="relative shrink-0">
-              <div className="relative h-16 w-16 overflow-hidden rounded-full border-4 border-amber-200 bg-white">
+              <div className="relative h-14 w-14 sm:h-16 sm:w-16 overflow-hidden rounded-full border-4 border-amber-200 bg-white">
                 <Image
                   src={topChild.userImageSrc}
                   alt={topChild.userName}
@@ -172,7 +172,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black tracking-tight text-slate-800">
+          <h2 className="text-xl font-black tracking-tight text-slate-800 sm:text-2xl">
             {dict["parent.yourChildren"] || "Your Children"}
           </h2>
           <Button asChild variant="secondary" className="rounded-xl">
@@ -181,7 +181,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
         </div>
 
         {children.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-slate-100 bg-white p-12 text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-slate-100 bg-white p-8 text-center shadow-sm sm:p-12">
             <Image
               src="/mascot.svg"
               alt="Mascot"
@@ -200,7 +200,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {children.map((child) => {
               const isTop = showCongrats && child.userId === topChild.userId;
               return (
@@ -218,11 +218,11 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                     <Crown className="h-3 w-3 fill-current" /> {dict["parent.topStar"] || "Top Star"}
                   </span>
                 )}
-                <div className="p-6">
+                <div className="p-5 sm:p-6">
                   <div className="mb-4 flex items-center gap-4">
                     <div
                       className={cn(
-                        "relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 bg-slate-50",
+                        "relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-full border-4 bg-slate-50",
                         isTop ? "border-amber-200" : "border-slate-100"
                       )}
                     >

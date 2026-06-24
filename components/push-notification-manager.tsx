@@ -52,10 +52,15 @@ export const PushNotificationManager = () => {
       const hasSubscribed = !!subscription;
       setIsSubscribed(hasSubscribed);
 
-      // Show modal if not subscribed and hasn't dismissed it before
-      const hasDismissed = localStorage.getItem("hidePushModal");
-      if (!hasSubscribed && !hasDismissed) {
-        setShowModal(true);
+      if (hasSubscribed) {
+        // The browser already has a push subscription, but it may belong to a
+        // previous user on this device. Re-link it to the CURRENT user so they
+        // actually receive pushes (saveSubscription is idempotent).
+        await saveSubscription(JSON.parse(JSON.stringify(subscription)));
+      } else {
+        // Show modal if not subscribed and hasn't dismissed it before
+        const hasDismissed = localStorage.getItem("hidePushModal");
+        if (!hasDismissed) setShowModal(true);
       }
     } catch (err) {
       console.error("Service Worker registration failed:", err);

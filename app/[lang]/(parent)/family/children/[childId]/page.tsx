@@ -74,7 +74,7 @@ const ChildDetailPage = async ({ params }: Props) => {
     (c.lastActiveAt === null || now - new Date(c.lastActiveAt).getTime() >= STALE_MS);
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 sm:space-y-8">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full">
           <Link href={`/${lang}/family/children`}>
@@ -88,31 +88,36 @@ const ChildDetailPage = async ({ params }: Props) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 md:flex-row">
-        {/* Profile overview */}
-        <div className="flex shrink-0 flex-col items-center gap-4 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm md:w-64">
-          <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-slate-100 bg-slate-50">
+      {/* Profile + stats — one unified card */}
+      <div className="overflow-hidden rounded-3xl border-2 border-slate-100 bg-white shadow-sm">
+        {/* Profile header */}
+        <div className="flex items-center gap-4 p-5 sm:p-6">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-emerald-50 bg-slate-50 sm:h-20 sm:w-20">
             <Image
               src={child.userImageSrc}
               alt={child.userName}
               fill
               className="object-cover"
-              sizes="128px"
+              sizes="80px"
             />
           </div>
-          <div className="text-center">
-            <h2 className="text-xl font-black text-slate-800">{child.userName}</h2>
-            <p className="text-sm font-medium text-slate-500">{dict["parent.learner"] || "Learner"}</p>
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-black text-slate-800 sm:text-xl">
+              {child.userName}
+            </h2>
+            <p className="text-sm font-medium text-slate-500">
+              {dict["parent.learner"] || "Learner"}
+            </p>
           </div>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat icon={<Star className="h-7 w-7 text-indigo-500" />} value={child.points} label={dict["parent.xp"] || "XP"} />
-          <Stat icon={<Flame className="h-7 w-7 text-orange-500" />} value={child.streak} label={dict["parent.dayStreak"] || "Day Streak"} />
-          <Stat icon={<Heart className="h-7 w-7 text-rose-500" />} value={child.hearts} label={dict["parent.hearts"] || "Hearts"} />
+        {/* Stats — hairline-separated cells, 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 gap-px border-t-2 border-slate-100 bg-slate-100 sm:grid-cols-4">
+          <Stat icon={<Star className="h-5 w-5 text-indigo-500 sm:h-6 sm:w-6" />} value={child.points} label={dict["parent.xp"] || "XP"} />
+          <Stat icon={<Flame className="h-5 w-5 text-orange-500 sm:h-6 sm:w-6" />} value={child.streak} label={dict["parent.dayStreak"] || "Day Streak"} />
+          <Stat icon={<Heart className="h-5 w-5 text-rose-500 sm:h-6 sm:w-6" />} value={child.hearts} label={dict["parent.hearts"] || "Hearts"} />
           <Stat
-            icon={<Clock className="h-7 w-7 text-emerald-500" />}
+            icon={<Clock className="h-5 w-5 text-emerald-500 sm:h-6 sm:w-6" />}
             value={formatDuration(totalSeconds)}
             label={dict["parent.timeLearning"] || "Time Learning"}
           />
@@ -135,7 +140,7 @@ const ChildDetailPage = async ({ params }: Props) => {
         </div>
 
         {childCourses.length === 0 ? (
-          <div className="rounded-[32px] border-2 border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+          <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm sm:p-10">
             {dict["parent.noCoursesAssigned"] || "No courses assigned yet."}{" "}
             <Link
               href={`/${lang}/family/courses`}
@@ -152,7 +157,7 @@ const ChildDetailPage = async ({ params }: Props) => {
                 className="group overflow-hidden rounded-[28px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white shadow-sm"
               >
                 <summary className="flex cursor-pointer list-none items-center gap-4 p-5">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-50 bg-slate-50">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-50 bg-slate-50 sm:h-16 sm:w-16">
                     <Image
                       src={course.imageSrc}
                       alt={course.title}
@@ -335,11 +340,11 @@ const Stat = ({
   value: React.ReactNode;
   label: string;
 }) => (
-  <div className="flex flex-col items-center justify-center gap-2 rounded-[28px] border-2 border-slate-100 bg-white p-6 shadow-sm">
+  <div className="flex flex-col items-center justify-center gap-1.5 bg-white p-4 text-center sm:p-5">
     {icon}
-    <div className="text-center">
-      <div className="text-2xl font-black text-slate-800">{value}</div>
-      <div className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</div>
+    <div className="text-xl font-black text-slate-800 sm:text-2xl">{value}</div>
+    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
+      {label}
     </div>
   </div>
 );

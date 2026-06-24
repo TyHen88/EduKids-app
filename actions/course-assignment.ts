@@ -5,7 +5,8 @@ import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
-import { courseAssignments, familyMembers, userProgress } from "@/db/schema";
+import { courseAssignments, courses, familyMembers, userProgress } from "@/db/schema";
+import { notifyUser } from "@/actions/notifications";
 
 export const assignCourse = async (childId: string, courseId: number, lang: string = "en") => {
   const { userId } = await auth();
@@ -36,6 +37,27 @@ export const assignCourse = async (childId: string, courseId: number, lang: stri
       childId: childId,
       courseId: courseId,
     });
+
+    // Notify the child about the new assignment (in-app + web push). Only on a
+    // genuinely new assignment, and fire-and-forget so it never blocks the UI.
+    const [course, parent] = await Promise.all([
+      db.query.courses.findFirst({
+        where: eq(courses.id, courseId),
+        columns: { title: true },
+      }),
+      db.query.userProgress.findFirst({
+        where: eq(userProgress.userId, userId),
+        columns: { userName: true },
+      }),
+    ]);
+    void notifyUser(
+      childId,
+      "New course assigned! 📚",
+      `${parent?.userName || "Your parent"} assigned you "${
+        course?.title || "a new course"
+      }". Time to learn!`,
+      `/${lang}/learn`
+    ).catch((e) => console.error("assignCourse notify failed", e));
   }
 
   // Also make it the active course for the child if they don't have one

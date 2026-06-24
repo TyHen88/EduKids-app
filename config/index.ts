@@ -4,6 +4,13 @@ export const siteConfig: Metadata = {
   title: "EduKids",
   description:
     "Interactive learning platform for kids — courses, quizzes, a learning journey, and rewards.",
+  // Launch full-screen (no Safari chrome) when added to the iOS/iPadOS home
+  // screen, which fixes the "zoomed"/scrollbar behavior.
+  appleWebApp: {
+    capable: true,
+    title: "EduKids",
+    statusBarStyle: "default",
+  },
   keywords: [
     "reactjs",
     "nextjs",

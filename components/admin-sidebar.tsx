@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
+import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 import { LanguageToggle } from "@/components/language-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
@@ -46,10 +47,12 @@ export const useAdminTitle = (title: string) => {
 
 export const AdminShell = ({
   children,
+  userId,
   initialNotifications = [],
   initialUnreadCount = 0,
 }: {
   children: ReactNode;
+  userId: string;
   initialNotifications?: AdminNotification[];
   initialUnreadCount?: number;
 }) => {
@@ -57,6 +60,7 @@ export const AdminShell = ({
   const dict = useDictionary();
   const pathname = usePathname();
   const [pageTitle, setPageTitle] = useState<string | null>(null);
+  useLockBodyScroll();
 
   const adminLinks = [
     {
@@ -112,10 +116,10 @@ export const AdminShell = ({
   const headerTitle = pageTitle || sectionTitle();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+    <div className="flex h-dvh overflow-hidden bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <aside className="z-10 hidden w-64 flex-col border-r border-slate-200 bg-white md:flex">
-        <div className="flex h-20 items-center border-b border-slate-100 px-6">
+        <div className="flex h-[calc(5rem+env(safe-area-inset-top))] items-center border-b border-slate-100 px-6 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-indigo-600">
             <GraduationCap className="h-6 w-6" />
             <span>{dict["admin.brandFull"] || "EduKids Admin"}</span>
@@ -158,7 +162,7 @@ export const AdminShell = ({
 
       {/* Main */}
       <div className="flex h-full flex-1 flex-col overflow-hidden">
-        <header className="z-10 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6">
+        <header className="z-10 flex h-[calc(5rem+env(safe-area-inset-top))] items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] md:px-6">
           <div className="flex items-center gap-2 text-xl font-bold text-indigo-600 md:hidden">
             <GraduationCap className="h-6 w-6" />
             <span>{dict["admin.brandShort"] || "Admin"}</span>
@@ -168,6 +172,7 @@ export const AdminShell = ({
           </h1>
           <div className="flex items-center gap-3">
             <NotificationBell
+              userId={userId}
               initialNotifications={initialNotifications}
               initialUnreadCount={initialUnreadCount}
             />
@@ -176,13 +181,42 @@ export const AdminShell = ({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4 md:px-6 md:py-8">
-          <div className="mx-auto w-full max-w-6xl">
+        <main className="flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 py-4 md:px-6 md:py-8">
+          <div className="mx-auto w-full max-w-6xl pb-28 md:pb-0">
             <AdminTitleContext.Provider value={setPageTitle}>
               {children}
             </AdminTitleContext.Provider>
           </div>
         </main>
+
+        {/* Mobile bottom nav — the sidebar is hidden below md, so phones get a
+            floating menu like the student/parent shells. */}
+        <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:hidden">
+          <nav className="pointer-events-auto mx-auto flex w-full max-w-[420px] items-center justify-between rounded-[32px] border border-b-4 border-slate-200 bg-white/90 px-3 py-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+            {adminLinks.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-label={link.name}
+                  className="group relative flex flex-col items-center"
+                >
+                  <div
+                    className={cn(
+                      "transform rounded-2xl p-2.5 transition-all duration-300",
+                      active
+                        ? "-translate-y-1 scale-110 border border-indigo-100 bg-indigo-50 text-indigo-600"
+                        : "text-slate-400 group-hover:bg-slate-50 group-hover:text-slate-600"
+                    )}
+                  >
+                    <link.icon className="h-6 w-6" />
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       </div>
     </div>
   );

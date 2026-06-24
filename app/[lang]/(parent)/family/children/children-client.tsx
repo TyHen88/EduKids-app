@@ -231,11 +231,11 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {children.map((child) => (
             <div
               key={child.userId}
-              className="group relative flex flex-col rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-emerald-200"
+              className="group relative flex flex-col rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-emerald-200 sm:p-5"
             >
               {/* Remove */}
               <button
@@ -249,7 +249,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
 
               {/* Identity */}
               <div className="flex items-center gap-3 pr-8">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-4 border-emerald-50 bg-slate-50">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-4 border-emerald-50 bg-slate-50 sm:h-14 sm:w-14">
                   <Image
                     src={child.userImageSrc}
                     alt={child.userName}

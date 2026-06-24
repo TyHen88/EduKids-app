@@ -15,13 +15,13 @@ const AdminCoursesPage = async ({ params }: Props) => {
   const courses = await getAdminCourses();
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 sm:space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
             {dict["admin.courses"] || "Courses"}
           </h1>
-          <p className="mt-2 text-lg text-slate-500">
+          <p className="mt-1 text-base text-slate-500 sm:mt-2 sm:text-lg">
             {dict["admin.coursesSubtitle"] ||
               "Create and manage your learning courses."}
           </p>

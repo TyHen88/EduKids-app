@@ -3,7 +3,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { Bell, Check, Trash2, MailOpen, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
+import * as Ably from "ably";
 
+import { createAblyTokenRequest } from "@/actions/ably";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -29,6 +31,7 @@ type Notification = {
 };
 
 type NotificationBellProps = {
+  userId: string;
   initialNotifications: Notification[];
   initialUnreadCount: number;
 };
@@ -49,6 +52,7 @@ const formatTimeAgo = (date: Date) => {
 };
 
 export const NotificationBell = ({
+  userId,
   initialNotifications,
   initialUnreadCount,
 }: NotificationBellProps) => {
@@ -64,6 +68,38 @@ export const NotificationBell = ({
     setNotifications(initialNotifications);
     setUnreadCount(initialUnreadCount);
   }, [initialNotifications, initialUnreadCount]);
+
+  // Real-time: subscribe to this user's Ably channel and prepend new
+  // notifications as they arrive (token auth — no API key in the browser).
+  useEffect(() => {
+    if (!userId) return;
+
+    const client = new Ably.Realtime({
+      authCallback: async (_params, callback) => {
+        try {
+          const tokenRequest = await createAblyTokenRequest();
+          callback(null, tokenRequest as never);
+        } catch (err) {
+          callback(err as string, null);
+        }
+      },
+    });
+
+    const channel = client.channels.get(`notifications:${userId}`);
+    const handler = (msg: Ably.Message) => {
+      const incoming = msg.data as Notification;
+      setNotifications((prev) =>
+        prev.some((n) => n.id === incoming.id) ? prev : [incoming, ...prev]
+      );
+      setUnreadCount((prev) => prev + 1);
+    };
+    channel.subscribe("notification", handler);
+
+    return () => {
+      channel.unsubscribe("notification", handler);
+      client.close();
+    };
+  }, [userId]);
 
   const filteredNotifications = notifications.filter((n) =>
     filter === "all" ? true : !n.isRead

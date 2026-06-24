@@ -19,7 +19,16 @@ const battambang = Battambang({
   variable: "--font-battambang",
 });
 
-export const viewport: Viewport = { themeColor: "#D97706" };
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  // Required for env(safe-area-inset-*) to take effect (notch / home indicator)
+  // when the app runs full-screen / added to the iPad/iPhone home screen.
+  viewportFit: "cover",
+};
 export const metadata: Metadata = siteConfig;
 
 export async function generateStaticParams() {

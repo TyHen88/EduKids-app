@@ -21,10 +21,12 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
+import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 import { NotificationBell } from "@/components/notification-bell";
 import { LanguageToggle } from "@/components/language-toggle";
 
 type MainShellProps = {
+  userId: string;
   points: number;
   hearts: number;
   streak: number;
@@ -39,6 +41,7 @@ type MainShellProps = {
 };
 
 export const MainShell = ({
+  userId,
   points,
   hearts,
   streak,
@@ -54,6 +57,7 @@ export const MainShell = ({
   const locale = useLocale();
   const dict = useDictionary();
   const pathname = usePathname();
+  useLockBodyScroll();
 
   const studentLinks = [
     // Home (dashboard) and Star Map (learning path) only make sense once a
@@ -79,8 +83,8 @@ export const MainShell = ({
   };
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
-      <header className="z-10 flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-900">
+      <header className="z-10 flex h-[calc(5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] sm:px-6">
         <Link
           href={`/${locale}/learn`}
           className="flex shrink-0 items-center gap-2 text-xl font-bold text-indigo-600"
@@ -172,6 +176,7 @@ export const MainShell = ({
 
           <div className="ml-1 sm:ml-2">
             <NotificationBell
+              userId={userId}
               initialNotifications={initialNotifications}
               initialUnreadCount={initialUnreadCount}
             />
@@ -198,7 +203,7 @@ export const MainShell = ({
         </div>
       </header>
 
-      <main className="w-full flex-1 overflow-y-auto px-4 pt-6 sm:px-8 desktop:pb-8">
+      <main className="w-full flex-1 overflow-y-auto overscroll-contain px-4 pt-6 sm:px-8 desktop:pb-8">
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 10 }}
@@ -214,7 +219,7 @@ export const MainShell = ({
       </main>
 
       {/* Bottom float nav (everything except real desktop) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex justify-center p-4 desktop:hidden">
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex justify-center px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] desktop:hidden">
         <nav className="pointer-events-auto mx-auto flex w-full max-w-[400px] items-center justify-between rounded-[32px] border border-b-4 border-slate-200 bg-white/90 px-6 py-3 text-center shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-xl">
           {studentLinks.map((link) => {
             const isActive = isLinkActive(link.href);

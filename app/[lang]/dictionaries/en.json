@@ -334,6 +334,7 @@
   "report.questionsToReview": "Questions to Review",
   "report.noMistakes": "No mistakes recorded — great job!",
   "report.saveAsPdf": "Save as PDF",
+  "report.downloadPdf": "Download PDF",
   "common.cancel": "Cancel",
   "common.refresh": "Refresh",
   "common.back": "Back",

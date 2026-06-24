@@ -75,13 +75,13 @@ const AdminSettingsPage = async ({
   ];
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 sm:space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
             {dict["admin.settings"] || "Settings"}
           </h1>
-          <p className="mt-2 text-lg text-slate-500">
+          <p className="mt-1 text-base text-slate-500 sm:mt-2 sm:text-lg">
             {dict["admin.settingsSubtitle"] ||
               "Your account and platform configuration."}
           </p>
@@ -92,8 +92,8 @@ const AdminSettingsPage = async ({
       </div>
 
       {/* Account */}
-      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-lg font-bold tracking-tight text-slate-800">
+      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-5 sm:p-8 shadow-sm">
+        <h2 className="mb-4 text-lg sm:mb-6 font-bold tracking-tight text-slate-800">
           {dict["admin.account"] || "Account"}
         </h2>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -143,7 +143,7 @@ const AdminSettingsPage = async ({
       </div>
 
       {/* Language preference */}
-      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
+      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-5 sm:p-8 shadow-sm">
         <h2 className="mb-2 text-lg font-bold tracking-tight text-slate-800">
           {dict["admin.language"] || "Language"}
         </h2>
@@ -155,8 +155,8 @@ const AdminSettingsPage = async ({
       </section>
 
       {/* Platform config */}
-      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-lg font-bold tracking-tight text-slate-800">
+      <section className="rounded-[32px] border-2 border-slate-100 bg-white p-5 sm:p-8 shadow-sm">
+        <h2 className="mb-4 text-lg sm:mb-6 font-bold tracking-tight text-slate-800">
           {dict["admin.platformConfiguration"] || "Platform configuration"}
         </h2>
         <div className="divide-y divide-slate-100">
@@ -184,7 +184,7 @@ const AdminSettingsPage = async ({
       </section>
 
       {/* Sound & Music (planned) */}
-      <section className="rounded-[32px] border-2 border-dashed border-slate-200 bg-white p-8 shadow-sm">
+      <section className="rounded-[32px] border-2 border-dashed border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
         <div className="mb-2 flex items-center gap-2">
           <Music className="h-5 w-5 text-indigo-600" />
           <h2 className="text-lg font-bold tracking-tight text-slate-800">

@@ -5,7 +5,7 @@ import { Rocket, ArrowLeft, CheckCircle2, Circle, XCircle } from "lucide-react";
 
 import { getChildProgress, getChildCourses } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
-import { PrintButton } from "./print-button";
+import { DownloadPdfButton } from "./download-button";
 
 type Props = {
   params: Promise<{ lang: string; childId: string; courseId: string }>;
@@ -50,6 +50,10 @@ const ReportPage = async ({ params }: Props) => {
     timeStyle: "short",
   });
 
+  // Strip characters that are invalid in filenames; keep it readable.
+  const safe = (s: string) => s.replace(/[\\/:*?"<>|]+/g, "").trim();
+  const pdfFileName = `EduKids - ${safe(child.userName)} - ${safe(course.title)}.pdf`;
+
   // All wrong questions across the course, tagged with their lesson.
   const reviewItems = course.units.flatMap((u) =>
     u.lessons.flatMap((l) =>
@@ -75,11 +79,14 @@ const ReportPage = async ({ params }: Props) => {
         >
           <ArrowLeft className="h-4 w-4" /> {dict["common.back"] || "Back"}
         </Link>
-        <PrintButton />
+        <DownloadPdfButton fileName={pdfFileName} />
       </div>
 
       {/* Paper */}
-      <div className="mx-auto max-w-[800px] rounded-2xl bg-white p-10 shadow-sm print:rounded-none print:p-8 print:shadow-none">
+      <div
+        id="report-paper"
+        className="mx-auto max-w-[800px] rounded-2xl bg-white p-10 shadow-sm print:rounded-none print:p-8 print:shadow-none"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b-2 border-slate-100 pb-5">
           <div className="flex items-center gap-3">

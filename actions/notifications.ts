@@ -1,12 +1,36 @@
 "use server";
 
 import webpush from "web-push";
+import * as Ably from "ably";
 import { auth } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
 import db from "@/db/drizzle";
 import { pushSubscriptions, appNotifications, userProgress } from "@/db/schema";
 import { getAdminIds } from "@/lib/admin";
+
+// Server-side Ably client (REST) for publishing real-time notifications.
+let ablyRest: Ably.Rest | null = null;
+const getAblyRest = () => {
+  const key = process.env.ABLY_API_KEY;
+  if (!key) return null;
+  if (!ablyRest) ablyRest = new Ably.Rest(key);
+  return ablyRest;
+};
+
+// Publish a notification to the recipient's personal channel so an open client
+// updates instantly. Best-effort — never throws into the caller.
+const publishRealtime = async (userId: string, notification: unknown) => {
+  const rest = getAblyRest();
+  if (!rest) return;
+  try {
+    await rest.channels
+      .get(`notifications:${userId}`)
+      .publish("notification", notification);
+  } catch (error) {
+    console.error("Ably publish failed", error);
+  }
+};
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 const VAPID_PRIVATE_KEY = process.env.NEXT_VAPID_PRIVATE_KEY || "";
@@ -30,6 +54,17 @@ export const saveSubscription = async (subscription: any) => {
   }
 
   try {
+    // Idempotent: a browser has one push endpoint, but multiple users may sign
+    // in on it (e.g. a parent then a child on the same device). Link the current
+    // user to this endpoint without creating duplicate rows.
+    const existing = await db.query.pushSubscriptions.findFirst({
+      where: and(
+        eq(pushSubscriptions.userId, userId),
+        eq(pushSubscriptions.endpoint, subscription.endpoint)
+      ),
+    });
+    if (existing) return { success: true };
+
     await db.insert(pushSubscriptions).values({
       userId,
       endpoint: subscription.endpoint,
@@ -111,22 +146,25 @@ export const sendPushNotification = async (userId: string, title: string, body: 
 
 export const createAppNotification = async (userId: string, title: string, message: string, actionUrl: string = "/") => {
   try {
-    await db.insert(appNotifications).values({
-      userId,
-      title,
-      message,
-      actionUrl,
-    });
+    const [row] = await db
+      .insert(appNotifications)
+      .values({ userId, title, message, actionUrl })
+      .returning();
+    return row ?? null;
   } catch (error) {
     console.error("Failed to create app notification", error);
+    return null;
   }
 };
 
 export const notifyUser = async (userId: string, title: string, message: string, url: string = "/") => {
   // 1. Save to in-app history
-  await createAppNotification(userId, title, message, url);
+  const row = await createAppNotification(userId, title, message, url);
 
-  // 2. Trigger web push to all their devices
+  // 2. Push it to the user's live client via Ably (instant bell update)
+  if (row) await publishRealtime(userId, row);
+
+  // 3. Trigger web push to all their devices
   await sendPushNotification(userId, title, message, url);
 };
 

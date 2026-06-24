@@ -44,6 +44,7 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
     <>
       <PushNotificationManager />
       <MainShell
+        userId={userId}
         points={userProgress?.points ?? 0}
         hearts={userProgress?.hearts ?? 0}
         streak={userProgress?.streak ?? 0}

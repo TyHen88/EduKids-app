@@ -111,6 +111,26 @@ body,
   font-family: var(--font-battambang), var(--font-nunito), sans-serif;
 }
 
+/* iOS/iPadOS auto-zooms the page when a focused form field is smaller than 16px.
+   Force >= 16px on touch-sized screens so focusing any input never zooms.
+   (!important overrides the Tailwind text-sm/text-xs utilities on inputs.) */
+@media (max-width: 1180px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Remove the browser's print header/footer (page URL + date) from PDF exports
+   like the progress report. A zero page margin leaves the browser no room to
+   draw them; the report supplies its own padding (print:p-8) and footer. */
+@media print {
+  @page {
+    margin: 0;
+  }
+}
+
 /* ── Khmer font helpers (loaded via Google Fonts in app/[lang]/layout.tsx) ── */
 .khmer-regular {
   font-family: "Khmer", sans-serif;
