@@ -361,7 +361,8 @@ export const ContentManager = ({
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!editor) return;
     const { kind, mode, parentId, entityId } = editor;
     const verb =
@@ -1108,12 +1109,11 @@ export const ContentManager = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-
-
+          <form onSubmit={onSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>{dict["admin.fieldTitle"] || "Title"}</Label>
               <Input
+                autoFocus
                 value={form.title}
                 onChange={(e) => setField("title", e.target.value)}
               />
@@ -1128,20 +1128,25 @@ export const ContentManager = ({
                 />
               </div>
             )}
-          </div>
 
-          <DialogFooter>
-            <Button variant="ghost" onClick={cancelEditor} disabled={pending}>
-              {dict["common.cancel"] || "Cancel"}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={pending || !form.title}
-              onClick={onSubmit}
-            >
-              {dict["common.save"] || "Save"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={cancelEditor}
+                disabled={pending}
+              >
+                {dict["common.cancel"] || "Cancel"}
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={pending || !form.title}
+              >
+                {dict["common.save"] || "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

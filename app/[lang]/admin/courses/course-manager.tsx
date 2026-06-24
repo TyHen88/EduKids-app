@@ -150,7 +150,8 @@ export const CourseManager = ({
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!form.title.trim()) {
       toast.error(dict["admin.titleRequired"] || "Title is required.");
       return;
@@ -401,11 +402,12 @@ export const CourseManager = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <form onSubmit={onSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title">{dict["admin.fieldTitle"] || "Title"}</Label>
               <Input
                 id="title"
+                autoFocus
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
                 placeholder={dict["admin.titlePlaceholder"] || "e.g. Science Explorer"}
@@ -488,22 +490,27 @@ export const CourseManager = ({
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button
-              variant="primaryOutline"
-              onClick={() => setOpen(false)}
-              disabled={pending || uploading}
-            >
-              {dict["common.cancel"] || "Cancel"}
-            </Button>
-            <Button variant="primary" onClick={onSubmit} disabled={pending || uploading}>
-              {editingId
-                ? dict["admin.saveChanges"] || "Save changes"
-                : dict["common.create"] || "Create"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="primaryOutline"
+                onClick={() => setOpen(false)}
+                disabled={pending || uploading}
+              >
+                {dict["common.cancel"] || "Cancel"}
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={pending || uploading}
+              >
+                {editingId
+                  ? dict["admin.saveChanges"] || "Save changes"
+                  : dict["common.create"] || "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
