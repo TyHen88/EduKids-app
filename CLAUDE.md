@@ -34,7 +34,7 @@ There is **no test suite**. Schema changes are applied with `db:push` (Drizzle g
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript (strict) · Tailwind CSS 3 + shadcn/ui (Radix) · Drizzle ORM on Neon serverless Postgres · Supabase Auth (`@supabase/ssr`) · Zustand (client modals) · `motion` (animations) · `lucide-react`. Path alias `@/*` → repo root.
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript (strict) · Tailwind CSS 3 + shadcn/ui (Radix) · Drizzle ORM (`postgres-js`) on Supabase Postgres · Supabase Auth (`@supabase/ssr`) · Zustand (client modals) · `motion` (animations) · `lucide-react`. Path alias `@/*` → repo root.
 
 ### Auth (Supabase)
 Auth was migrated from Clerk to Supabase Auth — see `SUPABASE_SETUP.md` for project setup. Key files:
@@ -48,7 +48,7 @@ Auth was migrated from Clerk to Supabase Auth — see `SUPABASE_SETUP.md` for pr
 
 ### Data layer (`db/`)
 - `db/schema.ts` — single source of truth. Hierarchy: `courses → units → lessons → challenges → challengeOptions`. Plus `challengeProgress`, `userProgress` (hearts/points/**streak**/active course), and `badges` + `userBadges` (achievements). `courses` carry extended `description`/`category`/`difficulty`. `challengesEnum` is `SELECT | ASSIST`.
-- `db/drizzle.ts` — exports the `db` client (Neon HTTP driver + schema).
+- `db/drizzle.ts` — exports the `db` client (`postgres-js` driver against Supabase Postgres + schema). Uses `prepare: false` for Supabase's transaction pooler (pgbouncer), plus `idle_timeout`/`connect_timeout`.
 - `db/queries.ts` — all reads, each wrapped in React `cache()` and scoped to the Supabase auth `userId` (via `auth()` from `lib/auth.ts`). Key queries: `getUserProgress`, `getUnits`, `getCourseProgress`, `getLesson(Percentage)`, `getCoursesWithProgress` (courses decorated with per-user progress %/status for "My Backpack"), `getBadges`/`getUserBadges`, `getTopTenUsers` (leaderboard), `getAdminStats`. `getUserSubscription` is a **stub** that always returns `isActive: true` (Stripe was removed) — gameplay actions still branch on it so hearts are effectively unlimited.
 - Writes are **server actions** in `actions/` (`"use server"`): `upsertChallengeProgress`, `reduceHearts`, `refillHearts`, `upsertUserProgress(courseId, lang)`. They call `auth()`, mutate, then `revalidatePath(...)`. Gameplay constants in `constants.ts` (`MAX_HEARTS = 5`, `POINTS_TO_REFILL = 10`, +10 points per challenge, `QUESTS` XP thresholds reused for dashboard "Today's Goals").
 
@@ -78,4 +78,4 @@ Stripe/subscriptions (lib + webhook + table), the shop and quests **pages**, the
 - `scripts/prod.ts` (`db:prod`) **deletes all data** before seeding (courses with extended fields + a starter set of badges).
 
 ## Environment
-Copy `.env.example` to `.env`. Vars: `DATABASE_URL` (Neon), Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`), `ADMIN_IDS` (**comma-and-space** separated Supabase user UUIDs: `uuid-a, uuid-b`), `NEXT_PUBLIC_APP_URL`, `BLOB_READ_WRITE_TOKEN` (Vercel Blob), VAPID keys (web push). See `SUPABASE_SETUP.md`.
+Copy `.env.example` to `.env`. Vars: `DATABASE_URL` (Supabase Postgres — use the pooled/transaction-pooler connection string), Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`), `ADMIN_IDS` (**comma-and-space** separated Supabase user UUIDs: `uuid-a, uuid-b`), `NEXT_PUBLIC_APP_URL`, `BLOB_READ_WRITE_TOKEN` (Vercel Blob), VAPID keys (web push). See `SUPABASE_SETUP.md`.

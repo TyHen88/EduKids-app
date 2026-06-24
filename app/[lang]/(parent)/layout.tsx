@@ -4,7 +4,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { ParentShell } from "@/components/parent-shell";
-import { getUserProgress } from "@/db/queries";
+import {
+  getUserProgress,
+  getUserNotifications,
+  getUnreadNotificationCount,
+} from "@/db/queries";
 
 type ParentLayoutProps = {
   children: ReactNode;
@@ -26,10 +30,17 @@ const ParentLayout = async ({ children, params }: ParentLayoutProps) => {
 
   if (userProgress.role !== "parent") redirect(`/${lang}/learn`);
 
+  const [notifications, unreadCount] = await Promise.all([
+    getUserNotifications(),
+    getUnreadNotificationCount(),
+  ]);
+
   return (
     <ParentShell
       userImageSrc={userProgress?.userImageSrc || "/mascot.svg"}
       userName={userProgress?.userName || "Parent"}
+      initialNotifications={notifications}
+      initialUnreadCount={unreadCount}
     >
       {children}
     </ParentShell>

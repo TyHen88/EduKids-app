@@ -31,7 +31,7 @@ export const links = {
 };
 ```
 
-`links.sourceCode` / `links.email` are surfaced in the banner/header. Update `authors`, `links.sourceCode`, and `links.email` to your own org/support details. Also review the `keywords` array (still contains `duolingo-clone`, `romduolkids`) for SEO.
+`links.sourceCode` / `links.email` are surfaced in the banner/header. Update `authors`, `links.sourceCode`, and `links.email` to your own org/support details. Also review the `keywords` array (still contains `duolingo-clone`, `Edukids`) for SEO.
 
 ---
 

@@ -6,6 +6,7 @@ import { Loader2, MailCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
@@ -221,9 +222,8 @@ export default function SignUpPage() {
           <Label htmlFor="password">
             {dict["auth.password"] || "Password"}
           </Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             required
             value={password}

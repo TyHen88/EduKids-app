@@ -6,6 +6,7 @@ import { ExitModal } from "@/components/modals/exit-modal";
 import { HeartsModal } from "@/components/modals/hearts-modal";
 import { PracticeModal } from "@/components/modals/practice-modal";
 import { Toaster } from "@/components/ui/sonner";
+import { WelcomeToast } from "@/components/welcome-toast";
 
 import { getDictionary, defaultLocale, locales } from "./dictionaries";
 import { DictionaryProvider } from "./lang-provider";
@@ -40,9 +41,10 @@ export default async function RootLayout({
   const fontClass = lang === "km" ? "font-app-khmer" : "font-app-latin";
   return (
     <html lang={lang} className={`${nunito.variable} ${battambang.variable}`}>
-      <body className={fontClass}>
+      <body className={fontClass} suppressHydrationWarning>
         <DictionaryProvider dictionary={dict} lang={lang as any}>
-          <Toaster theme="light" richColors closeButton />
+          <Toaster />
+          <WelcomeToast />
           <ExitModal />
           <HeartsModal />
           <PracticeModal />

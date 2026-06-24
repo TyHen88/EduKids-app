@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/admin-sidebar";
 import { getIsAdmin } from "@/lib/admin";
+import {
+  getUserNotifications,
+  getUnreadNotificationCount,
+} from "@/db/queries";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -16,7 +20,19 @@ const AdminLayout = async ({ children, params }: AdminLayoutProps) => {
 
   if (!isAdmin) redirect(`/${lang}/learn`);
 
-  return <AdminShell>{children}</AdminShell>;
+  const [notifications, unreadCount] = await Promise.all([
+    getUserNotifications(),
+    getUnreadNotificationCount(),
+  ]);
+
+  return (
+    <AdminShell
+      initialNotifications={notifications}
+      initialUnreadCount={unreadCount}
+    >
+      {children}
+    </AdminShell>
+  );
 };
 
 export default AdminLayout;

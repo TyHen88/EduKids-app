@@ -1,7 +1,15 @@
 import Image from "next/image";
 import { currentUser } from "@/lib/auth";
 import { UserMenu } from "@/components/auth/user-menu";
-import { Heart, Coins, Globe, ShieldCheck, Settings as Cog } from "lucide-react";
+import {
+  Heart,
+  Coins,
+  Globe,
+  ShieldCheck,
+  Settings as Cog,
+  Volume2,
+  Music,
+} from "lucide-react";
 
 import { MAX_HEARTS, POINTS_TO_REFILL } from "@/constants";
 import {
@@ -10,6 +18,8 @@ import {
   getDictionary,
 } from "@/app/[lang]/dictionaries";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SettingsForm } from "@/components/settings/settings-form";
+import { getUserProgress, getIsChild } from "@/db/queries";
 
 const AdminSettingsPage = async ({
   params,
@@ -18,7 +28,11 @@ const AdminSettingsPage = async ({
 }) => {
   const { lang } = await params;
   const dict = await getDictionary(lang as "km" | "en");
-  const user = await currentUser();
+  const [user, progress, isChild] = await Promise.all([
+    currentUser(),
+    getUserProgress(),
+    getIsChild(),
+  ]);
 
   const adminCount =
     process.env.ADMIN_IDS?.split(", ").filter(Boolean).length ?? 0;
@@ -114,6 +128,20 @@ const AdminSettingsPage = async ({
         </div>
       </section>
 
+      {/* Account security & preferences (password, notifications, sound) */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold tracking-tight text-slate-800">
+          {dict["admin.accountSecurity"] || "Account & preferences"}
+        </h2>
+        <SettingsForm
+          lang={lang}
+          email={user?.email ?? ""}
+          isChild={isChild}
+          notificationsEnabled={progress?.notificationsEnabled ?? true}
+          passwordSet={progress?.passwordSet ?? false}
+        />
+      </div>
+
       {/* Language preference */}
       <section className="rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">
         <h2 className="mb-2 text-lg font-bold tracking-tight text-slate-800">
@@ -152,6 +180,50 @@ const AdminSettingsPage = async ({
             "Admin accounts are configured via the"}{" "}
           <code>ADMIN_IDS</code>{" "}
           {dict["admin.environmentVariable"] || "environment variable."}
+        </p>
+      </section>
+
+      {/* Sound & Music (planned) */}
+      <section className="rounded-[32px] border-2 border-dashed border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-2 flex items-center gap-2">
+          <Music className="h-5 w-5 text-indigo-600" />
+          <h2 className="text-lg font-bold tracking-tight text-slate-800">
+            {dict["admin.soundMusic"] || "Sound & Music"}
+          </h2>
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+            {dict["admin.comingSoon"] || "Coming soon"}
+          </span>
+        </div>
+        <p className="mb-5 text-sm font-medium text-slate-500">
+          {dict["admin.soundMusicDesc"] ||
+            "Configure sound effects and background music for learners."}
+        </p>
+
+        <div className="space-y-3 opacity-60">
+          {[
+            { icon: Volume2, label: dict["settings.soundTitle"] || "Sound & Music" },
+            { icon: Music, label: dict["admin.soundMusic"] || "Sound & Music" },
+          ].map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center justify-between rounded-2xl border-2 border-slate-100 p-4"
+            >
+              <span className="flex items-center gap-3 font-bold text-slate-600">
+                <row.icon className="h-5 w-5 text-slate-400" />
+                {row.label}
+              </span>
+              {/* Static, non-interactive preview of the future toggle. */}
+              <span className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200">
+                <span className="ml-0.5 inline-block h-5 w-5 rounded-full bg-white shadow" />
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-6 rounded-2xl bg-slate-50 p-4 text-xs font-medium text-slate-400">
+          {dict["admin.roleBasedNote"] ||
+            "Role-based settings (learner, parent, admin) are planned."}{" "}
+          <code>SOUND_AND_MUSIC_PLAN.md</code>
         </p>
       </section>
     </div>

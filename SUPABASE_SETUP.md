@@ -2,8 +2,9 @@
 
 Auth was migrated from Clerk to **Supabase Auth** (`@supabase/ssr`). The code is
 complete and type-checks, but it needs a Supabase project + the steps below to
-run end-to-end. The app **database stays on Neon** — Supabase is used only for
-authentication. `userProgress.userId` now stores the Supabase auth user UUID.
+run end-to-end. The app **database also runs on Supabase Postgres** — Drizzle
+connects via `postgres-js` through the transaction pooler (`DATABASE_URL`).
+`userProgress.userId` stores the Supabase auth user UUID.
 
 ## 1. Create a Supabase project & set env vars
 
@@ -17,6 +18,12 @@ authentication. `userProgress.userId` now stores the Supabase auth user UUID.
    The service-role key is used by `lib/supabase/admin.ts` for parent-created
    child accounts (`actions/family.ts`) and username lookups (`db/queries.ts`).
    **Never expose it to the browser.**
+3. Project Settings → **Database** → Connection string → **Transaction pooler**,
+   copy into `.env` as `DATABASE_URL` (Drizzle/`postgres-js` use this; the pooler
+   is why `db/drizzle.ts` sets `prepare: false`):
+   ```
+   DATABASE_URL=postgresql://postgres.<ref>:<password>@<host>:6543/postgres
+   ```
 
 ## 2. Auth providers & URLs (Supabase dashboard → Authentication)
 
@@ -56,7 +63,7 @@ ADMIN_IDS=11111111-1111-1111-1111-111111111111, 22222222-2222-2222-2222-22222222
 ## 5. Run
 
 ```
-npm run db:push     # ensure the Neon schema exists (unchanged by this migration)
+npm run db:push     # create/update the schema on Supabase Postgres
 npm run dev
 ```
 

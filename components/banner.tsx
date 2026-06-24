@@ -12,7 +12,7 @@ type BannerProps = {
   setHide: Dispatch<SetStateAction<boolean>>;
 };
 
-const BANNER_KEY = "hide-romduolkids-banner";
+const BANNER_KEY = "hide-Edukids-banner";
 
 // Temporarily disabled. Flip back to `true` to re-enable the announcement.
 const BANNER_ENABLED = false;

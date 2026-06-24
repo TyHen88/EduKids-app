@@ -1,11 +1,11 @@
 import { cache } from "react";
 
-import { eq, ilike, not, and, inArray, isNull, or } from "drizzle-orm";
+import { eq, ilike, not, and, inArray, isNull, or, count } from "drizzle-orm";
 
 import db from "./drizzle";
 import { auth } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAdminIds } from "@/lib/admin";
+import { getAdminIds, getIsAdmin } from "@/lib/admin";
 import {
   lessonBlockProgress,
   lessonTime,
@@ -18,6 +18,7 @@ import {
   appNotifications,
   familyMembers,
   courseAssignments,
+  loginAudit,
 } from "./schema";
 
 // Returns only public (admin-created) courses. Private parent-created courses are excluded.
@@ -265,7 +266,13 @@ export const getTopTenUsers = cache(async () => {
 
   if (!userId) return [];
 
+  // Admin accounts are staff, not players — keep them off the leaderboard.
+  const adminIds = getAdminIds();
+
   const data = await db.query.userProgress.findMany({
+    where: adminIds.length
+      ? not(inArray(userProgress.userId, adminIds))
+      : undefined,
     orderBy: (userProgress, { desc }) => [desc(userProgress.points)],
     limit: 10,
     columns: {
@@ -372,6 +379,11 @@ export const getTopFriends = cache(async () => {
     followingIds.push(userId); // include self
   }
 
+  // Never surface admin accounts in the friends leaderboard.
+  const adminSet = new Set(getAdminIds());
+  followingIds = followingIds.filter((id) => !adminSet.has(id));
+  if (followingIds.length === 0) return [];
+
   const data = await db.query.userProgress.findMany({
     where: inArray(userProgress.userId, followingIds),
     orderBy: (userProgress, { desc }) => [desc(userProgress.points)],
@@ -400,15 +412,51 @@ export const searchUsers = cache(async (query: string, offset: number = 0) => {
   const { userId } = await auth();
   if (!userId) return [];
 
+  // Build conditions: exclude self, exclude admins, and optionally match name.
+  const adminIds = getAdminIds();
+  const conditions = [not(eq(userProgress.userId, userId))];
+  if (query) conditions.push(ilike(userProgress.userName, `%${query}%`));
+  if (adminIds.length) conditions.push(not(inArray(userProgress.userId, adminIds)));
+
   const data = await db.query.userProgress.findMany({
-    where: query 
-      ? and(ilike(userProgress.userName, `%${query}%`), not(eq(userProgress.userId, userId)))
-      : not(eq(userProgress.userId, userId)),
+    where: and(...conditions),
     limit: 10,
     offset: offset,
   });
 
   return data;
+});
+
+// --- Audit log (admin only) --------------------------------------------------
+export const getLoginAudit = cache(async (offset = 0, limit = 20) => {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) return [];
+
+  try {
+    return await db.query.loginAudit.findMany({
+      orderBy: (loginAudit, { desc }) => [desc(loginAudit.createdAt)],
+      limit,
+      offset,
+    });
+  } catch (error) {
+    // The table may not exist yet (run `npm run db:push`). Fail soft so the
+    // admin page renders an empty state instead of crashing.
+    console.error("getLoginAudit failed (did you run db:push?)", error);
+    return [];
+  }
+});
+
+export const getLoginAuditCount = cache(async () => {
+  const isAdmin = await getIsAdmin();
+  if (!isAdmin) return 0;
+
+  try {
+    const [row] = await db.select({ value: count() }).from(loginAudit);
+    return row?.value ?? 0;
+  } catch (error) {
+    console.error("getLoginAuditCount failed (did you run db:push?)", error);
+    return 0;
+  }
 });
 
 export const getIsChild = cache(async () => {

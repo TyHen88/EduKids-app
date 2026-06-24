@@ -12,12 +12,23 @@ import {
   BookOpen,
   Settings,
   LogOut,
+  ScrollText,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { NotificationBell } from "@/components/notification-bell";
+
+type AdminNotification = {
+  id: number;
+  title: string;
+  message: string;
+  isRead: boolean;
+  actionUrl: string | null;
+  createdAt: Date;
+};
 
 // Lets a page override the header title (e.g. show a course name instead of the
 // raw id from the URL). Pages call useAdminTitle() to register their title.
@@ -33,7 +44,15 @@ export const useAdminTitle = (title: string) => {
   }, [title, setTitle]);
 };
 
-export const AdminShell = ({ children }: { children: ReactNode }) => {
+export const AdminShell = ({
+  children,
+  initialNotifications = [],
+  initialUnreadCount = 0,
+}: {
+  children: ReactNode;
+  initialNotifications?: AdminNotification[];
+  initialUnreadCount?: number;
+}) => {
   const locale = useLocale();
   const dict = useDictionary();
   const pathname = usePathname();
@@ -54,6 +73,11 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
       name: dict["admin.navCourses"] || "Courses",
       href: `/${locale}/admin/courses`,
       icon: BookOpen,
+    },
+    {
+      name: dict["admin.navAudit"] || "Login Audit",
+      href: `/${locale}/admin/audit`,
+      icon: ScrollText,
     },
     {
       name: dict["admin.navSettings"] || "Settings",
@@ -77,6 +101,8 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
         return dict["admin.navUsers"] || "Users";
       case "courses":
         return dict["admin.navCourses"] || "Courses";
+      case "audit":
+        return dict["admin.navAudit"] || "Login Audit";
       case "settings":
         return dict["admin.navSettings"] || "Settings";
       default:
@@ -141,6 +167,10 @@ export const AdminShell = ({ children }: { children: ReactNode }) => {
             {headerTitle}
           </h1>
           <div className="flex items-center gap-3">
+            <NotificationBell
+              initialNotifications={initialNotifications}
+              initialUnreadCount={initialUnreadCount}
+            />
             <LanguageToggle />
             <UserMenu />
           </div>

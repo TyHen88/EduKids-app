@@ -17,12 +17,6 @@ export const AuthShell = ({
   return (
     <div className="w-full max-w-md px-4 py-8">
       <div className="mb-6 flex flex-col items-center text-center">
-        <div className="mb-4 flex items-center gap-2 text-2xl font-extrabold text-indigo-600">
-          <div className="rounded-xl bg-indigo-600 p-2 text-white">
-            <Rocket className="h-6 w-6" />
-          </div>
-          EduKids
-        </div>
         <h1 className="text-2xl font-black tracking-tight text-slate-800">
           {title}
         </h1>

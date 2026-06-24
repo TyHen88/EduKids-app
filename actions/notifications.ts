@@ -5,7 +5,8 @@ import { auth } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
 import db from "@/db/drizzle";
-import { pushSubscriptions, appNotifications } from "@/db/schema";
+import { pushSubscriptions, appNotifications, userProgress } from "@/db/schema";
+import { getAdminIds } from "@/lib/admin";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 const VAPID_PRIVATE_KEY = process.env.NEXT_VAPID_PRIVATE_KEY || "";
@@ -44,6 +45,15 @@ export const saveSubscription = async (subscription: any) => {
 
 export const sendPushNotification = async (userId: string, title: string, body: string, url: string = "/") => {
   try {
+    // 0. Respect the recipient's notification preference (Settings toggle).
+    const recipient = await db.query.userProgress.findFirst({
+      where: eq(userProgress.userId, userId),
+      columns: { notificationsEnabled: true },
+    });
+    if (recipient && !recipient.notificationsEnabled) {
+      return { success: false, message: "User has notifications disabled" };
+    }
+
     // 1. Fetch all subscriptions for the user
     const userSubscriptions = await db.query.pushSubscriptions.findMany({
       where: eq(pushSubscriptions.userId, userId),
@@ -71,7 +81,14 @@ export const sendPushNotification = async (userId: string, title: string, body: 
       };
 
       try {
-        await webpush.sendNotification(pushSubscription, payload);
+        // Bound the request so an unreachable/stale push endpoint can never
+        // hang the caller (this was leaving create-child requests pending).
+        await Promise.race([
+          webpush.sendNotification(pushSubscription, payload),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("push-timeout")), 5000)
+          ),
+        ]);
       } catch (error: any) {
         if (error.statusCode === 410 || error.statusCode === 404) {
           // Subscription has expired or is no longer valid, we should delete it
@@ -108,9 +125,19 @@ export const createAppNotification = async (userId: string, title: string, messa
 export const notifyUser = async (userId: string, title: string, message: string, url: string = "/") => {
   // 1. Save to in-app history
   await createAppNotification(userId, title, message, url);
-  
+
   // 2. Trigger web push to all their devices
   await sendPushNotification(userId, title, message, url);
+};
+
+// Fan a notification out to every configured admin (ADMIN_IDS). Used for staff
+// alerts such as a new user registering. Best-effort: a failing admin (e.g. one
+// with no profile row) is logged inside notifyUser and never blocks the caller.
+export const notifyAdmins = async (title: string, message: string, url: string = "/") => {
+  const adminIds = getAdminIds();
+  await Promise.all(
+    adminIds.map((adminId) => notifyUser(adminId, title, message, url))
+  );
 };
 
 export const markNotificationAsRead = async (notificationId: number) => {

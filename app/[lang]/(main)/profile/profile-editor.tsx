@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import Link from "next/link";
 import {
   Check,
   LogOut,
@@ -13,6 +14,8 @@ import {
   Heart,
   Mail,
   Upload,
+  Settings,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -199,6 +202,18 @@ export const ProfileEditor = ({
           </div>
         ))}
       </div>
+
+      {/* Settings link */}
+      <Link
+        href={`/${locale}/settings`}
+        className="flex items-center justify-between rounded-[24px] border-2 border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
+      >
+        <span className="flex items-center gap-3 font-bold text-slate-700">
+          <Settings className="h-5 w-5 text-indigo-600" />
+          {dict["nav.settings"] || "Settings"}
+        </span>
+        <ChevronRight className="h-5 w-5 text-slate-400" />
+      </Link>
 
       {/* Edit card */}
       <div className="space-y-6 rounded-[32px] border-2 border-slate-100 bg-white p-8 shadow-sm">

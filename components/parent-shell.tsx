@@ -18,16 +18,30 @@ import {
 import { cn } from "@/lib/utils";
 import { useDictionary, useLocale } from "@/app/[lang]/lang-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { NotificationBell } from "@/components/notification-bell";
+
+type ParentNotification = {
+  id: number;
+  title: string;
+  message: string;
+  isRead: boolean;
+  actionUrl: string | null;
+  createdAt: Date;
+};
 
 type ParentShellProps = {
   userImageSrc: string;
   userName: string;
+  initialNotifications?: ParentNotification[];
+  initialUnreadCount?: number;
   children: ReactNode;
 };
 
 export const ParentShell = ({
   userImageSrc,
   userName,
+  initialNotifications = [],
+  initialUnreadCount = 0,
   children,
 }: ParentShellProps) => {
   const locale = useLocale();
@@ -39,7 +53,7 @@ export const ParentShell = ({
     { name: dict["nav.children"] || "Children", href: `/${locale}/family/children`, icon: Users },
     { name: dict["nav.myCourses"] || "My Courses", href: `/${locale}/family/my-courses`, icon: GraduationCap },
     { name: dict["nav.courses"] || "Courses", href: `/${locale}/family/courses`, icon: BookOpen },
-    { name: dict["nav.settings"] || "Settings", href: `/${locale}/family/profile`, icon: Settings },
+    { name: dict["nav.settings"] || "Settings", href: `/${locale}/family/settings`, icon: Settings },
   ];
 
   const isLinkActive = (href: string) => {
@@ -89,6 +103,10 @@ export const ParentShell = ({
         </nav>
 
         <div className="flex shrink-0 items-center space-x-2 sm:space-x-4">
+          <NotificationBell
+            initialNotifications={initialNotifications}
+            initialUnreadCount={initialUnreadCount}
+          />
           <LanguageToggle />
 
           <Link

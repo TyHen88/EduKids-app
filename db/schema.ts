@@ -186,6 +186,13 @@ export const userProgress = pgTable("user_progress", {
   familyName: text("family_name").notNull().default("My Family"),
   familyCover: text("family_cover").notNull().default("emerald"),
   familyMotto: text("family_motto").notNull().default(""),
+  // --- Preferences ---
+  // Gates web-push delivery for this user (in-app history is always kept).
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
+  // True once the user has set a password through the app. Needed because
+  // Supabase doesn't expose "has password" for OAuth users who set one (no
+  // email identity is added), so the Settings UI can't infer it from providers.
+  passwordSet: boolean("password_set").notNull().default(false),
 });
 
 export const userProgressRelations = relations(
@@ -368,3 +375,20 @@ export const appNotificationsRelations = relations(appNotifications, ({ one }) =
     references: [userProgress.userId],
   }),
 }));
+
+// --- Audit log ---------------------------------------------------------------
+// Records account events for the admin audit log. Intentionally has NO foreign
+// key to userProgress so an event can be recorded even before the user has
+// completed onboarding (no profile row yet). userName/role are snapshots.
+export const loginAudit = pgTable("login_audit", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  userName: text("user_name"),
+  role: text("role"),
+  // login | logout | signup | create_child | change_password
+  event: text("event").notNull().default("login"),
+  loginType: text("login_type"), // email | google | pin — for login/signup
+  // Human-readable reason/description of what the user did.
+  reason: text("reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

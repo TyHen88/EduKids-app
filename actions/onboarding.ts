@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
 import { userProgress } from "@/db/schema";
+import { notifyAdmins } from "@/actions/notifications";
 
 // Whether the currently signed-in user has a profile row in THIS database.
 // Used to detect "orphaned identities" — e.g. a child that exists in the
@@ -46,6 +47,14 @@ export const createUserWithRole = async (role: "learner" | "parent", lang: strin
       userImageSrc: user.imageUrl || "/mascot.svg",
       role,
     });
+
+    // Alert admins about the new registration (in-app + web push). Fire-and-
+    // forget: notifications must never block or delay onboarding.
+    void notifyAdmins(
+      "New user registered 🎉",
+      `${user.firstName || "A new user"} just joined as a ${role}.`,
+      `/${lang}/admin/students`
+    ).catch((e) => console.error("notifyAdmins failed", e));
   }
 
   revalidatePath(`/${lang}/learn`);

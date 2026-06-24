@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { recordLogout } from "@/actions/audit";
 import { useLocale } from "@/app/[lang]/lang-provider";
 
 /**
@@ -18,6 +19,8 @@ export function useSignOut() {
   return useCallback(
     async (redirectTo?: string) => {
       const supabase = createClient();
+      // Record the logout while the session cookie is still valid.
+      await recordLogout().catch(() => {});
       await supabase.auth.signOut();
       router.push(redirectTo ?? `/${locale}`);
       router.refresh();

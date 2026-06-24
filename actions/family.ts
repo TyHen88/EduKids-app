@@ -8,6 +8,8 @@ import { auth } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { userProgress, familyMembers, courseAssignments } from "@/db/schema";
 import { MAX_HEARTS } from "@/constants";
+import { notifyAdmins } from "@/actions/notifications";
+import { recordCreateChild } from "@/actions/audit";
 
 export const createChildAccount = async (
   name: string,
@@ -59,6 +61,17 @@ export const createChildAccount = async (
     parentId: userId,
     childId: childId,
   });
+
+  // Audit the action (the parent created a child account).
+  void recordCreateChild(name).catch(() => {});
+
+  // Alert admins about the new child account (in-app + web push). Fire-and-
+  // forget: notifications must never block or delay the create flow.
+  void notifyAdmins(
+    "New user registered 🎉",
+    `${name} was added as a new kid account.`,
+    `/${lang}/admin/students`
+  ).catch((e) => console.error("notifyAdmins failed", e));
 
   revalidatePath(`/${lang}/family/children`);
   revalidatePath(`/${lang}/family`);

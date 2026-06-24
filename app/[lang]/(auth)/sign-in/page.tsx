@@ -7,9 +7,12 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { AuthShell, authInputClass } from "@/components/auth/auth-shell";
 import { GoogleButton } from "@/components/auth/google-button";
 import { authError } from "@/lib/auth-error";
+import { recordLogin } from "@/actions/audit";
+import { WELCOME_TOAST_KEY } from "@/components/welcome-toast";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 
@@ -46,6 +49,8 @@ export default function SignInPage() {
         return;
       }
 
+      await recordLogin("email");
+      sessionStorage.setItem(WELCOME_TOAST_KEY, "1");
       window.location.assign(`/${locale}/learn`);
       return;
     } catch (err) {
@@ -116,9 +121,8 @@ export default function SignInPage() {
               {dict["auth.forgot"] || "Forgot?"}
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             required
             value={password}
