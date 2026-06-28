@@ -205,35 +205,79 @@ export const userProgressRelations = relations(
     userBadges: many(userBadges),
     followers: many(userFollowers, { relationName: "following" }),
     following: many(userFollowers, { relationName: "follower" }),
-    // Parent-child family relations
-    childrenAsParent: many(familyMembers, { relationName: "parent" }),
-    parentsAsChild: many(familyMembers, { relationName: "child" }),
+    // Family Group relations
+    ownedFamilyGroups: many(familyGroups, { relationName: "owner" }),
+    familyGroupAdults: many(familyGroupAdults),
+    familyGroupChildren: many(familyGroupChildren),
   })
 );
 
-// --- Family (Parent ↔ Child) -------------------------------------------------
+// --- Family Groups -----------------------------------------------------------
 
-export const familyMembers = pgTable("family_members", {
+export const familyGroups = pgTable("family_groups", {
   id: serial("id").primaryKey(),
-  parentId: text("parent_id")
+  ownerId: text("owner_id")
     .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull().default("My Family"),
+  cover: text("cover").notNull().default("emerald"),
+  motto: text("motto").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const familyGroupsRelations = relations(familyGroups, ({ one, many }) => ({
+  owner: one(userProgress, {
+    fields: [familyGroups.ownerId],
+    references: [userProgress.userId],
+    relationName: "owner",
+  }),
+  adults: many(familyGroupAdults),
+  children: many(familyGroupChildren),
+}));
+
+export const familyGroupAdults = pgTable("family_group_adults", {
+  id: serial("id").primaryKey(),
+  familyGroupId: integer("family_group_id")
+    .references(() => familyGroups.id, { onDelete: "cascade" })
+    .notNull(),
+  userId: text("user_id")
+    .references(() => userProgress.userId, { onDelete: "cascade" })
+    .notNull(),
+  permissions: jsonb("permissions").notNull().default('{"canEditChild": false}'),
+  status: text("status").notNull().default("pending"), // "pending" | "active"
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+});
+
+export const familyGroupAdultsRelations = relations(familyGroupAdults, ({ one }) => ({
+  familyGroup: one(familyGroups, {
+    fields: [familyGroupAdults.familyGroupId],
+    references: [familyGroups.id],
+  }),
+  user: one(userProgress, {
+    fields: [familyGroupAdults.userId],
+    references: [userProgress.userId],
+  }),
+}));
+
+export const familyGroupChildren = pgTable("family_group_children", {
+  id: serial("id").primaryKey(),
+  familyGroupId: integer("family_group_id")
+    .references(() => familyGroups.id, { onDelete: "cascade" })
     .notNull(),
   childId: text("child_id")
     .references(() => userProgress.userId, { onDelete: "cascade" })
     .notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
-export const familyMembersRelations = relations(familyMembers, ({ one }) => ({
-  parent: one(userProgress, {
-    fields: [familyMembers.parentId],
-    references: [userProgress.userId],
-    relationName: "parent",
+export const familyGroupChildrenRelations = relations(familyGroupChildren, ({ one }) => ({
+  familyGroup: one(familyGroups, {
+    fields: [familyGroupChildren.familyGroupId],
+    references: [familyGroups.id],
   }),
   child: one(userProgress, {
-    fields: [familyMembers.childId],
+    fields: [familyGroupChildren.childId],
     references: [userProgress.userId],
-    relationName: "child",
   }),
 }));
 
@@ -392,3 +436,4 @@ export const loginAudit = pgTable("login_audit", {
   reason: text("reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+

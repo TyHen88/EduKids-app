@@ -14,7 +14,9 @@ import {
   lessonBlocks,
   userBadges,
   userProgress,
-  familyMembers,
+  familyGroups,
+  familyGroupAdults,
+  familyGroupChildren,
   units,
   lessons,
   courses,
@@ -69,10 +71,10 @@ const notifyParentOnCourseComplete = async (
   lessonId: number
 ) => {
   try {
-    const parentLink = await db.query.familyMembers.findFirst({
-      where: eq(familyMembers.childId, userId),
+    const childLink = await db.query.familyGroupChildren.findFirst({
+      where: eq(familyGroupChildren.childId, userId),
     });
-    if (!parentLink) return; // not a child → nobody to notify
+    if (!childLink) return; // not a child → nobody to notify
 
     // Resolve the course this lesson belongs to (lesson → unit → course).
     const lesson = await db.query.lessons.findFirst({
@@ -131,8 +133,13 @@ const notifyParentOnCourseComplete = async (
       }),
     ]);
 
+    const group = await db.query.familyGroups.findFirst({
+      where: eq(familyGroups.id, childLink.familyGroupId),
+    });
+    if (!group) return;
+
     await notifyUser(
-      parentLink.parentId,
+      group.ownerId,
       "Course completed! 🎓",
       `${child?.userName || "Your child"} just finished ${
         course?.title || "a course"

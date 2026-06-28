@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/db/drizzle";
 import { userProgress } from "@/db/schema";
 import { getIsAdmin } from "@/lib/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Activate or deactivate a user. Enforcement is app-level: deactivated users
@@ -30,6 +31,36 @@ export const setUserActive = async (
     .update(userProgress)
     .set({ isActive: active })
     .where(eq(userProgress.userId, targetUserId));
+
+  revalidatePath(`/${lang}/admin/students`);
+  revalidatePath(`/${lang}/admin`);
+};
+
+export const deleteUserAccount = async (
+  targetUserId: string,
+  lang = "km"
+) => {
+  if (!(await getIsAdmin())) throw new Error("Unauthorized.");
+
+  const { userId: adminId } = await auth();
+  if (targetUserId === adminId) {
+    throw new Error("You can't delete your own account.");
+  }
+
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin.auth.admin.deleteUser(targetUserId);
+    if (error) {
+      console.error("Supabase admin deleteUser error:", error);
+      // Don't throw, proceed to clean up our database anyway
+    }
+  } catch (error: any) {
+    console.error("Error deleting user from Supabase:", error);
+    // Don't throw, proceed to clean up our database anyway
+  }
+
+  // Always delete from userProgress to ensure the data is cleared
+  await db.delete(userProgress).where(eq(userProgress.userId, targetUserId));
 
   revalidatePath(`/${lang}/admin/students`);
   revalidatePath(`/${lang}/admin`);

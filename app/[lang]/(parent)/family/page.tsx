@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Users, BookOpen, Star, Flame, Heart, ArrowRight, Crown, Sparkles } from "lucide-react";
 
-import { getChildren, getUserProgress } from "@/db/queries";
+import { getChildren, getUserProgress, getFamilyGroupDetails } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
+import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,11 +43,23 @@ const PRESET_COVERS: Record<string, PresetCover> = {
 
 const FamilyDashboardPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const { userId } = await auth();
   const dict = await getDictionary(lang as "km" | "en");
-  const [children, userProgress] = await Promise.all([
+  const [children, userProgress, familyGroup] = await Promise.all([
     getChildren(),
     getUserProgress(),
+    getFamilyGroupDetails(),
   ]);
+
+  let canManage = false;
+  if (familyGroup?.ownerId === userId) {
+    canManage = true;
+  } else if (familyGroup) {
+    const adultLink = familyGroup.adults.find((a) => a.userId === userId);
+    if (adultLink?.permissions && (adultLink.permissions as any).manage) {
+      canManage = true;
+    }
+  }
 
   const totalPoints = children.reduce((acc, child) => acc + child.points, 0);
 
@@ -54,9 +67,9 @@ const FamilyDashboardPage = async ({ params }: Props) => {
   const topChild = [...children].sort((a, b) => b.points - a.points)[0];
   const showCongrats = children.length >= 2 && !!topChild && topChild.points > 0;
 
-  const familyName = userProgress?.familyName || "My Family";
-  const familyCover = userProgress?.familyCover || "emerald";
-  const familyMotto = userProgress?.familyMotto || "";
+  const familyName = familyGroup?.name || "My Family";
+  const familyCover = familyGroup?.cover || "emerald";
+  const familyMotto = familyGroup?.motto || "";
 
   return (
     <div className="space-y-6 pb-12 sm:space-y-8">
@@ -195,9 +208,11 @@ const FamilyDashboardPage = async ({ params }: Props) => {
             <p className="mb-6 max-w-sm text-slate-500">
               {dict["parent.createProfilePrompt"] || "Create a profile for your child so they can start exploring and learning!"}
             </p>
-            <Button asChild size="lg" className="rounded-2xl shadow-md">
-              <Link href={`/${lang}/family/children`}>{dict["parent.addFirstChild"] || "Add your first child"}</Link>
-            </Button>
+            {canManage && (
+              <Button asChild size="lg" className="rounded-2xl shadow-md">
+                <Link href={`/${lang}/family/children`}>{dict["parent.addFirstChild"] || "Add your first child"}</Link>
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">

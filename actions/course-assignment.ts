@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
-import { courseAssignments, courses, familyMembers, userProgress } from "@/db/schema";
+import { courseAssignments, courses, familyGroups, familyGroupAdults, familyGroupChildren, userProgress } from "@/db/schema";
 import { notifyUser } from "@/actions/notifications";
 
 export const assignCourse = async (childId: string, courseId: number, lang: string = "en") => {
@@ -13,12 +13,20 @@ export const assignCourse = async (childId: string, courseId: number, lang: stri
   if (!userId) throw new Error("Unauthorized");
 
   // Verify parent-child relationship
-  const link = await db.query.familyMembers.findFirst({
-    where: and(
-      eq(familyMembers.parentId, userId),
-      eq(familyMembers.childId, childId)
-    ),
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
   });
+  const adultLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+  const familyGroupId = ownedGroup?.id || adultLink?.familyGroupId;
+
+  const link = familyGroupId ? await db.query.familyGroupChildren.findFirst({
+    where: and(
+      eq(familyGroupChildren.familyGroupId, familyGroupId),
+      eq(familyGroupChildren.childId, childId)
+    ),
+  }) : null;
 
   if (!link) throw new Error("Not authorized");
 
@@ -81,12 +89,20 @@ export const unassignCourse = async (childId: string, courseId: number, lang: st
   if (!userId) throw new Error("Unauthorized");
 
   // Verify parent-child relationship
-  const link = await db.query.familyMembers.findFirst({
-    where: and(
-      eq(familyMembers.parentId, userId),
-      eq(familyMembers.childId, childId)
-    ),
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
   });
+  const adultLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+  const familyGroupId = ownedGroup?.id || adultLink?.familyGroupId;
+
+  const link = familyGroupId ? await db.query.familyGroupChildren.findFirst({
+    where: and(
+      eq(familyGroupChildren.familyGroupId, familyGroupId),
+      eq(familyGroupChildren.childId, childId)
+    ),
+  }) : null;
 
   if (!link) throw new Error("Not authorized");
 

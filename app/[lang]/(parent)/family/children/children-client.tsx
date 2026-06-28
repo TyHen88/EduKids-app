@@ -46,6 +46,7 @@ type Child = {
 type ChildrenClientProps = {
   initialChildren: Child[];
   lang: string;
+  canManage: boolean;
 };
 
 const formatDuration = (totalSeconds: number) => {
@@ -57,7 +58,7 @@ const formatDuration = (totalSeconds: number) => {
   return `${s}s`;
 };
 
-export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) => {
+export const ChildrenClient = ({ initialChildren, lang, canManage }: ChildrenClientProps) => {
   const dict = useDictionary();
   const [children] = useState(initialChildren);
   const [isPending, startTransition] = useTransition();
@@ -127,7 +128,7 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
             {dict["parent.createManageProfiles"] || "Create and manage profiles for your kids."}
           </p>
         </div>
-        {!isAdding && (
+        {!isAdding && canManage && (
           <Button
             onClick={() => setIsAdding(true)}
             className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
@@ -223,12 +224,14 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
           <p className="mx-auto mb-6 max-w-sm text-sm font-medium text-slate-400">
             {dict["parent.noChildrenYetDesc"] || "Add a profile for each of your kids. They'll log in with a username and a 4-digit PIN."}
           </p>
-          <Button
-            onClick={() => setIsAdding(true)}
-            className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
-          >
-            <UserPlus className="mr-2 h-5 w-5" /> {dict["parent.addFirstChild"] || "Add your first child"}
-          </Button>
+          {canManage && (
+            <Button
+              onClick={() => setIsAdding(true)}
+              className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
+            >
+              <UserPlus className="mr-2 h-5 w-5" /> {dict["parent.addFirstChild"] || "Add your first child"}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -238,14 +241,16 @@ export const ChildrenClient = ({ initialChildren, lang }: ChildrenClientProps) =
               className="group relative flex flex-col rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-emerald-200 sm:p-5"
             >
               {/* Remove */}
-              <button
-                disabled={isPending}
-                onClick={() => handleRemoveChild(child.userId)}
-                title={dict["parent.removeChild"] || "Remove child"}
-                className="absolute right-3 top-3 rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {canManage && (
+                <button
+                  disabled={isPending}
+                  onClick={() => handleRemoveChild(child.userId)}
+                  title={dict["parent.removeChild"] || "Remove child"}
+                  className="absolute right-3 top-3 rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
 
               {/* Identity */}
               <div className="flex items-center gap-3 pr-8">

@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   MoreHorizontal,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { setUserActive } from "@/actions/admin-users";
+import { setUserActive, deleteUserAccount } from "@/actions/admin-users";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
 const PAGE_SIZE = 10;
@@ -61,6 +62,7 @@ export const StudentsTable = ({
   const [page, setPage] = useState(1);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<StudentRow | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<StudentRow | null>(null);
   const [, startTransition] = useTransition();
 
   // Deactivating asks for confirmation (it signs the user out); activating is
@@ -81,6 +83,25 @@ export const StudentsTable = ({
               ? dict["admin.userDeactivated"] || "User deactivated."
               : dict["admin.userActivated"] || "User activated."
           );
+          router.refresh();
+        })
+        .catch((err) =>
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : dict["common.somethingWentWrong"] || "Something went wrong."
+          )
+        )
+        .finally(() => setPendingId(null));
+    });
+  };
+
+  const performDelete = (s: StudentRow) => {
+    setPendingId(s.userId);
+    startTransition(() => {
+      deleteUserAccount(s.userId, lang)
+        .then(() => {
+          toast.success(dict["admin.userDeleted"] || "User deleted.");
           router.refresh();
         })
         .catch((err) =>
@@ -293,6 +314,14 @@ export const StudentsTable = ({
                                 {dict["admin.activate"] || "Activate"}
                               </DropdownMenuItem>
                             )}
+                            <div className="h-px bg-slate-100 my-1 mx-2" />
+                            <DropdownMenuItem
+                              onSelect={() => setDeleteConfirmUser(s)}
+                              className="cursor-pointer font-bold text-rose-600 focus:bg-rose-50 focus:text-rose-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              {dict["admin.delete"] || "Delete"}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -354,6 +383,32 @@ export const StudentsTable = ({
           const user = confirmUser;
           setConfirmUser(null);
           if (user) performToggle(user);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmUser(null);
+        }}
+        variant="danger"
+        title={dict["admin.deleteTitle"] || "Delete user?"}
+        description={
+          <>
+            <span className="font-bold text-slate-700">
+              {deleteConfirmUser?.userName}
+            </span>{" "}
+            {dict["admin.deleteConfirmHint"] ||
+              "will be permanently deleted. This action cannot be undone."}
+          </>
+        }
+        confirmLabel={dict["admin.delete"] || "Delete"}
+        cancelLabel={dict["common.cancel"] || "Cancel"}
+        loading={pendingId === deleteConfirmUser?.userId}
+        onConfirm={() => {
+          const user = deleteConfirmUser;
+          setDeleteConfirmUser(null);
+          if (user) performDelete(user);
         }}
       />
     </div>

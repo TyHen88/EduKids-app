@@ -1,0 +1,89 @@
+import 'dotenv/config';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { pgTable, text, serial } from 'drizzle-orm/pg-core';
+
+const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+const db = drizzle(client, { schema });
+
+// Minimal definition of the legacy table so we can read from it
+const legacyFamilyMembers = pgTable('family_members', {
+  id: serial('id').primaryKey(),
+  parentId: text('parent_id').notNull(),
+  childId: text('child_id').notNull(),
+});
+
+async function main() {
+  console.log("Starting family data migration...");
+  
+  // 1. Get all unique parent IDs from family_members
+  const familyMembers = await db.select().from(legacyFamilyMembers);
+  console.log(`Found ${familyMembers.length} family member links.`);
+  
+  const parentIds = [...new Set(familyMembers.map(m => m.parentId))];
+  console.log(`Found ${parentIds.length} unique parents.`);
+
+  for (const parentId of parentIds) {
+    // Check if family group already exists for this parent
+    const existingGroup = await db.query.familyGroups.findFirst({
+      where: eq(schema.familyGroups.ownerId, parentId)
+    });
+
+    let familyGroupId;
+
+    if (!existingGroup) {
+      // Get parent user info to set family name
+      const parentUser = await db.query.userProgress.findFirst({
+        where: eq(schema.userProgress.userId, parentId)
+      });
+      
+      const familyName = parentUser?.familyName || "My Family";
+      const familyCover = parentUser?.familyCover || "emerald";
+      const familyMotto = parentUser?.familyMotto || "";
+
+      // Create a Family Group for this parent
+      const [newGroup] = await db.insert(schema.familyGroups).values({
+        ownerId: parentId,
+        name: familyName,
+        cover: familyCover,
+        motto: familyMotto,
+      }).returning();
+      
+      familyGroupId = newGroup.id;
+      console.log(`Created Family Group ID ${familyGroupId} for Parent ${parentId}`);
+    } else {
+      familyGroupId = existingGroup.id;
+      console.log(`Parent ${parentId} already has Family Group ID ${familyGroupId}`);
+    }
+
+    // Move all children of this parent into family_group_children
+    const childrenOfParent = familyMembers.filter(m => m.parentId === parentId);
+    for (const childLink of childrenOfParent) {
+      // Check if child is already in this group
+      const existingChildLink = await db.query.familyGroupChildren.findFirst({
+        where: (table, { and, eq }) => and(
+          eq(table.familyGroupId, familyGroupId),
+          eq(table.childId, childLink.childId)
+        )
+      });
+
+      if (!existingChildLink) {
+        await db.insert(schema.familyGroupChildren).values({
+          familyGroupId: familyGroupId,
+          childId: childLink.childId,
+        });
+        console.log(`Added child ${childLink.childId} to Family Group ${familyGroupId}`);
+      }
+    }
+  }
+
+  console.log("Migration complete!");
+  process.exit(0);
+}
+
+main().catch(e => {
+  console.error("Migration failed:", e);
+  process.exit(1);
+});

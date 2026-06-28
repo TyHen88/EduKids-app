@@ -16,7 +16,9 @@ import {
   userProgress,
   userFollowers,
   appNotifications,
-  familyMembers,
+  familyGroups,
+  familyGroupAdults,
+  familyGroupChildren,
   courseAssignments,
   loginAudit,
 } from "./schema";
@@ -363,16 +365,25 @@ export const getTopFriends = cache(async () => {
   let followingIds: string[] = [userId];
 
   // Check if child user
-  const parentLink = await db.query.familyMembers.findFirst({
-    where: eq(familyMembers.childId, userId),
+  const childLink = await db.query.familyGroupChildren.findFirst({
+    where: eq(familyGroupChildren.childId, userId),
   });
 
-  if (parentLink) {
-    const siblings = await db.query.familyMembers.findMany({
-      where: eq(familyMembers.parentId, parentLink.parentId),
+  if (childLink) {
+    const siblings = await db.query.familyGroupChildren.findMany({
+      where: eq(familyGroupChildren.familyGroupId, childLink.familyGroupId),
     });
     followingIds = siblings.map((s) => s.childId);
-    followingIds.push(parentLink.parentId); // include parent
+    
+    const group = await db.query.familyGroups.findFirst({
+      where: eq(familyGroups.id, childLink.familyGroupId),
+    });
+    if (group) followingIds.push(group.ownerId);
+
+    const adults = await db.query.familyGroupAdults.findMany({
+      where: eq(familyGroupAdults.familyGroupId, childLink.familyGroupId),
+    });
+    followingIds.push(...adults.map(a => a.userId));
   } else {
     const following = await getFollowing();
     followingIds = following.map((f) => f.userId);
@@ -397,7 +408,7 @@ export const getTopFriends = cache(async () => {
     },
   });
 
-  if (parentLink) {
+  if (childLink) {
     data.sort((a, b) => {
       if (a.role === "parent" && b.role !== "parent") return -1;
       if (b.role === "parent" && a.role !== "parent") return 1;
@@ -463,11 +474,11 @@ export const getIsChild = cache(async () => {
   const { userId } = await auth();
   if (!userId) return false;
 
-  const parentLink = await db.query.familyMembers.findFirst({
-    where: eq(familyMembers.childId, userId),
+  const childLink = await db.query.familyGroupChildren.findFirst({
+    where: eq(familyGroupChildren.childId, userId),
   });
 
-  return !!parentLink;
+  return !!childLink;
 });
 
 // --- Courses decorated with the current user's progress (for "My Courses") ---
@@ -494,11 +505,11 @@ export const getCoursesWithProgress = cache(
     let childCourseIds: number[] | null = null;
     if (userId) {
       // Check if this user is a child (has a parent)
-      const parentLink = await db.query.familyMembers.findFirst({
-        where: eq(familyMembers.childId, userId),
+      const childLink = await db.query.familyGroupChildren.findFirst({
+        where: eq(familyGroupChildren.childId, userId),
       });
 
-      if (parentLink) {
+      if (childLink) {
         // This user is a child. Fetch their assigned courses.
         const assignments = await db.query.courseAssignments.findMany({
           where: eq(courseAssignments.childId, userId),
@@ -627,11 +638,23 @@ export const getAllStudents = cache(async () => {
       activeCourse: true,
       userBadges: true,
       // family link where this user is the child → who their parent is
-      parentsAsChild: {
-        with: { parent: true },
+      familyGroupChildren: {
+        with: { familyGroup: { with: { owner: true } } },
       },
     },
   });
+
+  // Fetch all users from Supabase to check if they still exist in Auth
+  let validUserIds = new Set<string>();
+  try {
+    const admin = createAdminClient();
+    const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (authData?.users) {
+      validUserIds = new Set(authData.users.map((u) => u.id));
+    }
+  } catch (error) {
+    console.error("Failed to list users from Supabase", error);
+  }
 
   // Admins are platform operators, not learners/parents — keep them out of the
   // user list and its parent/learner counts.
@@ -639,20 +662,26 @@ export const getAllStudents = cache(async () => {
 
   return data
     .filter((student) => !adminIds.has(student.userId))
-    .map((student) => ({
-    userId: student.userId,
-    userName: student.userName,
-    userImageSrc: student.userImageSrc,
-    role: student.role, // "learner" | "parent"
-    isActive: student.isActive,
-    points: student.points,
-    hearts: student.hearts,
-    streak: student.streak,
-    activeCourse: student.activeCourse?.title ?? null,
-    badges: student.userBadges.length,
-    // null when the learner isn't linked to any parent account
-    parentName: student.parentsAsChild[0]?.parent?.userName ?? null,
-  }));
+    .map((student) => {
+      // If we successfully fetched users from Supabase, and this user isn't in it, auto-deactivate them
+      const isMissingFromAuth = validUserIds.size > 0 && !validUserIds.has(student.userId);
+      const isActive = isMissingFromAuth ? false : student.isActive;
+
+      return {
+        userId: student.userId,
+        userName: student.userName,
+        userImageSrc: student.userImageSrc,
+        role: student.role, // "learner" | "parent"
+        isActive,
+        points: student.points,
+        hearts: student.hearts,
+        streak: student.streak,
+        activeCourse: student.activeCourse?.title ?? null,
+        badges: student.userBadges.length,
+        // null when the learner isn't linked to any parent account
+        parentName: student.familyGroupChildren[0]?.familyGroup?.owner?.userName ?? null,
+      };
+    });
 });
 
 export type AdminCourse = {
@@ -756,12 +785,50 @@ export const getUnreadNotificationCount = cache(async () => {
 
 // --- Family / Parent Features ------------------------------------------------
 
+export const getFamilyGroupDetails = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
+  });
+
+  const adultGroupLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+
+  const familyGroupId = ownedGroup?.id || adultGroupLink?.familyGroupId;
+  if (!familyGroupId) return null;
+
+  return db.query.familyGroups.findFirst({
+    where: eq(familyGroups.id, familyGroupId),
+    with: {
+      owner: true,
+      adults: {
+        with: {
+          user: true,
+        },
+      },
+    },
+  });
+});
+
 export const getChildren = cache(async () => {
   const { userId } = await auth();
   if (!userId) return [];
 
-  const data = await db.query.familyMembers.findMany({
-    where: eq(familyMembers.parentId, userId),
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
+  });
+  const adultGroupLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+
+  const familyGroupId = ownedGroup?.id || adultGroupLink?.familyGroupId;
+  if (!familyGroupId) return [];
+
+  const data = await db.query.familyGroupChildren.findMany({
+    where: eq(familyGroupChildren.familyGroupId, familyGroupId),
     with: {
       child: {
         with: {
@@ -823,12 +890,20 @@ export const getChildProgress = cache(async (childId: string) => {
   if (!userId) return null;
 
   // Verify this child actually belongs to the parent
-  const isFamily = await db.query.familyMembers.findFirst({
-    where: and(
-      eq(familyMembers.parentId, userId),
-      eq(familyMembers.childId, childId)
-    ),
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
   });
+  const adultGroupLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+  const familyGroupId = ownedGroup?.id || adultGroupLink?.familyGroupId;
+  
+  const isFamily = familyGroupId ? await db.query.familyGroupChildren.findFirst({
+    where: and(
+      eq(familyGroupChildren.familyGroupId, familyGroupId),
+      eq(familyGroupChildren.childId, childId)
+    )
+  }) : null;
 
   if (!isFamily) return null;
 
@@ -849,12 +924,20 @@ export const getChildCourses = cache(async (childId: string) => {
   const { userId } = await auth();
   if (!userId) return [];
 
-  const isFamily = await db.query.familyMembers.findFirst({
-    where: and(
-      eq(familyMembers.parentId, userId),
-      eq(familyMembers.childId, childId)
-    ),
+  const ownedGroup = await db.query.familyGroups.findFirst({
+    where: eq(familyGroups.ownerId, userId),
   });
+  const adultGroupLink = await db.query.familyGroupAdults.findFirst({
+    where: eq(familyGroupAdults.userId, userId),
+  });
+  const familyGroupId = ownedGroup?.id || adultGroupLink?.familyGroupId;
+  
+  const isFamily = familyGroupId ? await db.query.familyGroupChildren.findFirst({
+    where: and(
+      eq(familyGroupChildren.familyGroupId, familyGroupId),
+      eq(familyGroupChildren.childId, childId)
+    )
+  }) : null;
   if (!isFamily) return [];
 
   const assignments = await db.query.courseAssignments.findMany({
