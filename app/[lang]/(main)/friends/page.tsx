@@ -125,7 +125,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                   <div key={user.userId} className="flex flex-col gap-3 rounded-2xl border-2 border-slate-100 p-3">
                     <div className="flex items-center gap-3">
                       <div className="relative h-10 w-10 overflow-hidden rounded-full bg-slate-100 border-2 border-slate-200 shrink-0">
-                        <Image src={user.userImageSrc} alt={user.userName} fill className="object-cover" />
+                        <Image src={user.userImageSrc} alt={user.userName} fill className="object-cover" sizes="40px" />
                       </div>
                       <p className="text-sm font-bold text-slate-700 truncate flex-1">{user.userName}</p>
                     </div>
@@ -176,7 +176,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                 {friends.map((user) => (
                   <div key={user.userId} className="flex items-center gap-3">
                     <div className="relative h-8 w-8 overflow-hidden rounded-full bg-slate-100 border-2 border-slate-200">
-                      <Image src={user.userImageSrc} alt={user.userName} fill className="object-cover" />
+                      <Image src={user.userImageSrc} alt={user.userName} fill className="object-cover" sizes="32px" />
                     </div>
                     <p className="text-sm font-bold text-slate-700 truncate flex-1">{user.userName}</p>
                     <form
@@ -247,6 +247,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
                             alt={user.userName}
                             fill
                             className="object-cover"
+                            sizes="32px"
                           />
                         </div>
                         <p className="font-bold text-slate-800 text-sm truncate max-w-[80px]">

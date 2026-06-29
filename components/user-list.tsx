@@ -127,6 +127,7 @@ export const UserList = ({ initialUsers, friendIds: initialFriendIds, sentReques
                   alt={user.userName}
                   fill
                   className="object-cover"
+                  sizes="48px"
                 />
               </div>
               <div>

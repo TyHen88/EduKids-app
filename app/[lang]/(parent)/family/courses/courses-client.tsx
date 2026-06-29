@@ -99,7 +99,7 @@ export const CoursesClient = ({ courses, childrenData, assignments, lang }: Cour
             )}
           >
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-slate-100 bg-slate-50">
-              <Image src={child.userImageSrc} alt={child.userName} fill className="object-cover" />
+              <Image src={child.userImageSrc} alt={child.userName} fill className="object-cover" sizes="40px" />
             </div>
             <div className="text-left">
               <div className={cn("text-sm font-bold", selectedChildId === child.userId ? "text-emerald-700" : "text-slate-700")}>

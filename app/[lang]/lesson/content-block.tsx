@@ -64,6 +64,7 @@ export const ContentBlock = ({
               alt={caption || dict["lesson.lessonImage"] || "Lesson Image"}
               fill
               className="object-cover"
+              sizes="(max-width: 500px) 100vw, 500px"
             />
           </div>
         )}

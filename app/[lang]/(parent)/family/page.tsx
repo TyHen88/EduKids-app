@@ -86,6 +86,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
             alt="Family Cover"
             fill
             className="object-cover animate-fade-in"
+            sizes="100vw"
           />
         )}
         {(PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS]?.imageSrc || (!PRESET_COVERS[familyCover as keyof typeof PRESET_COVERS] && familyCover)) && (
@@ -246,6 +247,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
                         alt={child.userName}
                         fill
                         className="object-cover"
+                        sizes="(min-width: 640px) 64px, 56px"
                       />
                     </div>
                     <div>

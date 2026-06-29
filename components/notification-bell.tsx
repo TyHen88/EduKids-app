@@ -93,7 +93,12 @@ export const NotificationBell = ({
       );
       setUnreadCount((prev) => prev + 1);
     };
-    channel.subscribe("notification", handler);
+    // `subscribe` triggers an implicit channel attach whose promise rejects
+    // with "Connection closed" if the client is torn down mid-attach (e.g. a
+    // React strict-mode remount, or a fast `userId` change). The teardown
+    // below already closes the client, so swallow that rejection rather than
+    // let it surface as an unhandledRejection.
+    channel.subscribe("notification", handler).catch(() => {});
 
     return () => {
       channel.unsubscribe("notification", handler);

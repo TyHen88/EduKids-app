@@ -171,6 +171,7 @@ export const ParentProfileEditor = ({
               alt={dict["profile.familyCoverAlt"] || "Family Cover"}
               fill
               className="object-cover"
+              sizes="(max-width: 768px) 100vw, 768px"
             />
           )}
           {/* Overlay to ensure contrast on image banners */}
