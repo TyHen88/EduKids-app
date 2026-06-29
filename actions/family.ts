@@ -253,7 +253,7 @@ export const acceptFamilyInvite = async (targetUserId?: string) => {
   
   if (!userId) {
     const session = await auth();
-    userId = session?.userId;
+    userId = session?.userId ?? undefined;
   }
 
   if (!userId) return;
