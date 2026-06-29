@@ -23,9 +23,10 @@ const MyFamilyPage = async ({ params }: Props) => {
     redirect(`/${lang}/friends`);
   }
 
-  // Parent is guaranteed to be index 0 based on our query logic
-  const parent = topFriends.length > 0 && topFriends[0].role === "parent" ? topFriends[0] : null;
-  const siblings = topFriends.filter((u) => u.userId !== parent?.userId);
+  // A family group can have multiple adults (owner + co-parents), all with role
+  // "parent". Group every adult under "Parents"; only learners are siblings.
+  const parents = topFriends.filter((u) => u.role === "parent");
+  const siblings = topFriends.filter((u) => u.role !== "parent");
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-12 pt-6">
@@ -37,29 +38,38 @@ const MyFamilyPage = async ({ params }: Props) => {
       </div>
 
       <div className="space-y-6">
-        {parent && (
+        {parents.length > 0 && (
           <section>
             <h2 className="mb-3 text-sm font-black uppercase tracking-widest text-slate-400 pl-2">
-              {dict["myFamily.parent"] || "Parent"}
+              {parents.length > 1
+                ? dict["myFamily.parents"] || "Parents"
+                : dict["myFamily.parent"] || "Parent"}
             </h2>
-            <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-slate-100 shadow-sm">
-                  <Image
-                    src={parent.userImageSrc}
-                    alt={parent.userName}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">{parent.userName}</h3>
-                  <div className="mt-1 text-xs font-black uppercase tracking-widest text-indigo-500">
-                    {dict["myFamily.familyManager"] || "Family Manager"}
+            <div className="flex flex-col gap-4">
+              {parents.map((parent) => (
+                <div
+                  key={parent.userId}
+                  className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-slate-100 shadow-sm">
+                      <Image
+                        src={parent.userImageSrc}
+                        alt={parent.userName}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">{parent.userName}</h3>
+                      <div className="mt-1 text-xs font-black uppercase tracking-widest text-indigo-500">
+                        {dict["myFamily.familyManager"] || "Family Manager"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           </section>
         )}
