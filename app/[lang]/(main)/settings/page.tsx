@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { currentUser } from "@/lib/auth";
-import { getUserProgress, getIsChild } from "@/db/queries";
+import { getUserProgress, getIsChild, getAudioSettings } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
 import { SettingsForm } from "@/components/settings/settings-form";
 
@@ -15,10 +15,11 @@ const SettingsPage = async ({
   const { lang } = await params;
   const dict = await getDictionary(lang as "km" | "en");
 
-  const [progress, isChild, user] = await Promise.all([
+  const [progress, isChild, user, audio] = await Promise.all([
     getUserProgress(),
     getIsChild(),
     currentUser(),
+    getAudioSettings(),
   ]);
 
   return (
@@ -47,6 +48,7 @@ const SettingsPage = async ({
         isChild={isChild}
         notificationsEnabled={progress?.notificationsEnabled ?? true}
         passwordSet={progress?.passwordSet ?? false}
+        showMusicToggle={audio.musicEnabled}
       />
     </div>
   );

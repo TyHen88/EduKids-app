@@ -21,7 +21,18 @@ import {
   familyGroupChildren,
   courseAssignments,
   loginAudit,
+  audioSettings,
 } from "./schema";
+
+// Global, admin-managed background-music config. Falls back to sensible
+// defaults when no row exists yet (music on, volume 50). Not user-scoped.
+export const getAudioSettings = cache(async () => {
+  const row = await db.query.audioSettings.findFirst();
+  return {
+    musicEnabled: row?.musicEnabled ?? true,
+    musicVolume: row?.musicVolume ?? 50,
+  };
+});
 
 // Returns only public (admin-created) courses. Private parent-created courses are excluded.
 export const getCourses = cache(async () => {

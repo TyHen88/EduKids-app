@@ -38,6 +38,10 @@ type MainShellProps = {
   initialUnreadCount?: number;
   isChild?: boolean;
   hasActiveCourse?: boolean;
+  // Global, admin-managed background music. When musicEnabled is false, no
+  // music plays and the toggle icon is hidden for learners.
+  musicEnabled?: boolean;
+  musicVolume?: number; // 0–100
   children: ReactNode;
 };
 
@@ -53,6 +57,8 @@ export const MainShell = ({
   initialUnreadCount = 0,
   isChild = false,
   hasActiveCourse = false,
+  musicEnabled = true,
+  musicVolume = 50,
   children,
 }: MainShellProps) => {
   const locale = useLocale();
@@ -85,7 +91,7 @@ export const MainShell = ({
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-900">
-      <BackgroundMusic />
+      <BackgroundMusic adminEnabled={musicEnabled} volume={musicVolume} />
 
       <header className="z-10 flex h-[calc(5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] sm:px-6">
         <Link
@@ -180,7 +186,7 @@ export const MainShell = ({
             </Link>
           )}
 
-          <MusicToggle />
+          {musicEnabled && <MusicToggle />}
 
           <LanguageToggle />
 

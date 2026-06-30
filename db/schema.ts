@@ -437,3 +437,16 @@ export const loginAudit = pgTable("login_audit", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+
+// --- Audio settings (global, admin-managed) ----------------------------------
+// A single-row table (id = 1) holding platform-wide background-music config set
+// by an admin. When `musicEnabled` is false, learners get no music and the
+// music toggle icon is hidden for them. `musicVolume` is 0–100. Learners still
+// keep their own on/off preference locally; effective playback is
+// adminEnabled && learnerEnabled, at `musicVolume`.
+export const audioSettings = pgTable("audio_settings", {
+  id: integer("id").primaryKey().default(1),
+  musicEnabled: boolean("music_enabled").notNull().default(true),
+  musicVolume: integer("music_volume").notNull().default(50),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

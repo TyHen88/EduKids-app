@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { MainShell } from "@/components/main-shell";
 import { getIsAdmin } from "@/lib/admin";
-import { getUserProgress, getUserNotifications, getUnreadNotificationCount, getIsChild } from "@/db/queries";
+import { getUserProgress, getUserNotifications, getUnreadNotificationCount, getIsChild, getAudioSettings } from "@/db/queries";
 import { PushNotificationManager } from "@/components/push-notification-manager";
 
 type MainLayoutProps = {
@@ -33,11 +33,12 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
   // Admins (userId in ADMIN_IDS) belong in the admin panel.
   if (await getIsAdmin()) redirect(`/${lang}/admin`);
 
-  const [isAdmin, notifications, unreadCount, isChild] = await Promise.all([
+  const [isAdmin, notifications, unreadCount, isChild, audio] = await Promise.all([
     getIsAdmin(),
     getUserNotifications(),
     getUnreadNotificationCount(),
     getIsChild(),
+    getAudioSettings(),
   ]);
 
   return (
@@ -55,6 +56,8 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
         initialUnreadCount={unreadCount}
         isChild={isChild}
         hasActiveCourse={!!userProgress?.activeCourseId}
+        musicEnabled={audio.musicEnabled}
+        musicVolume={audio.musicVolume}
       >
         {children}
       </MainShell>
