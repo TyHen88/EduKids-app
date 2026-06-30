@@ -10,7 +10,6 @@ import {
   ExternalLink,
   ArrowLeft,
   Loader2,
-  X,
   Lightbulb,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,7 +45,6 @@ const GradientDefs = () => (
 export const ToolsAssist = () => {
   const dict = useDictionary();
   const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
   const [view, setView] = useState<View>("home");
 
   const [query, setQuery] = useState("");
@@ -124,31 +122,21 @@ export const ToolsAssist = () => {
       <GradientDefs />
 
       {/* Sider-style launcher: a white pill docked to the right edge with a
-          gradient brain icon; hover reveals a × to dismiss it for now. */}
-      {!dismissed && (
-        <div className="group fixed right-3 top-1/2 z-40 flex -translate-y-1/2 items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            aria-label={dict["tools.hide"] || "Hide"}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200/90 text-slate-500 opacity-0 shadow transition-opacity hover:bg-slate-300 hover:text-slate-700 group-hover:opacity-100"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label={dict["tools.title"] || "Assistant tools"}
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg shadow-slate-400/20 transition-transform hover:scale-105 active:scale-95"
-          >
-            <Brain
-              className="h-7 w-7"
-              stroke="url(#tools-brain-grad)"
-              strokeWidth={2.25}
-            />
-          </button>
-        </div>
-      )}
+          gradient brain icon. */}
+      <div className="fixed right-3 top-1/2 z-40 -translate-y-1/2">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={dict["tools.title"] || "Assistant tools"}
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg shadow-slate-400/20 transition-transform hover:scale-105 active:scale-95"
+        >
+          <Brain
+            className="h-7 w-7"
+            stroke="url(#tools-brain-grad)"
+            strokeWidth={2.25}
+          />
+        </button>
+      </div>
 
       <Sheet
         open={open}
