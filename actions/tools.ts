@@ -32,10 +32,14 @@ const assertAdminOrParent = async () => {
 };
 
 /**
- * Image-only search via serper.dev (Google Images). Returns a trimmed list of
- * results the user can copy an image URL from (e.g. for a book cover or page).
+ * Image-only search via serper.dev (Google Images). Returns a list of results
+ * the user can copy an image URL from (e.g. for a book cover or page). `page`
+ * (1-indexed) maps to serper's `page` param so the UI can load more results.
  */
-export const searchImages = async (query: string): Promise<ImageResult[]> => {
+export const searchImages = async (
+  query: string,
+  page = 1
+): Promise<ImageResult[]> => {
   await assertAdminOrParent();
 
   const q = query.trim();
@@ -44,13 +48,15 @@ export const searchImages = async (query: string): Promise<ImageResult[]> => {
   const key = process.env.SERPER_API_KEY;
   if (!key) throw new Error("Image search is not configured.");
 
+  const safePage = Math.max(1, Math.floor(page) || 1);
+
   const res = await fetch("https://google.serper.dev/images", {
     method: "POST",
     headers: {
       "X-API-KEY": key,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ q }),
+    body: JSON.stringify({ q, page: safePage }),
     cache: "no-store",
   });
 
@@ -60,7 +66,6 @@ export const searchImages = async (query: string): Promise<ImageResult[]> => {
   const images = Array.isArray(data.images) ? data.images : [];
 
   return images
-    .slice(0, 24)
     .map((raw) => {
       const i = raw as Record<string, unknown>;
       return {

@@ -717,5 +717,6 @@
   "tools.openSource": "Open source",
   "tools.copyTip": "Tip: copy an image URL and paste it into a cover or page field.",
   "tools.urlCopied": "Image URL copied!",
-  "tools.hide": "Hide"
+  "tools.hide": "Hide",
+  "tools.moreImages": "More images"
 }

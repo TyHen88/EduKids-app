@@ -50,7 +50,11 @@ export const ToolsAssist = () => {
   const [view, setView] = useState<View>("home");
 
   const [query, setQuery] = useState("");
+  const [activeQuery, setActiveQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [noMore, setNoMore] = useState(false);
   const [results, setResults] = useState<ImageResult[]>([]);
   const [searched, setSearched] = useState(false);
 
@@ -61,9 +65,13 @@ export const ToolsAssist = () => {
 
     setLoading(true);
     setSearched(true);
+    setNoMore(false);
+    setActiveQuery(q);
+    setPage(1);
     try {
-      const res = await searchImages(q);
+      const res = await searchImages(q, 1);
       setResults(res);
+      if (res.length === 0) setNoMore(true);
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -73,6 +81,32 @@ export const ToolsAssist = () => {
       setResults([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load the next serper page and append any new images (dedup by URL).
+  const loadMore = async () => {
+    if (!activeQuery || moreLoading) return;
+    const next = page + 1;
+    setMoreLoading(true);
+    try {
+      const res = await searchImages(activeQuery, next);
+      const seen = new Set(results.map((r) => r.imageUrl));
+      const fresh = res.filter((r) => !seen.has(r.imageUrl));
+      if (fresh.length === 0) {
+        setNoMore(true);
+      } else {
+        setResults((prev) => [...prev, ...fresh]);
+        setPage(next);
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : dict["common.somethingWentWrong"] || "Something went wrong."
+      );
+    } finally {
+      setMoreLoading(false);
     }
   };
 
@@ -227,6 +261,7 @@ export const ToolsAssist = () => {
                         "Type a query and press search."}
                   </div>
                 ) : (
+                  <>
                   <div className="grid grid-cols-2 gap-3">
                     {results.map((img, i) => (
                       <div
@@ -266,6 +301,25 @@ export const ToolsAssist = () => {
                       </div>
                     ))}
                   </div>
+
+                  {!noMore && (
+                    <div className="mt-4 flex justify-center">
+                      <Button
+                        type="button"
+                        variant="primaryOutline"
+                        onClick={loadMore}
+                        disabled={moreLoading}
+                      >
+                        {moreLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                        )}
+                        {dict["tools.moreImages"] || "More images"}
+                      </Button>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
 
