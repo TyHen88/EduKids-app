@@ -21,7 +21,7 @@ const assertAdmin = async () => {
 
 const normalize = (data: CourseInput): CourseInput => ({
   title: data.title.trim(),
-  imageSrc: data.imageSrc.trim() || "/mascot.svg",
+  imageSrc: data.imageSrc.trim() || "/edu-logo.png",
   description: data.description.trim(),
   category: data.category.trim() || "General",
   difficulty: data.difficulty.trim() || "Beginner",

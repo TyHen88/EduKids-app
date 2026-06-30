@@ -445,7 +445,7 @@ const LearnPage = async ({ params }: Props) => {
               {topFriends.length <= 1 ? (
                 <div className="text-center py-4">
                   <Image
-                    src="/mascot.svg"
+                    src="/edu-logo.png"
                     alt="Mascot"
                     width={60}
                     height={60}

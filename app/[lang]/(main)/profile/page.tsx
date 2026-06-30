@@ -29,7 +29,7 @@ const ProfilePage = async ({ params }: Props) => {
         dict["profile.explorer"] ||
         "Explorer"
       }
-      initialImage={userProgress?.userImageSrc || "/mascot.svg"}
+      initialImage={userProgress?.userImageSrc || "/edu-logo.png"}
       initialBuddyName={userProgress?.buddyName || "Cosmo"}
       email={email}
       points={userProgress?.points ?? 0}

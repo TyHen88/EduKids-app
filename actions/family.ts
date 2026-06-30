@@ -49,7 +49,7 @@ export const createChildAccount = async (
   await db.insert(userProgress).values({
     userId: childId,
     userName: name,
-    userImageSrc: "/mascot.svg",
+    userImageSrc: "/edu-logo.png",
     role: "learner",
     hearts: MAX_HEARTS,
     points: 0,
@@ -184,7 +184,7 @@ export const inviteFamilyAdult = async (email: string, permissions: any, lang: s
   await db.insert(userProgress).values({
     userId: invitedUserId,
     userName: emailLocalPart,
-    userImageSrc: "/mascot.svg",
+    userImageSrc: "/edu-logo.png",
     role: "parent",
   }).onConflictDoNothing();
 

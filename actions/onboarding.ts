@@ -44,7 +44,7 @@ export const createUserWithRole = async (role: "learner" | "parent", lang: strin
     await db.insert(userProgress).values({
       userId,
       userName: user.firstName || "User",
-      userImageSrc: user.imageUrl || "/mascot.svg",
+      userImageSrc: user.imageUrl || "/edu-logo.png",
       role,
     });
 

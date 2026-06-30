@@ -39,7 +39,7 @@ export const upsertUserProgress = async (courseId: number, lang = "km") => {
       .set({
         activeCourseId: courseId,
         userName: user.firstName || "User",
-        userImageSrc: user.imageUrl || "/mascot.svg",
+        userImageSrc: user.imageUrl || "/edu-logo.png",
       })
       .where(eq(userProgress.userId, userId));
   } else {
@@ -47,7 +47,7 @@ export const upsertUserProgress = async (courseId: number, lang = "km") => {
       userId,
       activeCourseId: courseId,
       userName: user.firstName || "User",
-      userImageSrc: user.imageUrl || "/mascot.svg",
+      userImageSrc: user.imageUrl || "/edu-logo.png",
     });
   }
 

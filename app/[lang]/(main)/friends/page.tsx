@@ -202,7 +202,7 @@ const FriendsPage = async ({ params, searchParams }: Props) => {
             {topFriends.length <= 1 ? (
               <div className="text-center py-4">
                 <Image
-                  src="/mascot.svg"
+                  src="/edu-logo.png"
                   alt={dict["friends.mascot"] || "Mascot"}
                   width={60}
                   height={60}

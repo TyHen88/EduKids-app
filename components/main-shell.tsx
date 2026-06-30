@@ -14,7 +14,6 @@ import {
   Flame,
   Star,
   Heart,
-  Rocket,
   LayoutDashboard,
   Users,
 } from "lucide-react";
@@ -89,9 +88,14 @@ export const MainShell = ({
           href={`/${locale}/learn`}
           className="flex shrink-0 items-center gap-2 text-xl font-bold text-indigo-600"
         >
-          <div className="rounded-xl bg-indigo-600 p-2 text-white">
-            <Rocket className="h-6 w-6" />
-          </div>
+          <Image
+            src="/edu-logo.png"
+            alt="EduKids"
+            width={40}
+            height={40}
+            className="rounded-xl"
+            priority
+          />
           <span className="hidden lg:inline">EduKids</span>
         </Link>
 

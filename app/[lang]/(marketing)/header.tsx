@@ -68,7 +68,7 @@ export const Header = () => {
             className="flex items-center gap-x-2.5 transition-opacity hover:opacity-90"
           >
             <Image
-              src="/mascot.svg"
+              src="/edu-logo.png"
               alt="EduKids mascot"
               height={40}
               width={40}

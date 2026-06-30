@@ -44,7 +44,7 @@ const PAGE_SIZE = 6;
 
 const empty: CourseInput = {
   title: "",
-  imageSrc: "/mascot.svg",
+  imageSrc: "/edu-logo.png",
   description: "",
   category: "General",
   difficulty: "Beginner",

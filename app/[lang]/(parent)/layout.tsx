@@ -38,7 +38,7 @@ const ParentLayout = async ({ children, params }: ParentLayoutProps) => {
   return (
     <ParentShell
       userId={userId}
-      userImageSrc={userProgress?.userImageSrc || "/mascot.svg"}
+      userImageSrc={userProgress?.userImageSrc || "/edu-logo.png"}
       userName={userProgress?.userName || "Parent"}
       initialNotifications={notifications}
       initialUnreadCount={unreadCount}

@@ -26,7 +26,7 @@ const ParentProfilePage = async ({ params }: Props) => {
   return (
     <ParentProfileEditor
       initialName={userProgress.userName || user?.firstName || "Parent"}
-      initialImage={userProgress.userImageSrc || "/mascot.svg"}
+      initialImage={userProgress.userImageSrc || "/edu-logo.png"}
       email={email}
       initialFamilyName={userProgress.familyName}
       initialFamilyCover={userProgress.familyCover}

@@ -102,7 +102,7 @@ export const sendPushNotification = async (userId: string, title: string, body: 
       title,
       body,
       url,
-      icon: "/mascot.svg",
+      icon: "/edu-logo.png",
     });
 
     // 2. Send push to all registered devices for the user

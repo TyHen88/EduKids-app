@@ -40,7 +40,7 @@ const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
 
 const empty: CourseInput = {
   title: "",
-  imageSrc: "/mascot.svg",
+  imageSrc: "/edu-logo.png",
   description: "",
   category: "General",
   difficulty: "Beginner",

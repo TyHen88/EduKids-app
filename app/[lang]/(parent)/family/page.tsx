@@ -197,7 +197,7 @@ const FamilyDashboardPage = async ({ params }: Props) => {
         {children.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-slate-100 bg-white p-8 text-center shadow-sm sm:p-12">
             <Image
-              src="/mascot.svg"
+              src="/edu-logo.png"
               alt="Mascot"
               width={100}
               height={100}

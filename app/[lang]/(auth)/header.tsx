@@ -21,7 +21,7 @@ export const Header = () => {
       >
         <div className="mx-auto flex h-full items-center lg:max-w-screen-lg">
           <Link href="/" className="flex items-center gap-x-3 pl-4">
-            <Image src="/mascot.svg" alt="Mascot" height={40} width={40} />
+            <Image src="/edu-logo.png" alt="Mascot" height={40} width={40} className="drop-shadow-lg rounded-[10px]" />
             <h1 className="text-2xl font-extrabold tracking-wide text-indigo-600">
               EduKids
             </h1>

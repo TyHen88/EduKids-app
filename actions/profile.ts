@@ -21,7 +21,7 @@ export const updateProfile = async (data: ProfileInput, lang = "km") => {
 
   const values = {
     userName: data.userName.trim() || "Explorer",
-    userImageSrc: data.userImageSrc.trim() || "/mascot.svg",
+    userImageSrc: data.userImageSrc.trim() || "/edu-logo.png",
     buddyName: data.buddyName.trim() || "Cosmo",
     familyName: data.familyName?.trim() || "My Family",
     familyCover: data.familyCover || "emerald",

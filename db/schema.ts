@@ -164,7 +164,7 @@ export const lessonTimeRelations = relations(lessonTime, ({ one }) => ({
 export const userProgress = pgTable("user_progress", {
   userId: text("user_id").primaryKey(),
   userName: text("user_name").notNull().default("User"),
-  userImageSrc: text("user_image_src").notNull().default("/mascot.svg"),
+  userImageSrc: text("user_image_src").notNull().default("/edu-logo.png"),
   role: text("role").notNull().default("learner"), // "learner" | "parent"
   // false = deactivated by an admin. Enforcement is app-level only: the auth
   // session stays valid but every authenticated layout redirects them to

@@ -20,14 +20,14 @@ export const QuestionBubble = ({ question }: QuestionBubbleProps) => {
       className="mb-6 flex items-center gap-x-4"
     >
       <Image
-        src="/mascot.svg"
+        src="/edu-logo.png"
         alt={dict["lesson.mascot"] || "Mascot"}
         height={60}
         width={60}
         className="hidden lg:block"
       />
       <Image
-        src="/mascot.svg"
+        src="/edu-logo.png"
         alt={dict["lesson.mascot"] || "Mascot"}
         height={40}
         width={40}

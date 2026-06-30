@@ -81,11 +81,11 @@ const OnboardingForm = () => {
         <div className="mb-10 text-center">
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
             <Image
-              src="/mascot.svg"
+              src="/edu-logo.png"
               alt="EduKids"
               width={80}
               height={80}
-              className="drop-shadow-lg"
+              className="drop-shadow-lg rounded-[10px]"
             />
           </div>
           <h1 className="mb-2 text-3xl font-black tracking-tight text-slate-800 sm:text-4xl">

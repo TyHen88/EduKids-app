@@ -49,7 +49,7 @@ const MainLayout = async ({ children, params }: MainLayoutProps) => {
         hearts={userProgress?.hearts ?? 0}
         streak={userProgress?.streak ?? 0}
         isAdmin={isAdmin}
-        userImageSrc={userProgress?.userImageSrc || "/mascot.svg"}
+        userImageSrc={userProgress?.userImageSrc || "/edu-logo.png"}
         userName={userProgress?.userName || "Explorer"}
         initialNotifications={notifications}
         initialUnreadCount={unreadCount}

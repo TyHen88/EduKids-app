@@ -123,8 +123,8 @@ export const PushNotificationManager = () => {
     }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <div className="mx-auto mb-4 bg-indigo-100 p-4 rounded-full w-20 h-20 flex items-center justify-center">
-            <Image src="/mascot.svg" alt="Mascot" width={48} height={48} />
+          <div className="mx-auto mb-4 p-4 w-20 h-20 flex items-center justify-center">
+            <Image src="/edu-logo.png" alt="Mascot" width={48} height={48} />
           </div>
           <DialogTitle className="text-center text-2xl font-black text-slate-700">
             Never miss a request!
