@@ -41,6 +41,37 @@ export const getAudioSettings = cache(async () => {
 // Published books for the learner library (newest first). Includes a unit count
 // so the UI can show length / hide empty books.
 export const getPublishedBooks = cache(async () => {
+  const { userId } = await auth();
+  let allowedCreators: (string | null)[] = [null];
+
+  if (userId) {
+    const user = await db.query.userProgress.findFirst({
+      where: eq(userProgress.userId, userId),
+    });
+
+    if (user?.role === "parent") {
+      allowedCreators.push(userId);
+    } else {
+      const childLink = await db.query.familyGroupChildren.findFirst({
+        where: eq(familyGroupChildren.childId, userId),
+      });
+
+      if (childLink) {
+        const adults = await db.query.familyGroupAdults.findMany({
+          where: eq(familyGroupAdults.familyGroupId, childLink.familyGroupId),
+        });
+        const group = await db.query.familyGroups.findFirst({
+          where: eq(familyGroups.id, childLink.familyGroupId),
+        });
+
+        allowedCreators.push(...adults.map((a) => a.userId));
+        if (group) allowedCreators.push(group.ownerId);
+      }
+    }
+  }
+
+  const parentIds = allowedCreators.filter((id): id is string => id !== null);
+
   const rows = await db
     .select({
       id: books.id,
@@ -53,7 +84,14 @@ export const getPublishedBooks = cache(async () => {
     })
     .from(books)
     .leftJoin(bookUnits, eq(bookUnits.bookId, books.id))
-    .where(eq(books.isPublished, true))
+    .where(
+      and(
+        eq(books.isPublished, true),
+        parentIds.length > 0
+          ? or(isNull(books.createdBy), inArray(books.createdBy, parentIds))
+          : isNull(books.createdBy)
+      )
+    )
     .groupBy(books.id)
     .orderBy(desc(books.createdAt));
 
@@ -65,8 +103,45 @@ export type LibraryBook = Awaited<ReturnType<typeof getPublishedBooks>>[number];
 // A published book + its ordered units, for the reader. Returns null if the
 // book doesn't exist or isn't published.
 export const getBookForReader = cache(async (bookId: number) => {
+  const { userId } = await auth();
+  let allowedCreators: (string | null)[] = [null];
+
+  if (userId) {
+    const user = await db.query.userProgress.findFirst({
+      where: eq(userProgress.userId, userId),
+    });
+
+    if (user?.role === "parent") {
+      allowedCreators.push(userId);
+    } else {
+      const childLink = await db.query.familyGroupChildren.findFirst({
+        where: eq(familyGroupChildren.childId, userId),
+      });
+
+      if (childLink) {
+        const adults = await db.query.familyGroupAdults.findMany({
+          where: eq(familyGroupAdults.familyGroupId, childLink.familyGroupId),
+        });
+        const group = await db.query.familyGroups.findFirst({
+          where: eq(familyGroups.id, childLink.familyGroupId),
+        });
+
+        allowedCreators.push(...adults.map((a) => a.userId));
+        if (group) allowedCreators.push(group.ownerId);
+      }
+    }
+  }
+
+  const parentIds = allowedCreators.filter((id): id is string => id !== null);
+
   const book = await db.query.books.findFirst({
-    where: and(eq(books.id, bookId), eq(books.isPublished, true)),
+    where: and(
+      eq(books.id, bookId),
+      eq(books.isPublished, true),
+      parentIds.length > 0
+        ? or(isNull(books.createdBy), inArray(books.createdBy, parentIds))
+        : isNull(books.createdBy)
+    ),
     with: {
       units: { orderBy: [asc(bookUnits.order), asc(bookUnits.id)] },
     },
@@ -114,6 +189,46 @@ export const getAdminBook = cache(async (bookId: number) => {
 const assertAdminOrThrow = async () => {
   if (!(await getIsAdmin())) throw new Error("Unauthorized.");
 };
+
+// All books (any publish state) + unit counts, for the parent list.
+export const getParentBooks = cache(async () => {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  const rows = await db
+    .select({
+      id: books.id,
+      title: books.title,
+      coverSrc: books.coverSrc,
+      description: books.description,
+      category: books.category,
+      language: books.language,
+      isPublished: books.isPublished,
+      createdAt: books.createdAt,
+      units: count(bookUnits.id),
+    })
+    .from(books)
+    .leftJoin(bookUnits, eq(bookUnits.bookId, books.id))
+    .where(eq(books.createdBy, userId))
+    .groupBy(books.id)
+    .orderBy(desc(books.createdAt));
+
+  return rows;
+});
+
+// One book + ordered units for the parent editor.
+export const getParentBook = cache(async (bookId: number) => {
+  const { userId } = await auth();
+  if (!userId) return null;
+  
+  const book = await db.query.books.findFirst({
+    where: and(eq(books.id, bookId), eq(books.createdBy, userId)),
+    with: {
+      units: { orderBy: [asc(bookUnits.order), asc(bookUnits.id)] },
+    },
+  });
+  return book ?? null;
+});
 
 // Returns only public (admin-created) courses. Private parent-created courses are excluded.
 export const getCourses = cache(async () => {

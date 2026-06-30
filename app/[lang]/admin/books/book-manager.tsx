@@ -43,9 +43,11 @@ const empty: BookInput = {
 export const BookManager = ({
   books,
   lang,
+  basePath,
 }: {
   books: AdminBook[];
   lang: string;
+  basePath: string;
 }) => {
   const dict = useDictionary();
   const router = useRouter();
@@ -239,7 +241,7 @@ export const BookManager = ({
                     {dict["admin.units"] || "units"}
                   </span>
                   <Link
-                    href={`/${lang}/admin/books/${book.id}`}
+                    href={`${basePath}/${book.id}`}
                     className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
                   >
                     <Images className="h-3.5 w-3.5" />{" "}

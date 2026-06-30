@@ -14,6 +14,7 @@ import {
   Settings,
   GraduationCap,
   UserCog,
+  BookText,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export const ParentShell = ({
   const parentLinks = [
     { name: dict["nav.dashboard"] || "Dashboard", href: `/${locale}/family`, icon: Home },
     { name: dict["nav.children"] || "Children", href: `/${locale}/family/children`, icon: Users },
+    { name: dict["nav.books"] || "Books", href: `/${locale}/family/books`, icon: BookText },
     { name: dict["nav.members"] || "Members", href: `/${locale}/family/members`, icon: UserCog },
     { name: dict["nav.myCourses"] || "My Courses", href: `/${locale}/family/my-courses`, icon: GraduationCap },
     { name: dict["nav.courses"] || "Courses", href: `/${locale}/family/courses`, icon: BookOpen },

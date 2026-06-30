@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/db/drizzle";
 import { auth } from "@/lib/auth";
 import { getIsAdmin } from "@/lib/admin";
-import { books, bookUnits } from "@/db/schema";
+import { books, bookUnits, userProgress } from "@/db/schema";
 
 export type BookInput = {
   title: string;
@@ -17,10 +17,33 @@ export type BookInput = {
   isPublished: boolean;
 };
 
-const assertAdmin = async () => {
+const assertAdminOrParent = async () => {
   const { userId } = await auth();
-  if (!userId || !(await getIsAdmin())) throw new Error("Unauthorized.");
-  return userId;
+  if (!userId) throw new Error("Unauthorized.");
+  const isAdmin = await getIsAdmin();
+  if (isAdmin) return { userId, isAdmin, isParent: false };
+  
+  const user = await db.query.userProgress.findFirst({
+    where: eq(userProgress.userId, userId),
+    columns: { role: true },
+  });
+  if (user?.role === "parent") return { userId, isAdmin: false, isParent: true };
+  
+  throw new Error("Unauthorized.");
+};
+
+const assertBookOwnership = async (bookId: number) => {
+  const { userId, isAdmin } = await assertAdminOrParent();
+  if (isAdmin) return; // Admins can modify any book
+  
+  const book = await db.query.books.findFirst({
+    where: eq(books.id, bookId),
+    columns: { createdBy: true },
+  });
+  
+  if (!book || book.createdBy !== userId) {
+    throw new Error("Unauthorized or book not found.");
+  }
 };
 
 const normalize = (data: BookInput) => ({
@@ -34,7 +57,11 @@ const normalize = (data: BookInput) => ({
 
 const revalidate = (lang: string, bookId?: number) => {
   revalidatePath(`/${lang}/admin/books`);
-  if (bookId) revalidatePath(`/${lang}/admin/books/${bookId}`);
+  revalidatePath(`/${lang}/family/books`);
+  if (bookId) {
+    revalidatePath(`/${lang}/admin/books/${bookId}`);
+    revalidatePath(`/${lang}/family/books/${bookId}`);
+  }
   revalidatePath(`/${lang}/books`);
   revalidatePath(`/${lang}/learn`);
 };
@@ -42,12 +69,12 @@ const revalidate = (lang: string, bookId?: number) => {
 // --- Book CRUD ---------------------------------------------------------------
 
 export const createBook = async (data: BookInput, lang = "en") => {
-  const userId = await assertAdmin();
+  const { userId, isAdmin } = await assertAdminOrParent();
   if (!data.title.trim()) throw new Error("Title is required.");
 
   const [row] = await db
     .insert(books)
-    .values({ ...normalize(data), createdBy: userId })
+    .values({ ...normalize(data), createdBy: isAdmin ? null : userId })
     .returning({ id: books.id });
 
   revalidate(lang, row.id);
@@ -55,7 +82,7 @@ export const createBook = async (data: BookInput, lang = "en") => {
 };
 
 export const updateBook = async (id: number, data: BookInput, lang = "en") => {
-  await assertAdmin();
+  await assertBookOwnership(id);
   if (!data.title.trim()) throw new Error("Title is required.");
 
   await db.update(books).set(normalize(data)).where(eq(books.id, id));
@@ -64,7 +91,7 @@ export const updateBook = async (id: number, data: BookInput, lang = "en") => {
 };
 
 export const deleteBook = async (id: number, lang = "en") => {
-  await assertAdmin();
+  await assertBookOwnership(id);
 
   // book_units cascade on book delete (fk onDelete: cascade).
   await db.delete(books).where(eq(books.id, id));
@@ -92,7 +119,7 @@ export const createBookUnit = async (
   data: BookUnitInput,
   lang = "en"
 ) => {
-  await assertAdmin();
+  await assertBookOwnership(bookId);
   const [row] = await db
     .insert(bookUnits)
     .values({
@@ -113,7 +140,7 @@ export const updateBookUnit = async (
   data: BookUnitInput,
   lang = "en"
 ) => {
-  await assertAdmin();
+  await assertBookOwnership(bookId);
   await db
     .update(bookUnits)
     .set({ title: data.title.trim(), content: data.content ?? "" })
@@ -127,7 +154,7 @@ export const deleteBookUnit = async (
   bookId: number,
   lang = "en"
 ) => {
-  await assertAdmin();
+  await assertBookOwnership(bookId);
   await db
     .delete(bookUnits)
     .where(and(eq(bookUnits.id, unitId), eq(bookUnits.bookId, bookId)));
@@ -141,7 +168,7 @@ export const reorderBookUnits = async (
   orderedUnitIds: number[],
   lang = "en"
 ) => {
-  await assertAdmin();
+  await assertBookOwnership(bookId);
   for (let i = 0; i < orderedUnitIds.length; i++) {
     await db
       .update(bookUnits)
