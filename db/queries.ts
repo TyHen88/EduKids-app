@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { eq, ilike, not, and, inArray, isNull, or, count } from "drizzle-orm";
+import { eq, ilike, not, and, inArray, isNull, or, count, asc, desc } from "drizzle-orm";
 
 import db from "./drizzle";
 import { auth } from "@/lib/auth";
@@ -22,6 +22,8 @@ import {
   courseAssignments,
   loginAudit,
   audioSettings,
+  books,
+  bookPages,
 } from "./schema";
 
 // Global, admin-managed background-music config. Falls back to sensible
@@ -33,6 +35,85 @@ export const getAudioSettings = cache(async () => {
     musicVolume: row?.musicVolume ?? 50,
   };
 });
+
+// --- Books -------------------------------------------------------------------
+
+// Published books for the learner library (newest first). Includes a page count
+// so the UI can show length / hide empty books.
+export const getPublishedBooks = cache(async () => {
+  const rows = await db
+    .select({
+      id: books.id,
+      title: books.title,
+      coverSrc: books.coverSrc,
+      description: books.description,
+      category: books.category,
+      language: books.language,
+      pages: count(bookPages.id),
+    })
+    .from(books)
+    .leftJoin(bookPages, eq(bookPages.bookId, books.id))
+    .where(eq(books.isPublished, true))
+    .groupBy(books.id)
+    .orderBy(desc(books.createdAt));
+
+  return rows;
+});
+
+export type LibraryBook = Awaited<ReturnType<typeof getPublishedBooks>>[number];
+
+// A published book + its ordered pages, for the reader. Returns null if the
+// book doesn't exist or isn't published.
+export const getBookForReader = cache(async (bookId: number) => {
+  const book = await db.query.books.findFirst({
+    where: and(eq(books.id, bookId), eq(books.isPublished, true)),
+    with: {
+      pages: { orderBy: [asc(bookPages.order), asc(bookPages.id)] },
+    },
+  });
+  return book ?? null;
+});
+
+// All books (any publish state) + page counts, for the admin list.
+export const getAdminBooks = cache(async () => {
+  await assertAdminOrThrow();
+  const rows = await db
+    .select({
+      id: books.id,
+      title: books.title,
+      coverSrc: books.coverSrc,
+      description: books.description,
+      category: books.category,
+      language: books.language,
+      isPublished: books.isPublished,
+      createdAt: books.createdAt,
+      pages: count(bookPages.id),
+    })
+    .from(books)
+    .leftJoin(bookPages, eq(bookPages.bookId, books.id))
+    .groupBy(books.id)
+    .orderBy(desc(books.createdAt));
+
+  return rows;
+});
+
+export type AdminBook = Awaited<ReturnType<typeof getAdminBooks>>[number];
+
+// One book + ordered pages for the admin page editor (any publish state).
+export const getAdminBook = cache(async (bookId: number) => {
+  await assertAdminOrThrow();
+  const book = await db.query.books.findFirst({
+    where: eq(books.id, bookId),
+    with: {
+      pages: { orderBy: [asc(bookPages.order), asc(bookPages.id)] },
+    },
+  });
+  return book ?? null;
+});
+
+const assertAdminOrThrow = async () => {
+  if (!(await getIsAdmin())) throw new Error("Unauthorized.");
+};
 
 // Returns only public (admin-created) courses. Private parent-created courses are excluded.
 export const getCourses = cache(async () => {

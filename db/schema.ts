@@ -450,3 +450,39 @@ export const audioSettings = pgTable("audio_settings", {
   musicVolume: integer("music_volume").notNull().default(50),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+// --- Books (admin-managed reading library) -----------------------------------
+// Picture/reading books for kids. Each book has ordered page images stored in
+// Vercel Blob. `createdBy` is the admin's user id (null = system seed). Only
+// `isPublished` books are visible to learners.
+export const books = pgTable("books", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  coverSrc: text("cover_src").notNull().default("/edu-logo.png"),
+  description: text("description").notNull().default(""),
+  category: text("category").notNull().default("General"),
+  language: text("language").notNull().default("en"), // "km" | "en" | ...
+  isPublished: boolean("is_published").notNull().default(false),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const bookPages = pgTable("book_pages", {
+  id: serial("id").primaryKey(),
+  bookId: integer("book_id")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  order: integer("order").notNull().default(0),
+  imageSrc: text("image_src").notNull(),
+});
+
+export const booksRelations = relations(books, ({ many }) => ({
+  pages: many(bookPages),
+}));
+
+export const bookPagesRelations = relations(bookPages, ({ one }) => ({
+  book: one(books, {
+    fields: [bookPages.bookId],
+    references: [books.id],
+  }),
+}));

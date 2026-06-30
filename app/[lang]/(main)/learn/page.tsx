@@ -3,11 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   PlayCircle,
-  Award,
   Target,
   Star,
-  CheckCircle2,
-  ShieldQuestion,
+  BookOpen,
   Users,
   Globe,
   Crown,
@@ -17,7 +15,6 @@ import {
 
 import { cn } from "@/lib/utils";
 import { getDictionary } from "@/app/[lang]/dictionaries";
-import { QUESTS } from "@/constants";
 import {
   getCoursesWithProgress,
   getTopFriends,
@@ -25,6 +22,7 @@ import {
   getUserProgress,
   getIsChild,
   getUserRank,
+  getPublishedBooks,
 } from "@/db/queries";
 
 import { Button } from "@/components/ui/button";
@@ -121,14 +119,18 @@ const LearnPage = async ({ params }: Props) => {
   const { lang } = await params;
   const dict = await getDictionary(lang as "km" | "en");
 
-  const [userProgress, courses, badges, topFriends, isChild, rank] = await Promise.all([
-    getUserProgress(),
-    getCoursesWithProgress(),
-    getUserBadges(),
-    getTopFriends(),
-    getIsChild(),
-    getUserRank(),
-  ]);
+  const [userProgress, courses, badges, topFriends, isChild, rank, allBooks] =
+    await Promise.all([
+      getUserProgress(),
+      getCoursesWithProgress(),
+      getUserBadges(),
+      getTopFriends(),
+      getIsChild(),
+      getUserRank(),
+      getPublishedBooks(),
+    ]);
+
+  const books = allBooks.filter((b) => b.pages > 0).slice(0, 4);
 
   if (!userProgress || !userProgress.activeCourseId)
     redirect(`/${lang}/courses`);
@@ -145,17 +147,6 @@ const LearnPage = async ({ params }: Props) => {
     rank && rank.points > 0 && rank.total > 1
       ? rankTheme(rank.rank, name, dict)
       : null;
-
-  // Real, points-based daily goals (uses existing QUESTS thresholds).
-  const goals = QUESTS.slice(0, 3).map((q) => ({
-    title: (dict["learn.earnXp"] || "Earn {value} XP").replace(
-      "{value}",
-      String(q.value)
-    ),
-    value: q.value,
-    done: userProgress.points >= q.value,
-  }));
-  const goalsDone = goals.filter((g) => g.done).length;
 
   const chestAvailable = !(
     userProgress.lastChestAt &&
@@ -317,68 +308,47 @@ const LearnPage = async ({ params }: Props) => {
             )}
           </section>
 
-          {/* Daily goals (points-based) */}
-          <section>
-            <div className="mb-4 flex items-center justify-between px-2">
-              <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
-                <Award className="h-5 w-5 text-orange-500" />{" "}
-                {dict["learn.todaysGoals"] || "Today's Goals"}
-              </h2>
-              <span className="text-sm font-bold text-slate-400">
-                {goalsDone}/{goals.length} {dict["common.done"] || "Done"}
-              </span>
-            </div>
-            <div className="rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
-              <div className="space-y-3 sm:space-y-4">
-                {goals.map((goal) => (
-                  <div
-                    key={goal.value}
-                    className={cn(
-                      "flex items-center gap-3 rounded-2xl border-2 p-3 transition-transform hover:scale-[1.02] sm:gap-4 sm:p-4",
-                      goal.done
-                        ? "border-emerald-100 bg-emerald-50"
-                        : "border-slate-100 bg-slate-50 opacity-80"
-                    )}
+          {/* Story Books */}
+          {books.length > 0 && (
+            <section>
+              <div className="mb-4 flex items-center justify-between px-2">
+                <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
+                  <BookOpen className="h-5 w-5 text-amber-500" />{" "}
+                  {dict["learn.storyBooks"] || "Story Books"}
+                </h2>
+                <Link
+                  href={`/${lang}/books`}
+                  className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                >
+                  {dict["learn.seeAll"] || "See all"}
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                {books.map((book) => (
+                  <Link
+                    key={book.id}
+                    href={`/${lang}/read/${book.id}`}
+                    className="group flex flex-col overflow-hidden rounded-2xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200"
                   >
-                    <div
-                      className={cn(
-                        "shrink-0 rounded-full p-1.5 shadow-sm",
-                        goal.done
-                          ? "bg-emerald-500 text-white"
-                          : "bg-slate-200 text-slate-500"
-                      )}
-                    >
-                      {goal.done ? (
-                        <CheckCircle2 className="h-5 w-5" />
-                      ) : (
-                        <ShieldQuestion className="h-5 w-5" />
-                      )}
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-50">
+                      <Image
+                        src={book.coverSrc}
+                        alt={book.title}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                      />
                     </div>
-                    <div className="flex-1">
-                      <div
-                        className={cn(
-                          "font-bold leading-tight",
-                          goal.done ? "text-emerald-900" : "text-slate-700"
-                        )}
-                      >
-                        {goal.title}
-                      </div>
-                      <div
-                        className={cn(
-                          "mt-0.5 text-[10px] font-bold uppercase tracking-widest",
-                          goal.done ? "text-emerald-700/80" : "text-slate-500"
-                        )}
-                      >
-                        {goal.done
-                          ? dict["learn.completed"] || "Completed"
-                          : dict["learn.inProgress"] || "In progress"}
-                      </div>
+                    <div className="p-2">
+                      <h3 className="line-clamp-2 text-xs font-black text-slate-800">
+                        {book.title}
+                      </h3>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </div>
 
         {/* Right column */}

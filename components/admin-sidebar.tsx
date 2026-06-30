@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
+  BookText,
   Settings,
   LogOut,
   ScrollText,
@@ -77,6 +78,11 @@ export const AdminShell = ({
       name: dict["admin.navCourses"] || "Courses",
       href: `/${locale}/admin/courses`,
       icon: BookOpen,
+    },
+    {
+      name: dict["admin.navBooks"] || "Books",
+      href: `/${locale}/admin/books`,
+      icon: BookText,
     },
     {
       name: dict["admin.navAudit"] || "Login Audit",
