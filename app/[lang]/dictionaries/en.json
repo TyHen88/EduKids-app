@@ -728,5 +728,17 @@
   "admin.uploadPagesHint": "PNG, JPG or WEBP — select one or more.",
   "admin.moveUp": "Move up",
   "admin.moveDown": "Move down",
-  "common.add": "Add"
+  "common.add": "Add",
+  "admin.pageNeedsContent": "Add some text or an image for the page.",
+  "admin.pageUpdated": "Page updated.",
+  "admin.pagesEditorHint": "Each page has a title and text content, with an optional picture.",
+  "admin.untitledPage": "Untitled page",
+  "admin.imageOnlyPage": "Image only",
+  "admin.editPage": "Edit page",
+  "admin.pageTitle": "Page title",
+  "admin.pageTitlePlaceholder": "e.g. Chapter 1",
+  "admin.pageContent": "Content",
+  "admin.pageContentPlaceholder": "Write the text for this page...",
+  "admin.pageImage": "Picture",
+  "common.optional": "optional"
 }

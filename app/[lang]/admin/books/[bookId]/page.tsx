@@ -43,7 +43,12 @@ const AdminBookPagesPage = async ({ params }: Props) => {
 
       <BookPageManager
         bookId={book.id}
-        initialPages={book.pages.map((p) => ({ id: p.id, imageSrc: p.imageSrc }))}
+        initialPages={book.pages.map((p) => ({
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          imageSrc: p.imageSrc ?? "",
+        }))}
         lang={lang}
       />
     </div>

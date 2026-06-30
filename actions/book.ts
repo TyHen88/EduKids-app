@@ -72,6 +72,68 @@ export const deleteBook = async (id: number, lang = "en") => {
   revalidate(lang);
 };
 
+// --- Page content CRUD -------------------------------------------------------
+
+export type BookPageInput = {
+  title: string;
+  content: string;
+  imageSrc: string; // "" = no image
+};
+
+const normalizePage = (data: BookPageInput) => ({
+  title: data.title.trim(),
+  content: data.content.trim(),
+  imageSrc: data.imageSrc.trim() || null,
+});
+
+const nextOrder = async (bookId: number) => {
+  const [{ value } = { value: null }] = await db
+    .select({ value: max(bookPages.order) })
+    .from(bookPages)
+    .where(eq(bookPages.bookId, bookId));
+  return (value ?? -1) + 1;
+};
+
+export const createBookPage = async (
+  bookId: number,
+  data: BookPageInput,
+  lang = "en"
+) => {
+  await assertAdmin();
+  const page = normalizePage(data);
+  if (!page.content && !page.imageSrc) {
+    throw new Error("Add some text or an image for the page.");
+  }
+
+  const [row] = await db
+    .insert(bookPages)
+    .values({ bookId, order: await nextOrder(bookId), ...page })
+    .returning({ id: bookPages.id });
+
+  revalidate(lang, bookId);
+  return { id: row.id };
+};
+
+export const updateBookPage = async (
+  pageId: number,
+  bookId: number,
+  data: BookPageInput,
+  lang = "en"
+) => {
+  await assertAdmin();
+  const page = normalizePage(data);
+  if (!page.content && !page.imageSrc) {
+    throw new Error("Add some text or an image for the page.");
+  }
+
+  await db
+    .update(bookPages)
+    .set(page)
+    .where(and(eq(bookPages.id, pageId), eq(bookPages.bookId, bookId)));
+
+  revalidate(lang, bookId);
+};
+
 // --- Page management ---------------------------------------------------------
 
 // Append one or more page images (already uploaded to Blob) to the end of the

@@ -6,7 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-type Page = { id: number; imageSrc: string };
+type Page = {
+  id: number;
+  title: string;
+  content: string;
+  imageSrc: string;
+};
 
 type Labels = {
   page: string;
@@ -51,6 +56,8 @@ export const Reader = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
+  const current = atEnd ? null : pages[index];
+
   return (
     <div className="relative flex h-full flex-col">
       {/* Top bar */}
@@ -73,9 +80,9 @@ export const Reader = ({
       </header>
 
       {/* Page */}
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-2">
+      <div className="relative flex min-h-0 flex-1 items-stretch justify-center px-2 pb-2 sm:px-4">
         {atEnd ? (
-          <div className="flex flex-col items-center gap-5 text-center text-white">
+          <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center text-white">
             <div className="text-3xl font-black sm:text-4xl">{labels.theEnd}</div>
             <Link
               href={`/${lang}/books`}
@@ -85,15 +92,32 @@ export const Reader = ({
             </Link>
           </div>
         ) : (
-          <div className="relative h-full w-full max-w-3xl">
-            <Image
-              src={pages[index].imageSrc}
-              alt={`${labels.page} ${index + 1}`}
-              fill
-              priority
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 768px"
-            />
+          // The page "sheet" — scrollable, with optional picture, title and text.
+          <div className="my-1 flex w-full max-w-2xl flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            {current!.imageSrc && (
+              <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-3xl bg-slate-100">
+                <Image
+                  src={current!.imageSrc}
+                  alt={current!.title || `${labels.page} ${index + 1}`}
+                  fill
+                  priority
+                  className="object-contain"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                />
+              </div>
+            )}
+            <div className="flex-1 px-6 py-6 sm:px-10 sm:py-8">
+              {current!.title && (
+                <h2 className="mb-4 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">
+                  {current!.title}
+                </h2>
+              )}
+              {current!.content && (
+                <p className="whitespace-pre-wrap text-lg leading-relaxed text-slate-700 sm:text-xl">
+                  {current!.content}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -103,7 +127,7 @@ export const Reader = ({
             type="button"
             onClick={() => go(index - 1)}
             aria-label={labels.prev}
-            className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/30"
+            className="absolute left-1 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/30 sm:left-3"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -113,7 +137,7 @@ export const Reader = ({
             type="button"
             onClick={() => go(index + 1)}
             aria-label={labels.next}
-            className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/30"
+            className="absolute right-1 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/30 sm:right-3"
           >
             <ChevronRight className="h-6 w-6" />
           </button>

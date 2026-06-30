@@ -473,7 +473,11 @@ export const bookPages = pgTable("book_pages", {
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   order: integer("order").notNull().default(0),
-  imageSrc: text("image_src").notNull(),
+  // A page has real content: an optional heading + body text, plus an optional
+  // illustration. At least content or an image should be present.
+  title: text("title").notNull().default(""),
+  content: text("content").notNull().default(""),
+  imageSrc: text("image_src"), // optional illustration
 });
 
 export const booksRelations = relations(books, ({ many }) => ({

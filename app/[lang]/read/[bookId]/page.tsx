@@ -22,7 +22,12 @@ const ReadBookPage = async ({ params }: Props) => {
     <Reader
       lang={lang}
       title={book.title}
-      pages={book.pages.map((p) => ({ id: p.id, imageSrc: p.imageSrc }))}
+      pages={book.pages.map((p) => ({
+        id: p.id,
+        title: p.title,
+        content: p.content,
+        imageSrc: p.imageSrc ?? "",
+      }))}
       labels={{
         page: dict["books.page"] || "Page",
         of: dict["common.of"] || "of",

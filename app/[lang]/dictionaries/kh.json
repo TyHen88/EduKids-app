@@ -728,5 +728,17 @@
   "admin.uploadPagesHint": "PNG, JPG ឬ WEBP — ជ្រើសរើសមួយ ឬច្រើន។",
   "admin.moveUp": "ផ្លាស់ឡើងលើ",
   "admin.moveDown": "ផ្លាស់ចុះក្រោម",
-  "common.add": "បន្ថែម"
+  "common.add": "បន្ថែម",
+  "admin.pageNeedsContent": "សូមបន្ថែមអក្សរ ឬរូបភាពសម្រាប់ទំព័រ។",
+  "admin.pageUpdated": "បានធ្វើបច្ចុប្បន្នភាពទំព័រ។",
+  "admin.pagesEditorHint": "ទំព័រនីមួយៗមានចំណងជើង និងអត្ថបទ ព្រមទាំងរូបភាពស្រេចចិត្ត។",
+  "admin.untitledPage": "ទំព័រគ្មានចំណងជើង",
+  "admin.imageOnlyPage": "រូបភាពតែប៉ុណ្ណោះ",
+  "admin.editPage": "កែសម្រួលទំព័រ",
+  "admin.pageTitle": "ចំណងជើងទំព័រ",
+  "admin.pageTitlePlaceholder": "ឧ. ជំពូកទី ១",
+  "admin.pageContent": "ខ្លឹមសារ",
+  "admin.pageContentPlaceholder": "សរសេរអត្ថបទសម្រាប់ទំព័រនេះ...",
+  "admin.pageImage": "រូបភាព",
+  "common.optional": "ស្រេចចិត្ត"
 }
