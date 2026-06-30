@@ -24,6 +24,7 @@ import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 import { NotificationBell } from "@/components/notification-bell";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BackgroundMusic } from "@/components/background-music";
+import { ButtonClickSound } from "@/components/button-click-sound";
 import { MusicToggle } from "@/components/music-toggle";
 
 type MainShellProps = {
@@ -92,6 +93,7 @@ export const MainShell = ({
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-900">
       <BackgroundMusic adminEnabled={musicEnabled} volume={musicVolume} />
+      <ButtonClickSound enabled={musicEnabled} />
 
       <header className="z-10 flex h-[calc(5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] sm:px-6">
         <Link
