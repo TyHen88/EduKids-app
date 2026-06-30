@@ -703,5 +703,19 @@
   "books.exit": "Exit",
   "books.theEnd": "The End!",
   "books.backToLibrary": "Back to Library",
-  "learn.storyBooks": "Story Books"
+  "learn.storyBooks": "Story Books",
+  "tools.title": "Assistant Tools",
+  "tools.imageSearch": "Image Search",
+  "tools.aiTitle": "AI Assistant",
+  "tools.planned": "Soon",
+  "tools.aiDesc": "Ask Gemini for general info (coming soon).",
+  "tools.imageDesc": "Find images on the web and copy a URL.",
+  "tools.imagePlaceholder": "Search for an image...",
+  "tools.noResults": "No images found.",
+  "tools.searchHint": "Type a query and press search.",
+  "tools.copyUrl": "Copy image URL",
+  "tools.openSource": "Open source",
+  "tools.copyTip": "Tip: copy an image URL and paste it into a cover or page field.",
+  "tools.urlCopied": "Image URL copied!",
+  "tools.hide": "Hide"
 }

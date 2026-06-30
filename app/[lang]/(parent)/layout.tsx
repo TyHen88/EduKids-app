@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { ParentShell } from "@/components/parent-shell";
+import { ToolsAssist } from "@/components/tools/tools-assist";
 import {
   getUserProgress,
   getUserNotifications,
@@ -44,6 +45,7 @@ const ParentLayout = async ({ children, params }: ParentLayoutProps) => {
       initialUnreadCount={unreadCount}
     >
       {children}
+      <ToolsAssist />
     </ParentShell>
   );
 };

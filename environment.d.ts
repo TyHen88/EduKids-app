@@ -21,6 +21,9 @@ declare global {
 
       // vercel blob read/write token (from the Vercel dashboard Blob store)
       BLOB_READ_WRITE_TOKEN: string;
+
+      // serper.dev API key — image search tool in admin/parent panels
+      SERPER_API_KEY: string;
     }
   }
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/admin-sidebar";
+import { ToolsAssist } from "@/components/tools/tools-assist";
 import { getIsAdmin } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import {
@@ -34,6 +35,7 @@ const AdminLayout = async ({ children, params }: AdminLayoutProps) => {
       initialUnreadCount={unreadCount}
     >
       {children}
+      <ToolsAssist />
     </AdminShell>
   );
 };

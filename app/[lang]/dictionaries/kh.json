@@ -703,5 +703,19 @@
   "books.exit": "ចេញ",
   "books.theEnd": "ចប់!",
   "books.backToLibrary": "ត្រឡប់ទៅបណ្ណាល័យ",
-  "learn.storyBooks": "សៀវភៅរឿង"
+  "learn.storyBooks": "សៀវភៅរឿង",
+  "tools.title": "ឧបករណ៍ជំនួយ",
+  "tools.imageSearch": "ស្វែងរករូបភាព",
+  "tools.aiTitle": "ជំនួយការ AI",
+  "tools.planned": "ឆាប់ៗ",
+  "tools.aiDesc": "សួរ Gemini សម្រាប់ព័ត៌មានទូទៅ (នឹងមកដល់ឆាប់ៗ)។",
+  "tools.imageDesc": "ស្វែងរករូបភាពនៅលើអ៊ីនធឺណិត ហើយចម្លង URL។",
+  "tools.imagePlaceholder": "ស្វែងរករូបភាព...",
+  "tools.noResults": "រកមិនឃើញរូបភាពទេ។",
+  "tools.searchHint": "វាយបញ្ចូលពាក្យស្វែងរក ហើយចុចស្វែងរក។",
+  "tools.copyUrl": "ចម្លង URL រូបភាព",
+  "tools.openSource": "បើកប្រភព",
+  "tools.copyTip": "គន្លឹះ៖ ចម្លង URL រូបភាព ហើយដាក់ចូលក្នុងប្រអប់គម្រប ឬទំព័រ។",
+  "tools.urlCopied": "បានចម្លង URL រូបភាព!",
+  "tools.hide": "លាក់"
 }
