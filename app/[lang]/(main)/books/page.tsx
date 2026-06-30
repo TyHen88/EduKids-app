@@ -13,7 +13,7 @@ type Props = {
 const BooksPage = async ({ params }: Props) => {
   const { lang } = await params;
   const dict = await getDictionary(lang as "km" | "en");
-  const books = (await getPublishedBooks()).filter((b) => b.pages > 0);
+  const books = (await getPublishedBooks()).filter((b) => b.units > 0);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-12">
@@ -60,8 +60,8 @@ const BooksPage = async ({ params }: Props) => {
                   {book.title}
                 </h3>
                 <div className="mt-auto flex items-center gap-1 pt-2 text-xs font-bold text-slate-400">
-                  <Images className="h-3.5 w-3.5" /> {book.pages}{" "}
-                  {dict["books.pages"] || "pages"}
+                  <Images className="h-3.5 w-3.5" /> {book.units}{" "}
+                  {dict["books.units"] || "units"}
                 </div>
               </div>
             </Link>

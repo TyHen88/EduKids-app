@@ -467,26 +467,26 @@ export const books = pgTable("books", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const bookPages = pgTable("book_pages", {
+// A book is organised into ordered units (chapters). Each unit is a single
+// rich-text document (HTML produced by the Tiptap editor) with a title; images
+// and formatting live inline inside `content`.
+export const bookUnits = pgTable("book_units", {
   id: serial("id").primaryKey(),
   bookId: integer("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   order: integer("order").notNull().default(0),
-  // A page has real content: an optional heading + body text, plus an optional
-  // illustration. At least content or an image should be present.
   title: text("title").notNull().default(""),
-  content: text("content").notNull().default(""),
-  imageSrc: text("image_src"), // optional illustration
+  content: text("content").notNull().default(""), // rich-text HTML
 });
 
 export const booksRelations = relations(books, ({ many }) => ({
-  pages: many(bookPages),
+  units: many(bookUnits),
 }));
 
-export const bookPagesRelations = relations(bookPages, ({ one }) => ({
+export const bookUnitsRelations = relations(bookUnits, ({ one }) => ({
   book: one(books, {
-    fields: [bookPages.bookId],
+    fields: [bookUnits.bookId],
     references: [books.id],
   }),
 }));

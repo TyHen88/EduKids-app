@@ -235,8 +235,8 @@ export const BookManager = ({
 
                 <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                   <span className="flex items-center gap-1 text-xs font-bold text-slate-500">
-                    <Images className="h-3.5 w-3.5" /> {book.pages}{" "}
-                    {dict["admin.pages"] || "pages"}
+                    <Images className="h-3.5 w-3.5" /> {book.units}{" "}
+                    {dict["admin.units"] || "units"}
                   </span>
                   <Link
                     href={`/${lang}/admin/books/${book.id}`}

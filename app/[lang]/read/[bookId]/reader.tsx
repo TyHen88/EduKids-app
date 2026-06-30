@@ -1,20 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-type Page = {
-  id: number;
-  title: string;
-  content: string;
-  imageSrc: string;
-};
+type Unit = { id: number; title: string; content: string };
 
 type Labels = {
-  page: string;
+  unit: string;
   of: string;
   prev: string;
   next: string;
@@ -26,21 +20,21 @@ type Labels = {
 export const Reader = ({
   lang,
   title,
-  pages,
+  units,
   labels,
 }: {
   lang: string;
   title: string;
-  pages: Page[];
+  units: Unit[];
   labels: Labels;
 }) => {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  // `index === pages.length` shows the friendly "The End" screen.
-  const atEnd = index === pages.length;
+  // `index === units.length` shows the friendly "The End" screen.
+  const atEnd = index === units.length;
 
   const go = (next: number) => {
-    if (next < 0 || next > pages.length) return;
+    if (next < 0 || next > units.length) return;
     setIndex(next);
   };
 
@@ -56,7 +50,7 @@ export const Reader = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  const current = atEnd ? null : pages[index];
+  const current = atEnd ? null : units[index];
 
   return (
     <div className="relative flex h-full flex-col">
@@ -67,7 +61,7 @@ export const Reader = ({
           <span className="text-xs font-semibold text-white/70">
             {atEnd
               ? labels.theEnd
-              : `${labels.page} ${index + 1} ${labels.of} ${pages.length}`}
+              : `${labels.unit} ${index + 1} ${labels.of} ${units.length}`}
           </span>
           <Link
             href={`/${lang}/books`}
@@ -79,7 +73,7 @@ export const Reader = ({
         </div>
       </header>
 
-      {/* Page */}
+      {/* Unit */}
       <div className="relative flex min-h-0 flex-1 items-stretch justify-center px-2 pb-2 sm:px-4">
         {atEnd ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center text-white">
@@ -92,31 +86,21 @@ export const Reader = ({
             </Link>
           </div>
         ) : (
-          // The page "sheet" — scrollable, with optional picture, title and text.
+          // The unit "sheet" — scrollable rich content.
           <div className="my-1 flex w-full max-w-2xl flex-col overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            {current!.imageSrc && (
-              <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-t-3xl bg-slate-100">
-                <Image
-                  src={current!.imageSrc}
-                  alt={current!.title || `${labels.page} ${index + 1}`}
-                  fill
-                  priority
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                />
-              </div>
-            )}
-            <div className="flex-1 px-6 py-6 sm:px-10 sm:py-8">
+            <div className="px-6 py-6 sm:px-10 sm:py-8">
               {current!.title && (
                 <h2 className="mb-4 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">
                   {current!.title}
                 </h2>
               )}
-              {current!.content && (
-                <p className="whitespace-pre-wrap text-lg leading-relaxed text-slate-700 sm:text-xl">
-                  {current!.content}
-                </p>
-              )}
+              {current!.content ? (
+                <div
+                  className="book-prose"
+                  // Authored by admins only (trusted) via the Tiptap editor.
+                  dangerouslySetInnerHTML={{ __html: current!.content }}
+                />
+              ) : null}
             </div>
           </div>
         )}
@@ -146,11 +130,11 @@ export const Reader = ({
 
       {/* Progress dots */}
       <div className="flex shrink-0 items-center justify-center gap-1.5 pb-4">
-        {pages.map((p, i) => (
+        {units.map((u, i) => (
           <button
-            key={p.id}
+            key={u.id}
             type="button"
-            aria-label={`${labels.page} ${i + 1}`}
+            aria-label={`${labels.unit} ${i + 1}`}
             onClick={() => go(i)}
             className={
               "h-1.5 rounded-full transition-all " +

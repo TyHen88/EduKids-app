@@ -1,12 +1,12 @@
 "use server";
 
-import { eq, and, notInArray, max } from "drizzle-orm";
+import { eq, and, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import db from "@/db/drizzle";
 import { auth } from "@/lib/auth";
 import { getIsAdmin } from "@/lib/admin";
-import { books, bookPages } from "@/db/schema";
+import { books, bookUnits } from "@/db/schema";
 
 export type BookInput = {
   title: string;
@@ -66,154 +66,88 @@ export const updateBook = async (id: number, data: BookInput, lang = "en") => {
 export const deleteBook = async (id: number, lang = "en") => {
   await assertAdmin();
 
-  // book_pages cascade on book delete (fk onDelete: cascade).
+  // book_units cascade on book delete (fk onDelete: cascade).
   await db.delete(books).where(eq(books.id, id));
 
   revalidate(lang);
 };
 
-// --- Page content CRUD -------------------------------------------------------
+// --- Unit (chapter) CRUD -----------------------------------------------------
 
-export type BookPageInput = {
+export type BookUnitInput = {
   title: string;
-  content: string;
-  imageSrc: string; // "" = no image
+  content: string; // rich-text HTML from the editor
 };
-
-const normalizePage = (data: BookPageInput) => ({
-  title: data.title.trim(),
-  content: data.content.trim(),
-  imageSrc: data.imageSrc.trim() || null,
-});
 
 const nextOrder = async (bookId: number) => {
   const [{ value } = { value: null }] = await db
-    .select({ value: max(bookPages.order) })
-    .from(bookPages)
-    .where(eq(bookPages.bookId, bookId));
+    .select({ value: max(bookUnits.order) })
+    .from(bookUnits)
+    .where(eq(bookUnits.bookId, bookId));
   return (value ?? -1) + 1;
 };
 
-export const createBookPage = async (
+export const createBookUnit = async (
   bookId: number,
-  data: BookPageInput,
+  data: BookUnitInput,
   lang = "en"
 ) => {
   await assertAdmin();
-  const page = normalizePage(data);
-  if (!page.content && !page.imageSrc) {
-    throw new Error("Add some text or an image for the page.");
-  }
-
   const [row] = await db
-    .insert(bookPages)
-    .values({ bookId, order: await nextOrder(bookId), ...page })
-    .returning({ id: bookPages.id });
+    .insert(bookUnits)
+    .values({
+      bookId,
+      order: await nextOrder(bookId),
+      title: data.title.trim(),
+      content: data.content ?? "",
+    })
+    .returning({ id: bookUnits.id });
 
   revalidate(lang, bookId);
   return { id: row.id };
 };
 
-export const updateBookPage = async (
-  pageId: number,
+export const updateBookUnit = async (
+  unitId: number,
   bookId: number,
-  data: BookPageInput,
+  data: BookUnitInput,
   lang = "en"
 ) => {
   await assertAdmin();
-  const page = normalizePage(data);
-  if (!page.content && !page.imageSrc) {
-    throw new Error("Add some text or an image for the page.");
-  }
-
   await db
-    .update(bookPages)
-    .set(page)
-    .where(and(eq(bookPages.id, pageId), eq(bookPages.bookId, bookId)));
+    .update(bookUnits)
+    .set({ title: data.title.trim(), content: data.content ?? "" })
+    .where(and(eq(bookUnits.id, unitId), eq(bookUnits.bookId, bookId)));
 
   revalidate(lang, bookId);
 };
 
-// --- Page management ---------------------------------------------------------
-
-// Append one or more page images (already uploaded to Blob) to the end of the
-// book, preserving the given order.
-export const addBookPages = async (
-  bookId: number,
-  imageSrcs: string[],
-  lang = "en"
-) => {
-  await assertAdmin();
-  const srcs = imageSrcs.map((s) => s.trim()).filter(Boolean);
-  if (srcs.length === 0) return;
-
-  const [{ value: currentMax } = { value: null }] = await db
-    .select({ value: max(bookPages.order) })
-    .from(bookPages)
-    .where(eq(bookPages.bookId, bookId));
-
-  let next = (currentMax ?? -1) + 1;
-  const values = srcs.map((imageSrc) => ({
-    bookId,
-    imageSrc,
-    order: next++,
-  }));
-
-  await db.insert(bookPages).values(values);
-
-  revalidate(lang, bookId);
-};
-
-export const deleteBookPage = async (
-  pageId: number,
+export const deleteBookUnit = async (
+  unitId: number,
   bookId: number,
   lang = "en"
 ) => {
   await assertAdmin();
-
   await db
-    .delete(bookPages)
-    .where(and(eq(bookPages.id, pageId), eq(bookPages.bookId, bookId)));
+    .delete(bookUnits)
+    .where(and(eq(bookUnits.id, unitId), eq(bookUnits.bookId, bookId)));
 
   revalidate(lang, bookId);
 };
 
-// Persist a new page order. `items` is the full ordered list of page ids.
-export const reorderBookPages = async (
+// Persist a new unit order from the full ordered list of unit ids.
+export const reorderBookUnits = async (
   bookId: number,
-  orderedPageIds: number[],
+  orderedUnitIds: number[],
   lang = "en"
 ) => {
   await assertAdmin();
-
-  // Sequential updates (matches reorderLessonBlocks — avoids pooled-driver
-  // transaction issues).
-  for (let i = 0; i < orderedPageIds.length; i++) {
+  for (let i = 0; i < orderedUnitIds.length; i++) {
     await db
-      .update(bookPages)
+      .update(bookUnits)
       .set({ order: i })
-      .where(and(eq(bookPages.id, orderedPageIds[i]), eq(bookPages.bookId, bookId)));
-  }
-
-  revalidate(lang, bookId);
-};
-
-// Guard against stale ids: remove any pages not in the provided set (used when
-// the editor saves a reconciled list). Optional helper, kept for completeness.
-export const pruneBookPages = async (
-  bookId: number,
-  keepPageIds: number[],
-  lang = "en"
-) => {
-  await assertAdmin();
-
-  if (keepPageIds.length === 0) {
-    await db.delete(bookPages).where(eq(bookPages.bookId, bookId));
-  } else {
-    await db
-      .delete(bookPages)
       .where(
-        and(eq(bookPages.bookId, bookId), notInArray(bookPages.id, keepPageIds))
+        and(eq(bookUnits.id, orderedUnitIds[i]), eq(bookUnits.bookId, bookId))
       );
   }
 

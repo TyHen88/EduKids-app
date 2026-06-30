@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 import { getAdminBook } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
 
-import { BookPageManager } from "./book-page-manager";
+import { BookUnitEditor } from "./book-unit-editor";
 
 type Props = {
   params: Promise<{ lang: string; bookId: string }>;
 };
 
-const AdminBookPagesPage = async ({ params }: Props) => {
+const AdminBookEditorPage = async ({ params }: Props) => {
   const { lang, bookId } = await params;
   const dict = await getDictionary(lang as "km" | "en");
   const id = Number(bookId);
@@ -21,7 +21,7 @@ const AdminBookPagesPage = async ({ params }: Props) => {
   if (!book) notFound();
 
   return (
-    <div className="space-y-6 pb-12 sm:space-y-8">
+    <div className="flex h-full flex-col gap-5 pb-4">
       <div className="flex items-center gap-3">
         <Link
           href={`/${lang}/admin/books`}
@@ -30,24 +30,34 @@ const AdminBookPagesPage = async ({ params }: Props) => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
             {book.title}
           </h1>
-          <p className="mt-1 text-base text-slate-500">
-            {dict["admin.managePagesSubtitle"] ||
-              "Upload, reorder and remove the book's pages."}
+          <p className="mt-0.5 text-sm text-slate-500">
+            {dict["admin.bookEditorSubtitle"] ||
+              "Organise your book into units and write each unit's content."}
           </p>
         </div>
+        {book.isPublished ? (
+          <span className="hidden items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 sm:flex">
+            <Eye className="h-3.5 w-3.5" />
+            {dict["admin.published"] || "Published"}
+          </span>
+        ) : (
+          <span className="hidden items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 sm:flex">
+            <EyeOff className="h-3.5 w-3.5" />
+            {dict["admin.draft"] || "Draft"}
+          </span>
+        )}
       </div>
 
-      <BookPageManager
+      <BookUnitEditor
         bookId={book.id}
-        initialPages={book.pages.map((p) => ({
-          id: p.id,
-          title: p.title,
-          content: p.content,
-          imageSrc: p.imageSrc ?? "",
+        initialUnits={book.units.map((u) => ({
+          id: u.id,
+          title: u.title,
+          content: u.content,
         }))}
         lang={lang}
       />
@@ -55,4 +65,4 @@ const AdminBookPagesPage = async ({ params }: Props) => {
   );
 };
 
-export default AdminBookPagesPage;
+export default AdminBookEditorPage;

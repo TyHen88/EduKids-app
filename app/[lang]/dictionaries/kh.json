@@ -740,5 +740,19 @@
   "admin.pageContent": "ខ្លឹមសារ",
   "admin.pageContentPlaceholder": "សរសេរអត្ថបទសម្រាប់ទំព័រនេះ...",
   "admin.pageImage": "រូបភាព",
-  "common.optional": "ស្រេចចិត្ត"
+  "common.optional": "ស្រេចចិត្ត",
+  "admin.bookEditorSubtitle": "រៀបចំសៀវភៅរបស់អ្នកជាឯកតា ហើយសរសេរខ្លឹមសារនៃឯកតានីមួយៗ។",
+  "admin.units": "ឯកតា",
+  "admin.untitledUnit": "គ្មានចំណងជើង",
+  "admin.newUnitTitle": "ឯកតាថ្មី",
+  "admin.deleteUnitConfirm": "លុបឯកតានេះ?",
+  "admin.unitDeleted": "បានលុបឯកតា។",
+  "admin.unitSaved": "បានរក្សាទុកឯកតា។",
+  "admin.discardUnsaved": "បោះបង់ការផ្លាស់ប្ដូរដែលមិនទាន់រក្សាទុក?",
+  "admin.unitTitlePlaceholder": "ចំណងជើងឯកតា",
+  "admin.saveUnit": "រក្សាទុកឯកតា",
+  "admin.unsavedChanges": "អ្នកមានការផ្លាស់ប្ដូរដែលមិនទាន់រក្សាទុក។",
+  "admin.selectOrAddUnit": "បន្ថែមឯកតានៅខាងឆ្វេងដើម្បីចាប់ផ្ដើមសរសេរ។",
+  "books.unit": "ឯកតា",
+  "books.units": "ឯកតា"
 }

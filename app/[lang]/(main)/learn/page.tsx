@@ -130,7 +130,7 @@ const LearnPage = async ({ params }: Props) => {
       getPublishedBooks(),
     ]);
 
-  const books = allBooks.filter((b) => b.pages > 0).slice(0, 4);
+  const books = allBooks.filter((b) => b.units > 0).slice(0, 4);
 
   if (!userProgress || !userProgress.activeCourseId)
     redirect(`/${lang}/courses`);

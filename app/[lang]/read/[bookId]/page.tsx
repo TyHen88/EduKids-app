@@ -16,20 +16,19 @@ const ReadBookPage = async ({ params }: Props) => {
   if (!Number.isFinite(id)) notFound();
 
   const book = await getBookForReader(id);
-  if (!book || book.pages.length === 0) notFound();
+  if (!book || book.units.length === 0) notFound();
 
   return (
     <Reader
       lang={lang}
       title={book.title}
-      pages={book.pages.map((p) => ({
-        id: p.id,
-        title: p.title,
-        content: p.content,
-        imageSrc: p.imageSrc ?? "",
+      units={book.units.map((u) => ({
+        id: u.id,
+        title: u.title,
+        content: u.content,
       }))}
       labels={{
-        page: dict["books.page"] || "Page",
+        unit: dict["books.unit"] || "Unit",
         of: dict["common.of"] || "of",
         prev: dict["books.prev"] || "Previous",
         next: dict["books.next"] || "Next",

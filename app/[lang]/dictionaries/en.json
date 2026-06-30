@@ -740,5 +740,19 @@
   "admin.pageContent": "Content",
   "admin.pageContentPlaceholder": "Write the text for this page...",
   "admin.pageImage": "Picture",
-  "common.optional": "optional"
+  "common.optional": "optional",
+  "admin.bookEditorSubtitle": "Organise your book into units and write each unit’s content.",
+  "admin.units": "Units",
+  "admin.untitledUnit": "Untitled",
+  "admin.newUnitTitle": "New unit",
+  "admin.deleteUnitConfirm": "Delete this unit?",
+  "admin.unitDeleted": "Unit deleted.",
+  "admin.unitSaved": "Unit saved.",
+  "admin.discardUnsaved": "Discard unsaved changes to this unit?",
+  "admin.unitTitlePlaceholder": "Unit title",
+  "admin.saveUnit": "Save unit",
+  "admin.unsavedChanges": "You have unsaved changes.",
+  "admin.selectOrAddUnit": "Add a unit on the left to start writing.",
+  "books.unit": "Unit",
+  "books.units": "units"
 }

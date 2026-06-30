@@ -23,7 +23,7 @@ import {
   loginAudit,
   audioSettings,
   books,
-  bookPages,
+  bookUnits,
 } from "./schema";
 
 // Global, admin-managed background-music config. Falls back to sensible
@@ -38,7 +38,7 @@ export const getAudioSettings = cache(async () => {
 
 // --- Books -------------------------------------------------------------------
 
-// Published books for the learner library (newest first). Includes a page count
+// Published books for the learner library (newest first). Includes a unit count
 // so the UI can show length / hide empty books.
 export const getPublishedBooks = cache(async () => {
   const rows = await db
@@ -49,10 +49,10 @@ export const getPublishedBooks = cache(async () => {
       description: books.description,
       category: books.category,
       language: books.language,
-      pages: count(bookPages.id),
+      units: count(bookUnits.id),
     })
     .from(books)
-    .leftJoin(bookPages, eq(bookPages.bookId, books.id))
+    .leftJoin(bookUnits, eq(bookUnits.bookId, books.id))
     .where(eq(books.isPublished, true))
     .groupBy(books.id)
     .orderBy(desc(books.createdAt));
@@ -62,19 +62,19 @@ export const getPublishedBooks = cache(async () => {
 
 export type LibraryBook = Awaited<ReturnType<typeof getPublishedBooks>>[number];
 
-// A published book + its ordered pages, for the reader. Returns null if the
+// A published book + its ordered units, for the reader. Returns null if the
 // book doesn't exist or isn't published.
 export const getBookForReader = cache(async (bookId: number) => {
   const book = await db.query.books.findFirst({
     where: and(eq(books.id, bookId), eq(books.isPublished, true)),
     with: {
-      pages: { orderBy: [asc(bookPages.order), asc(bookPages.id)] },
+      units: { orderBy: [asc(bookUnits.order), asc(bookUnits.id)] },
     },
   });
   return book ?? null;
 });
 
-// All books (any publish state) + page counts, for the admin list.
+// All books (any publish state) + unit counts, for the admin list.
 export const getAdminBooks = cache(async () => {
   await assertAdminOrThrow();
   const rows = await db
@@ -87,10 +87,10 @@ export const getAdminBooks = cache(async () => {
       language: books.language,
       isPublished: books.isPublished,
       createdAt: books.createdAt,
-      pages: count(bookPages.id),
+      units: count(bookUnits.id),
     })
     .from(books)
-    .leftJoin(bookPages, eq(bookPages.bookId, books.id))
+    .leftJoin(bookUnits, eq(bookUnits.bookId, books.id))
     .groupBy(books.id)
     .orderBy(desc(books.createdAt));
 
@@ -99,13 +99,13 @@ export const getAdminBooks = cache(async () => {
 
 export type AdminBook = Awaited<ReturnType<typeof getAdminBooks>>[number];
 
-// One book + ordered pages for the admin page editor (any publish state).
+// One book + ordered units for the admin editor (any publish state).
 export const getAdminBook = cache(async (bookId: number) => {
   await assertAdminOrThrow();
   const book = await db.query.books.findFirst({
     where: eq(books.id, bookId),
     with: {
-      pages: { orderBy: [asc(bookPages.order), asc(bookPages.id)] },
+      units: { orderBy: [asc(bookUnits.order), asc(bookUnits.id)] },
     },
   });
   return book ?? null;

@@ -155,3 +155,59 @@ body,
 .noto-khmer {
   font-family: "Noto Sans Khmer", sans-serif;
 }
+
+/* ── Book rich-text content (Tiptap editor + reader) ───────────────────────── */
+.book-prose {
+  @apply text-slate-700;
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+.book-prose:focus {
+  outline: none;
+}
+.book-prose h1 {
+  @apply mb-3 mt-5 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl;
+}
+.book-prose h2 {
+  @apply mb-2 mt-4 text-xl font-extrabold tracking-tight text-slate-800 sm:text-2xl;
+}
+.book-prose p {
+  @apply my-3;
+}
+.book-prose ul {
+  @apply my-3 list-disc space-y-1 pl-6;
+}
+.book-prose ol {
+  @apply my-3 list-decimal space-y-1 pl-6;
+}
+.book-prose a {
+  @apply font-semibold text-indigo-600 underline underline-offset-2;
+}
+.book-prose strong {
+  @apply font-bold text-slate-900;
+}
+.book-prose s {
+  @apply line-through;
+}
+.book-prose img {
+  @apply my-4 max-w-full rounded-2xl border border-slate-100;
+}
+.book-prose table {
+  @apply my-4 w-full border-collapse overflow-hidden rounded-xl text-base;
+}
+.book-prose th,
+.book-prose td {
+  @apply border border-slate-200 px-3 py-2 text-left align-top;
+}
+.book-prose th {
+  @apply bg-slate-50 font-bold text-slate-700;
+}
+/* Tiptap placeholder + selected-cell affordances */
+.book-prose .selectedCell {
+  @apply bg-indigo-50;
+}
+.book-prose:empty::before,
+.book-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply pointer-events-none float-left h-0 text-slate-300;
+}
