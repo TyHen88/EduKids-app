@@ -718,5 +718,15 @@
   "tools.copyTip": "Tip: copy an image URL and paste it into a cover or page field.",
   "tools.urlCopied": "Image URL copied!",
   "tools.hide": "Hide",
-  "tools.moreImages": "More images"
+  "tools.moreImages": "More images",
+  "admin.invalidImageUrl": "Enter a valid image URL.",
+  "admin.pageAdded": "Page added.",
+  "admin.addPage": "Add a page",
+  "admin.addPageHint": "Paste an image link or upload from your device.",
+  "admin.pasteImageLink": "Paste image link",
+  "admin.pasteFromSearchHint": "Tip: use the assistant’s Image Search, copy a URL, and paste it here.",
+  "admin.uploadPagesHint": "PNG, JPG or WEBP — select one or more.",
+  "admin.moveUp": "Move up",
+  "admin.moveDown": "Move down",
+  "common.add": "Add"
 }

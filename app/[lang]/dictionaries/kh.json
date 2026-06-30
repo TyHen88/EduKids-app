@@ -718,5 +718,15 @@
   "tools.copyTip": "គន្លឹះ៖ ចម្លង URL រូបភាព ហើយដាក់ចូលក្នុងប្រអប់គម្រប ឬទំព័រ។",
   "tools.urlCopied": "បានចម្លង URL រូបភាព!",
   "tools.hide": "លាក់",
-  "tools.moreImages": "រូបភាពច្រើនទៀត"
+  "tools.moreImages": "រូបភាពច្រើនទៀត",
+  "admin.invalidImageUrl": "សូមបញ្ចូល URL រូបភាពត្រឹមត្រូវ។",
+  "admin.pageAdded": "បានបន្ថែមទំព័រ។",
+  "admin.addPage": "បន្ថែមទំព័រ",
+  "admin.addPageHint": "បិទភ្ជាប់តំណរូបភាព ឬផ្ទុកឡើងពីឧបករណ៍របស់អ្នក។",
+  "admin.pasteImageLink": "បិទភ្ជាប់តំណរូបភាព",
+  "admin.pasteFromSearchHint": "គន្លឹះ៖ ប្រើ Image Search របស់ជំនួយការ ចម្លង URL ហើយបិទភ្ជាប់នៅទីនេះ។",
+  "admin.uploadPagesHint": "PNG, JPG ឬ WEBP — ជ្រើសរើសមួយ ឬច្រើន។",
+  "admin.moveUp": "ផ្លាស់ឡើងលើ",
+  "admin.moveDown": "ផ្លាស់ចុះក្រោម",
+  "common.add": "បន្ថែម"
 }
