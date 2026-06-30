@@ -1,7 +1,7 @@
 # Sound & Music — build plan
 
 > **Status: planned.** Today the Settings page ships a **UI-only** sound toggle
-> ([app/[lang]/settings/settings-form.tsx](app/[lang]/settings/settings-form.tsx))
+> ([app/[lang]/settings/settings-form.tsx](../app/[lang]/settings/settings-form.tsx))
 > that persists to `localStorage` (`edukids-sound-enabled`) and does not yet drive
 > any audio. The admin Settings page shows a non-interactive preview of the
 > future controls. This document is the plan to make it real.
