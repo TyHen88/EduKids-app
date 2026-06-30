@@ -754,5 +754,9 @@
   "admin.unsavedChanges": "អ្នកមានការផ្លាស់ប្ដូរដែលមិនទាន់រក្សាទុក។",
   "admin.selectOrAddUnit": "បន្ថែមឯកតានៅខាងឆ្វេងដើម្បីចាប់ផ្ដើមសរសេរ។",
   "books.unit": "ឯកតា",
-  "books.units": "ឯកតា"
+  "books.units": "ឯកតា",
+  "books.contents": "មាតិកា",
+  "books.byUnit": "តាមឯកតា",
+  "books.readFull": "អានទាំងអស់",
+  "books.finish": "បញ្ចប់"
 }

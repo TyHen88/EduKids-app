@@ -18,7 +18,7 @@ const ReadLayout = async ({
   if (!userId) redirect(`/${lang}`);
   await guardActiveUser(lang);
 
-  return <div className="flex h-dvh flex-col bg-slate-900">{children}</div>;
+  return <div className="flex h-dvh flex-col bg-slate-50">{children}</div>;
 };
 
 export default ReadLayout;

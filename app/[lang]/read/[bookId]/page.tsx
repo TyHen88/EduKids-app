@@ -35,6 +35,10 @@ const ReadBookPage = async ({ params }: Props) => {
         exit: dict["books.exit"] || "Exit",
         theEnd: dict["books.theEnd"] || "The End!",
         backToLibrary: dict["books.backToLibrary"] || "Back to Library",
+        contents: dict["books.contents"] || "Contents",
+        byUnit: dict["books.byUnit"] || "By unit",
+        readFull: dict["books.readFull"] || "Read full",
+        finish: dict["books.finish"] || "Finish",
       }}
     />
   );

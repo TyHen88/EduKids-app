@@ -754,5 +754,9 @@
   "admin.unsavedChanges": "You have unsaved changes.",
   "admin.selectOrAddUnit": "Add a unit on the left to start writing.",
   "books.unit": "Unit",
-  "books.units": "units"
+  "books.units": "units",
+  "books.contents": "Contents",
+  "books.byUnit": "By unit",
+  "books.readFull": "Read full",
+  "books.finish": "Finish"
 }
