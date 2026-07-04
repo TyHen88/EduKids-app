@@ -19,7 +19,7 @@ export type ImageResult = {
 
 // The assistant tools live in the admin and parent panels, so allow either an
 // admin or a parent account.
-const assertAdminOrParent = async () => {
+export const assertAdminOrParent = async () => {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized.");
   if (await getIsAdmin()) return;

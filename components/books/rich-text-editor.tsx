@@ -23,6 +23,7 @@ import {
   Upload,
   Table as TableIcon,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -67,6 +68,35 @@ const Divider = () => <span className="mx-0.5 h-5 w-px bg-slate-200" />;
 const Toolbar = ({ editor }: { editor: Editor }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const handleEnhance = async () => {
+    const html = editor.getHTML();
+    if (!html || html === "<p></p>") return;
+
+    setIsEnhancing(true);
+    const toastId = toast.loading("Enhancing text with AI...");
+    try {
+      const res = await fetch("/api/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: html, isHtml: true }),
+      });
+
+      if (!res.ok) throw new Error("Failed to enhance text");
+
+      const data = await res.json();
+      if (data.text) {
+        editor.commands.setContent(data.text);
+        toast.success("Text enhanced successfully!", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to enhance text", { id: toastId });
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const setLink = () => {
     const prev = editor.getAttributes("link").href as string | undefined;
@@ -216,6 +246,20 @@ const Toolbar = ({ editor }: { editor: Editor }) => {
         title="Insert table"
       >
         <TableIcon className="h-4 w-4" />
+      </Btn>
+
+      <Divider />
+
+      <Btn
+        onClick={handleEnhance}
+        disabled={isEnhancing}
+        title="Enhance text with AI"
+      >
+        {isEnhancing ? (
+          <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+        ) : (
+          <Sparkles className="h-4 w-4 text-indigo-500" />
+        )}
       </Btn>
     </div>
   );

@@ -17,6 +17,8 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AiInput } from "@/components/ui/ai-input";
+import { AiTextarea } from "@/components/ui/ai-textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -249,7 +251,7 @@ export const ParentCourseManager = ({
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title">{dict["myCourses.titleLabel"] || "Title"}</Label>
-              <Input
+              <AiInput
                 id="title"
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
@@ -259,7 +261,7 @@ export const ParentCourseManager = ({
 
             <div className="space-y-1.5">
               <Label htmlFor="category">{dict["myCourses.categoryLabel"] || "Category"}</Label>
-              <Input
+              <AiInput
                 id="category"
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
@@ -314,13 +316,12 @@ export const ParentCourseManager = ({
 
             <div className="space-y-1.5">
               <Label htmlFor="description">{dict["myCourses.descriptionLabel"] || "Description"}</Label>
-              <textarea
+              <AiTextarea
                 id="description"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
                 placeholder={dict["myCourses.descriptionPlaceholder"] || "What will your children learn?"}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
           </div>

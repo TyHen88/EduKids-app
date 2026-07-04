@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useChat, type UIMessage as Message } from "@ai-sdk/react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Brain,
   Bot,
@@ -25,7 +28,7 @@ import {
 import { searchImages, type ImageResult } from "@/actions/tools";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
-type View = "home" | "image";
+type View = "home" | "image" | "ai";
 
 // Colorful "AI brain" gradient, applied to the lucide Brain icon via an SVG
 // linearGradient (referenced by id). Sider-style launcher.
@@ -46,6 +49,23 @@ export const ToolsAssist = () => {
   const dict = useDictionary();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
+
+  const { messages, status, sendMessage } = useChat();
+  const [input, setInput] = useState("");
+  const isLoading = status === "submitted" || status === "streaming";
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessage({ role: "user", parts: [{ type: "text", text: input }] });
+    setInput("");
+  };
 
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
@@ -151,7 +171,7 @@ export const ToolsAssist = () => {
         >
           <SheetHeader className="border-b border-slate-100 p-5 text-left">
             <SheetTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
-              {view === "image" && (
+              {view !== "home" && (
                 <button
                   type="button"
                   onClick={() => setView("home")}
@@ -168,32 +188,33 @@ export const ToolsAssist = () => {
               />
               {view === "image"
                 ? dict["tools.imageSearch"] || "Image Search"
+                : view === "ai"
+                ? dict["tools.aiTitle"] || "AI Assistant"
                 : dict["tools.title"] || "Assistant Tools"}
             </SheetTitle>
           </SheetHeader>
 
           {view === "home" ? (
             <div className="flex-1 space-y-3 overflow-y-auto p-5">
-              {/* Gemini AI — planned/disabled */}
-              <div className="flex items-center gap-4 rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 opacity-70">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
+              {/* Gemini AI */}
+              <button
+                type="button"
+                onClick={() => setView("ai")}
+                className="flex w-full items-center gap-4 rounded-2xl border-2 border-slate-100 bg-white p-4 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/40"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <Bot className="h-6 w-6" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-700">
-                      {dict["tools.aiTitle"] || "AI Assistant"}
-                    </h3>
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                      {dict["tools.planned"] || "Soon"}
-                    </span>
-                  </div>
+                  <h3 className="font-bold text-slate-800">
+                    {dict["tools.aiTitle"] || "AI Assistant"}
+                  </h3>
                   <p className="text-sm text-slate-500">
                     {dict["tools.aiDesc"] ||
-                      "Ask Gemini for general info (coming soon)."}
+                      "Ask Gemini for general info and tips."}
                   </p>
                 </div>
-              </div>
+              </button>
 
               {/* Image search — active */}
               <button
@@ -214,6 +235,92 @@ export const ToolsAssist = () => {
                   </p>
                 </div>
               </button>
+            </div>
+          ) : view === "ai" ? (
+            <div className="flex min-h-0 flex-1 flex-col p-5">
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="py-12 text-center text-sm font-medium text-slate-400">
+                    <div className="mb-6">
+                      {(dict as any)["tools.aiPlaceholder"] || "Hello! How can I help you today?"}
+                    </div>
+                    <div className="mx-auto flex max-w-[200px] flex-col gap-2">
+                      <Button
+                        variant="primaryOutline"
+                        size="sm"
+                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Help me write a course for beginners." }] })}
+                        className="w-full justify-start text-xs font-medium"
+                      >
+                        💡 Write a course
+                      </Button>
+                      <Button
+                        variant="primaryOutline"
+                        size="sm"
+                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Generate a quiz for animals." }] })}
+                        className="w-full justify-start text-xs font-medium"
+                      >
+                        💡 Generate a quiz
+                      </Button>
+                      <Button
+                        variant="primaryOutline"
+                        size="sm"
+                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Create a challenge for new users." }] })}
+                        className="w-full justify-start text-xs font-medium"
+                      >
+                        💡 Create a challenge
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((m: Message) => (
+                    <div
+                      key={m.id}
+                      className={`flex ${
+                        m.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
+                          m.role === "user"
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-100 text-slate-800"
+                        }`}
+                      >
+                        <div className={m.role === "user" ? "whitespace-pre-wrap" : "prose prose-sm max-w-none prose-slate prose-p:leading-relaxed prose-pre:p-0"}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {(m as any).content || m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {status === "submitted" && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-4 py-3 text-slate-500">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]"></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]"></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400"></div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+              <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={(dict as any)["tools.aiInputPlaceholder"] || "Type a message..."}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="primary" disabled={isLoading || !input.trim()}>
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Search className="h-5 w-5" />
+                  )}
+                </Button>
+              </form>
             </div>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col p-5">

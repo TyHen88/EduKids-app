@@ -16,6 +16,8 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AiInput } from "@/components/ui/ai-input";
+import { AiTextarea } from "@/components/ui/ai-textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -267,7 +269,7 @@ export const BookManager = ({
           <form onSubmit={onSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title">{dict["admin.fieldTitle"] || "Title"}</Label>
-              <Input
+              <AiInput
                 id="title"
                 autoFocus
                 value={form.title}
@@ -281,7 +283,7 @@ export const BookManager = ({
                 <Label htmlFor="category">
                   {dict["admin.fieldCategory"] || "Category"}
                 </Label>
-                <Input
+                <AiInput
                   id="category"
                   value={form.category}
                   onChange={(e) => set("category", e.target.value)}
@@ -334,13 +336,12 @@ export const BookManager = ({
               <Label htmlFor="description">
                 {dict["admin.fieldDescription"] || "Description"}
               </Label>
-              <textarea
+              <AiTextarea
                 id="description"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
                 placeholder={dict["admin.bookDescPlaceholder"] || "What is this book about?"}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
 

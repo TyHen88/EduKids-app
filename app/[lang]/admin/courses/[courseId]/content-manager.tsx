@@ -22,6 +22,8 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AiInput } from "@/components/ui/ai-input";
+import { AiTextarea } from "@/components/ui/ai-textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -493,7 +495,7 @@ export const ContentManager = ({
                 <Label className="text-xs font-bold text-slate-600">
                   {dict["admin.question"] || "Question"}
                 </Label>
-                <Input
+                <AiInput
                   value={form.question}
                   onChange={(e) => setField("question", e.target.value)}
                   placeholder={
@@ -631,7 +633,7 @@ export const ContentManager = ({
                 <Label className="text-xs font-bold text-slate-600">
                   {dict["admin.bodyText"] || "Body Text"}
                 </Label>
-                <textarea
+                <AiTextarea
                   value={form.body}
                   onChange={(e) => setField("body", e.target.value)}
                   className="w-full min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-indigo-500"
@@ -716,7 +718,7 @@ export const ContentManager = ({
                 <Label className="text-xs font-bold text-slate-600">
                   {dict["admin.captionOptional"] || "Caption (optional)"}
                 </Label>
-                <Input
+                <AiInput
                   value={form.caption}
                   onChange={(e) => setField("caption", e.target.value)}
                   placeholder={dict["admin.captionPlaceholder"] || "e.g., An apple"}
@@ -1112,7 +1114,7 @@ export const ContentManager = ({
           <form onSubmit={onSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>{dict["admin.fieldTitle"] || "Title"}</Label>
-              <Input
+              <AiInput
                 autoFocus
                 value={form.title}
                 onChange={(e) => setField("title", e.target.value)}
@@ -1122,7 +1124,7 @@ export const ContentManager = ({
             {editor?.kind === "unit" && (
               <div className="space-y-2">
                 <Label>{dict["admin.fieldDescription"] || "Description"}</Label>
-                <Input
+                <AiInput
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
                 />

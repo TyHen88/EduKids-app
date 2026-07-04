@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AiInput } from "@/components/ui/ai-input";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/books/rich-text-editor";
@@ -264,7 +265,7 @@ export const BookUnitEditor = ({
         {selected ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <div className="flex items-center gap-3">
-              <Input
+              <AiInput
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
                 placeholder={dict["admin.unitTitlePlaceholder"] || "Unit title"}
