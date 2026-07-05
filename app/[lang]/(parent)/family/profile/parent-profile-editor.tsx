@@ -14,6 +14,7 @@ import { uploadImage } from "@/actions/lesson-block";
 import { useSignOut } from "@/lib/use-sign-out";
 import { useLocale, useDictionary } from "@/app/[lang]/lang-provider";
 import { cn } from "@/lib/utils";
+import { AiInput } from "@/components/ui/ai-input";
 
 type Props = {
   initialName: string;
@@ -260,13 +261,12 @@ export const ParentProfileEditor = ({
           <label htmlFor="name" className="block text-sm font-bold text-slate-700">
             {dict["profile.displayName"] || "Display name"}
           </label>
-          <input
+          <AiInput
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={24}
             placeholder={dict["profile.displayNamePlaceholder"] || "Parent"}
-            className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -281,13 +281,12 @@ export const ParentProfileEditor = ({
           <label htmlFor="familyName" className="block text-sm font-bold text-slate-700">
             {dict["profile.familyName"] || "Family Name"}
           </label>
-          <input
+          <AiInput
             id="familyName"
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
             maxLength={32}
             placeholder={dict["profile.familyNamePlaceholder"] || "e.g. The Henty Family"}
-            className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -296,13 +295,12 @@ export const ParentProfileEditor = ({
           <label htmlFor="familyMotto" className="block text-sm font-bold text-slate-700">
             {dict["profile.familyMotto"] || "Family Motto"}
           </label>
-          <input
+          <AiInput
             id="familyMotto"
             value={familyMotto}
             onChange={(e) => setFamilyMotto(e.target.value)}
             maxLength={80}
             placeholder={dict["profile.familyMottoPlaceholder"] || "e.g. Keep exploring and learning together! 🚀"}
-            className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-medium focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
