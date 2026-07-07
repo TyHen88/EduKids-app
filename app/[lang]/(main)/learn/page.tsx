@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { CompanionBuddy } from "./companion-buddy";
 import { DailyChest } from "./daily-chest";
 import { Greeting } from "./greeting";
+import { AppSuggest } from "./app-suggest";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -473,6 +474,9 @@ const LearnPage = async ({ params }: Props) => {
               )}
             </div>
           </section>
+
+          {/* Suggested companion apps */}
+          <AppSuggest dict={dict} />
         </div>
       </div>
     </div>
