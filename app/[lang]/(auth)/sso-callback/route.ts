@@ -9,7 +9,15 @@ import { recordAuthCallback } from "@/actions/audit";
  * <AuthenticateWithRedirectCallback> page.
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const url = new URL(request.url);
+  // Behind Railway's proxy the request URL is the internal address
+  // (localhost:8080); the public origin arrives in forwarded headers.
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : url.origin;
+  const { searchParams } = url;
   const code = searchParams.get("code");
   const next = searchParams.get("next") || "/";
   // The locale is the first segment of `next` (e.g. "/km/learn" → "km").
