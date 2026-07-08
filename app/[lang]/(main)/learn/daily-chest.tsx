@@ -7,6 +7,7 @@ import { Gift, Flame, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { openDailyChest } from "@/actions/cosmic";
+import { cn } from "@/lib/utils";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type Props = {
@@ -50,18 +51,21 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
   };
 
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-b-4 border-amber-100 border-b-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
-      <div className="mb-3 flex items-center justify-between sm:mb-4">
-        <h2 className="text-base font-black tracking-tight text-slate-800 sm:text-lg">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-b-4 border-amber-100 border-b-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm">
+      {/* warm glow */}
+      <div className="pointer-events-none absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-orange-200/40 blur-2xl" />
+
+      <div className="relative mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-black tracking-tight text-slate-800">
           {dict["learn.dailyChest"] || "Daily Chest"}
         </h2>
-        <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-600">
-          <Flame className="h-3.5 w-3.5 fill-current" /> {streak}{" "}
+        <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black text-orange-600">
+          <Flame className="h-3 w-3 fill-current" /> {streak}{" "}
           {dict["learn.day"] || "day"}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-1 text-center sm:gap-3 sm:py-2">
+      <div className="relative flex flex-1 items-center">
         <AnimatePresence mode="wait">
           {reward !== null ? (
             <motion.div
@@ -69,12 +73,12 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
               initial={{ scale: 0.4, opacity: 0, rotate: -20 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 14 }}
-              className="flex flex-col items-center gap-1"
+              className="flex items-center gap-3"
             >
-              <div className="flex items-center gap-1 text-4xl font-black text-amber-500">
-                <Star className="h-9 w-9 fill-current" /> +{reward}
+              <div className="flex items-center gap-1 text-3xl font-black text-amber-500">
+                <Star className="h-8 w-8 fill-current" /> +{reward}
               </div>
-              <p className="text-sm font-bold text-slate-500">
+              <p className="text-xs font-bold leading-tight text-slate-500">
                 {dict["learn.stardustCollected"] || "Stardust collected!"}
               </p>
             </motion.div>
@@ -83,28 +87,35 @@ export const DailyChest = ({ available, streak, lang }: Props) => {
               key="chest"
               onClick={onOpen}
               disabled={pending || claimed}
-              whileHover={!claimed ? { scale: 1.05 } : undefined}
+              whileHover={!claimed ? { scale: 1.03 } : undefined}
               whileTap={!claimed ? { scale: 0.95 } : undefined}
-              animate={
-                claimed
-                  ? { y: 0 }
-                  : { y: [0, -6, 0], rotate: [-2, 2, -2] }
-              }
-              transition={
-                claimed
-                  ? undefined
-                  : { repeat: Infinity, duration: 1.8, ease: "easeInOut" }
-              }
-              className="flex flex-col items-center gap-2 disabled:cursor-not-allowed"
+              className="flex items-center gap-3 text-left disabled:cursor-not-allowed"
             >
-              <Gift
-                className={
-                  claimed
-                    ? "h-12 w-12 text-slate-300 sm:h-16 sm:w-16"
-                    : "h-12 w-12 text-amber-500 drop-shadow sm:h-16 sm:w-16"
+              <motion.span
+                animate={
+                  claimed ? { y: 0 } : { y: [0, -5, 0], rotate: [-3, 3, -3] }
                 }
-              />
-              <span className="text-sm font-bold text-slate-500">
+                transition={
+                  claimed
+                    ? undefined
+                    : { repeat: Infinity, duration: 1.8, ease: "easeInOut" }
+                }
+                className={cn(
+                  "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-4 border-white shadow-inner sm:h-16 sm:w-16",
+                  claimed
+                    ? "bg-slate-100"
+                    : "bg-gradient-to-br from-amber-100 to-orange-100"
+                )}
+              >
+                <Gift
+                  className={
+                    claimed
+                      ? "h-7 w-7 text-slate-300 sm:h-8 sm:w-8"
+                      : "h-7 w-7 text-amber-500 drop-shadow sm:h-8 sm:w-8"
+                  }
+                />
+              </motion.span>
+              <span className="text-sm font-bold leading-tight text-slate-600">
                 {claimed
                   ? dict["learn.comeBackTomorrow"] || "Come back tomorrow!"
                   : dict["learn.tapToOpen"] || "Tap to open!"}

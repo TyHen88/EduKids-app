@@ -7,7 +7,6 @@ import {
   Star,
   BookOpen,
   Users,
-  Globe,
   Crown,
   Medal,
   Sparkles,
@@ -155,36 +154,36 @@ const LearnPage = async ({ params }: Props) => {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 pb-12 sm:space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-4 pb-12 sm:space-y-5">
       {/* Welcome */}
       <Greeting name={name} />
 
-      {/* Leaderboard rank celebration */}
+      {/* Leaderboard rank celebration — compact banner */}
       {rankCard && rank && (
         <div
           className={cn(
-            "relative overflow-hidden rounded-3xl border-2 border-b-4 bg-gradient-to-br p-5 shadow-sm sm:rounded-[32px] sm:p-6",
+            "relative overflow-hidden rounded-3xl border-2 border-b-4 bg-gradient-to-br p-3.5 shadow-sm sm:p-4",
             rankCard.border,
             rankCard.grad
           )}
         >
           <Sparkles
             className={cn(
-              "pointer-events-none absolute right-6 top-5 h-6 w-6 opacity-60",
+              "pointer-events-none absolute right-4 top-3 h-5 w-5 opacity-60",
               rankCard.chip
             )}
           />
           <Sparkles
             className={cn(
-              "pointer-events-none absolute bottom-5 right-20 h-4 w-4 opacity-50",
+              "pointer-events-none absolute bottom-3 right-16 h-3 w-3 opacity-50",
               rankCard.chip
             )}
           />
-          <div className="relative z-10 flex items-center gap-4">
+          <div className="relative z-10 flex items-center gap-3 sm:gap-4">
             <div className="relative shrink-0">
               <div
                 className={cn(
-                  "relative h-16 w-16 overflow-hidden rounded-full border-4 bg-white",
+                  "relative h-12 w-12 overflow-hidden rounded-full border-4 bg-white sm:h-14 sm:w-14",
                   rankCard.ring
                 )}
               >
@@ -193,41 +192,46 @@ const LearnPage = async ({ params }: Props) => {
                   alt={name}
                   fill
                   className="object-cover"
-                  sizes="64px"
+                  sizes="56px"
                 />
               </div>
               <span
                 className={cn(
-                  "absolute -right-1 -top-2 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md",
+                  "absolute -right-1 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-md",
                   rankCard.badge
                 )}
               >
-                <rankCard.Icon className="h-4 w-4 fill-current" />
+                <rankCard.Icon className="h-3.5 w-3.5 fill-current" />
               </span>
             </div>
 
             <div className="min-w-0 flex-1">
               <div
                 className={cn(
-                  "flex items-center gap-1 text-[11px] font-black uppercase tracking-widest",
+                  "flex items-center gap-1 text-[10px] font-black uppercase tracking-widest",
                   rankCard.chip
                 )}
               >
-                <rankCard.Icon className="h-3.5 w-3.5" /> {rankCard.label}
+                <rankCard.Icon className="h-3 w-3" /> {rankCard.label}
               </div>
-              <h3 className="truncate text-lg font-black text-slate-800 sm:text-xl">
+              <h3 className="truncate text-base font-black text-slate-800 sm:text-lg">
                 {rankCard.title}
               </h3>
-              <p className="text-sm font-semibold text-slate-500">
+              <p className="truncate text-xs font-semibold text-slate-500 sm:text-sm">
                 {rankCard.subtitle}
               </p>
             </div>
 
-            <div className="ml-auto hidden shrink-0 text-right sm:block">
-              <div className={cn("text-3xl font-black", rankCard.num)}>
+            <div className="ml-auto flex shrink-0 flex-col items-center text-center">
+              <div
+                className={cn(
+                  "text-2xl font-black leading-none sm:text-3xl",
+                  rankCard.num
+                )}
+              >
                 #{rank.rank}
               </div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <div className="mt-1 text-[9px] font-bold uppercase tracking-widest text-slate-400">
                 {dict["learn.of"] || "of"} {rank.total}
               </div>
             </div>
@@ -235,48 +239,34 @@ const LearnPage = async ({ params }: Props) => {
         </div>
       )}
 
-      {/* Daily engagement: buddy + chest */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <CompanionBuddy
-          buddyName={userProgress.buddyName}
-          buddyXp={userProgress.buddyXp}
-          points={userProgress.points}
-          lang={lang}
-        />
-        <DailyChest
-          available={chestAvailable}
-          streak={userProgress.streak}
-          lang={lang}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-4 sm:space-y-6 md:col-span-1 lg:col-span-2">
-          {/* Continue adventure */}
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+        {/* Main column */}
+        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
+          {/* Continue adventure — primary call to action */}
           <section>
-            <h2 className="mb-4 flex items-center gap-2 px-2 text-lg font-black tracking-tight text-slate-800">
+            <h2 className="mb-3 flex items-center gap-2 px-2 text-lg font-black tracking-tight text-slate-800">
               <Target className="h-5 w-5 text-indigo-500" />{" "}
               {dict["learn.continueAdventure"] || "Continue Adventure"}
             </h2>
             {currentCourse ? (
-              <div className="group relative flex flex-col gap-4 overflow-hidden rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-indigo-200 sm:flex-row sm:gap-6 sm:rounded-[32px] sm:p-6">
-                <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-2xl border-2 border-slate-50 shadow-sm sm:w-32">
+              <div className="group relative flex flex-col gap-4 overflow-hidden rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-indigo-200 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
+                <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-2xl border-2 border-slate-50 shadow-sm sm:h-28 sm:w-28">
                   <Image
                     src={currentCourse.imageSrc}
                     alt={currentCourse.title}
                     fill
                     className="object-cover"
-                    sizes="128px"
+                    sizes="112px"
                   />
                 </div>
                 <div className="flex flex-1 flex-col justify-center">
-                  <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <div className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     {currentCourse.category}
                   </div>
-                  <h3 className="mb-2 text-xl font-black text-slate-800">
+                  <h3 className="mb-2 text-lg font-black text-slate-800 sm:text-xl">
                     {currentCourse.title}
                   </h3>
-                  <div className="mb-4 flex items-center gap-3">
+                  <div className="mb-3 flex items-center gap-3">
                     <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="h-full rounded-full bg-emerald-500"
@@ -289,7 +279,7 @@ const LearnPage = async ({ params }: Props) => {
                   </div>
                   <Link
                     href={`/${lang}/path`}
-                    className="flex items-center justify-center gap-2 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-6 py-3.5 text-center text-sm font-black text-white shadow-lg transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0"
+                    className="flex items-center justify-center gap-2 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-6 py-3 text-center text-sm font-black text-white shadow-lg transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0"
                   >
                     <PlayCircle className="h-5 w-5" />{" "}
                     {dict["learn.jumpIn"] || "Jump In!"}
@@ -297,7 +287,7 @@ const LearnPage = async ({ params }: Props) => {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[32px] border-2 border-slate-100 bg-white p-6 text-slate-500 shadow-sm">
+              <div className="rounded-3xl border-2 border-slate-100 bg-white p-5 text-slate-500 shadow-sm">
                 {dict["learn.noCourseYet"] || "No course yet."}{" "}
                 <Link
                   href={`/${lang}/courses`}
@@ -309,10 +299,33 @@ const LearnPage = async ({ params }: Props) => {
             )}
           </section>
 
+          {/* Daily engagement: buddy + chest. Once today's chest is claimed it
+              disappears, and the buddy expands to fill the whole row. */}
+          <div
+            className={cn(
+              "grid grid-cols-1 gap-4",
+              chestAvailable && "sm:grid-cols-2"
+            )}
+          >
+            <CompanionBuddy
+              buddyName={userProgress.buddyName}
+              buddyXp={userProgress.buddyXp}
+              points={userProgress.points}
+              lang={lang}
+            />
+            {chestAvailable && (
+              <DailyChest
+                available={chestAvailable}
+                streak={userProgress.streak}
+                lang={lang}
+              />
+            )}
+          </div>
+
           {/* Story Books */}
           {books.length > 0 && (
             <section>
-              <div className="mb-4 flex items-center justify-between px-2">
+              <div className="mb-3 flex items-center justify-between px-2">
                 <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
                   <BookOpen className="h-5 w-5 text-amber-500" />{" "}
                   {dict["learn.storyBooks"] || "Story Books"}
@@ -352,11 +365,12 @@ const LearnPage = async ({ params }: Props) => {
           )}
         </div>
 
-        {/* Right column */}
-        <div className="hidden space-y-6 md:block">
+        {/* Sidebar — now visible on every breakpoint (stacks under the main
+            column on mobile/tablet, sits beside it on desktop) */}
+        <div className="space-y-4 sm:space-y-6">
           {/* Recent rewards */}
           <section>
-            <div className="mb-4 flex items-center justify-between px-2">
+            <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
                 <Star className="h-5 w-5 text-yellow-500" />{" "}
                 {dict["learn.recentRewards"] || "Recent Rewards"}
@@ -368,18 +382,18 @@ const LearnPage = async ({ params }: Props) => {
                 {dict["learn.seeAll"] || "See All"}
               </Link>
             </div>
-            <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm sm:p-5">
               {badges.length > 0 ? (
                 badges.slice(0, 2).map((ub) => (
                   <div
                     key={ub.id}
-                    className="mb-3 flex items-center gap-4 rounded-2xl border-2 border-yellow-200 bg-yellow-50 p-4 last:mb-0"
+                    className="mb-3 flex items-center gap-3 rounded-2xl border-2 border-yellow-200 bg-yellow-50 p-3 last:mb-0"
                   >
-                    <div className="shrink-0 text-4xl drop-shadow filter">
+                    <div className="shrink-0 text-3xl drop-shadow filter">
                       {ub.badge.icon}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-black leading-tight text-yellow-900">
+                      <h4 className="text-sm font-black leading-tight text-yellow-900">
                         {ub.badge.name}
                       </h4>
                       <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-yellow-700/80">
@@ -395,7 +409,7 @@ const LearnPage = async ({ params }: Props) => {
               )}
               <Link
                 href={`/${lang}/achievements`}
-                className="mt-4 block w-full rounded-2xl border-2 border-slate-200 bg-slate-50 py-3.5 text-center font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                className="mt-3 block w-full rounded-2xl border-2 border-slate-200 bg-slate-50 py-3 text-center text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800"
               >
                 {dict["learn.openRewardsIsland"] || "Open Rewards Island"}
               </Link>
@@ -403,8 +417,8 @@ const LearnPage = async ({ params }: Props) => {
           </section>
 
           {/* Friends Club / Family Club */}
-          <section className="hidden lg:block">
-            <div className="mb-4 flex items-center justify-between px-2">
+          <section>
+            <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
                 <Users className="h-5 w-5 text-purple-500" />{" "}
                 {isChild
@@ -412,7 +426,7 @@ const LearnPage = async ({ params }: Props) => {
                   : dict["learn.friendsClub"] || "Friends Club"}
               </h2>
             </div>
-            <div className="space-y-3 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-6 shadow-sm">
+            <div className="space-y-2.5 rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm sm:p-5">
               {topFriends.length <= 1 ? (
                 <div className="text-center py-4">
                   <Image
@@ -436,7 +450,7 @@ const LearnPage = async ({ params }: Props) => {
                     <div
                       key={u.userId}
                       className={cn(
-                        "relative flex items-center justify-between rounded-2xl border-2 p-4 transition-transform hover:scale-[1.02]",
+                        "relative flex items-center justify-between rounded-2xl border-2 p-3 transition-transform hover:scale-[1.02]",
                         isYou
                           ? "border-indigo-200 bg-indigo-50"
                           : "border-purple-200 bg-purple-50"
