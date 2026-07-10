@@ -60,7 +60,15 @@ export const searchImages = async (
     cache: "no-store",
   });
 
-  if (!res.ok) throw new Error("Image search failed. Please try again.");
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    console.error(`[searchImages] serper ${res.status}: ${detail}`);
+    // 401/403 means the SERPER_API_KEY is missing, invalid, or out of credits.
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("Image search is not configured. Check SERPER_API_KEY.");
+    }
+    throw new Error("Image search failed. Please try again.");
+  }
 
   const data = (await res.json()) as { images?: unknown[] };
   const images = Array.isArray(data.images) ? data.images : [];
