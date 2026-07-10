@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useChat, type UIMessage as Message } from "@ai-sdk/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -29,6 +28,7 @@ import { searchImages, type ImageResult } from "@/actions/tools";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
 type View = "home" | "image" | "ai";
+type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
 
 // Colorful "AI brain" gradient, applied to the lucide Brain icon via an SVG
 // linearGradient (referenced by id). Sider-style launcher.
@@ -50,21 +50,73 @@ export const ToolsAssist = () => {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("home");
 
-  const { messages, status, sendMessage } = useChat();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const isLoading = status === "submitted" || status === "streaming";
-  
+  const [isLoading, setIsLoading] = useState(false);
+  const idRef = useRef(0);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Send a message and stream the plain-text reply from /api/chat.
+  const sendMessage = async (text: string) => {
+    const content = text.trim();
+    if (!content || isLoading) return;
+
+    const userMsg: ChatMessage = {
+      id: `u-${idRef.current++}`,
+      role: "user",
+      content,
+    };
+    const assistantId = `a-${idRef.current++}`;
+    const history = [...messages, userMsg];
+    setMessages([...history, { id: assistantId, role: "assistant", content: "" }]);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: history.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error("Chat request failed");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (chunk) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, content: m.content + chunk } : m
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(dict["common.somethingWentWrong"] || "Something went wrong.");
+      // Drop the empty assistant placeholder if nothing streamed in.
+      setMessages((prev) => prev.filter((m) => m.id !== assistantId || m.content));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    sendMessage({ role: "user", parts: [{ type: "text", text: input }] });
+    const text = input;
     setInput("");
+    sendMessage(text);
   };
 
   const [query, setQuery] = useState("");
@@ -196,7 +248,7 @@ export const ToolsAssist = () => {
 
           {view === "home" ? (
             <div className="flex-1 space-y-3 overflow-y-auto p-5">
-              {/* Gemini AI */}
+              {/* AI Assistant */}
               <button
                 type="button"
                 onClick={() => setView("ai")}
@@ -211,7 +263,7 @@ export const ToolsAssist = () => {
                   </h3>
                   <p className="text-sm text-slate-500">
                     {dict["tools.aiDesc"] ||
-                      "Ask Gemini for general info and tips."}
+                      "Ask the AI assistant for general info and tips."}
                   </p>
                 </div>
               </button>
@@ -248,7 +300,7 @@ export const ToolsAssist = () => {
                       <Button
                         variant="primaryOutline"
                         size="sm"
-                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Help me write a course for beginners." }] })}
+                        onClick={() => sendMessage("Help me write a course for beginners.")}
                         className="w-full justify-start text-xs font-medium"
                       >
                         💡 Write a course
@@ -256,7 +308,7 @@ export const ToolsAssist = () => {
                       <Button
                         variant="primaryOutline"
                         size="sm"
-                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Generate a quiz for animals." }] })}
+                        onClick={() => sendMessage("Generate a quiz for animals.")}
                         className="w-full justify-start text-xs font-medium"
                       >
                         💡 Generate a quiz
@@ -264,7 +316,7 @@ export const ToolsAssist = () => {
                       <Button
                         variant="primaryOutline"
                         size="sm"
-                        onClick={() => sendMessage({ role: "user", parts: [{ type: "text", text: "Create a challenge for new users." }] })}
+                        onClick={() => sendMessage("Create a challenge for new users.")}
                         className="w-full justify-start text-xs font-medium"
                       >
                         💡 Create a challenge
@@ -272,7 +324,7 @@ export const ToolsAssist = () => {
                     </div>
                   </div>
                 ) : (
-                  messages.map((m: Message) => (
+                  messages.map((m) => (
                     <div
                       key={m.id}
                       className={`flex ${
@@ -288,14 +340,14 @@ export const ToolsAssist = () => {
                       >
                         <div className={m.role === "user" ? "whitespace-pre-wrap" : "prose prose-sm max-w-none prose-slate prose-p:leading-relaxed prose-pre:p-0"}>
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {(m as any).content || m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
+                            {m.content}
                           </ReactMarkdown>
                         </div>
                       </div>
                     </div>
                   ))
                 )}
-                {status === "submitted" && (
+                {isLoading && messages[messages.length - 1]?.content === "" && (
                   <div className="flex justify-start">
                     <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-4 py-3 text-slate-500">
                       <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]"></div>

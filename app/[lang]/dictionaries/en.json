@@ -713,7 +713,7 @@
   "tools.imageSearch": "Image Search",
   "tools.aiTitle": "AI Assistant",
   "tools.planned": "Soon",
-  "tools.aiDesc": "Ask Gemini for general info (coming soon).",
+  "tools.aiDesc": "Ask the AI assistant for general info and tips.",
   "tools.imageDesc": "Find images on the web and copy a URL.",
   "tools.imagePlaceholder": "Search for an image...",
   "tools.noResults": "No images found.",
