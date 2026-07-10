@@ -10,7 +10,7 @@ A Duolingo-style learning app for kids. Pick a course (Khmer, English, or Math),
 - **Supabase Auth** (`@supabase/ssr`) — email OTP, Google OAuth, and PIN login for kids accounts
 - **Zustand** for client-side modal state
 - **`motion`** for animations, **`lucide-react`** for icons
-- **Vercel Blob** for image uploads, **web-push** (VAPID) for notifications
+- **Vercel Blob** for image uploads, **web-push** (VAPID) for notifications 
 
 > Subscriptions are **stubbed** — `getUserSubscription()` always returns active, so hearts are effectively unlimited. There is no real billing. See `CLAUDE.md`.
 
