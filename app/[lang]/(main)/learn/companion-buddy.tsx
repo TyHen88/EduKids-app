@@ -52,39 +52,42 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-b-4 border-indigo-100 border-b-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm sm:rounded-[32px] sm:p-6">
-      {/* twinkles */}
-      <Sparkles className="absolute right-4 top-4 h-5 w-5 text-indigo-300" />
-      <Sparkles className="absolute bottom-6 right-10 h-3 w-3 text-purple-300" />
+    <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-b-4 border-indigo-100 border-b-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 shadow-sm">
+      {/* cosmic glow + twinkles */}
+      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-purple-200/40 blur-2xl" />
+      <Sparkles className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-indigo-300" />
+      <Sparkles className="pointer-events-none absolute bottom-3 right-10 h-3 w-3 text-purple-300" />
 
-      <div className="mb-3 flex items-center gap-2 text-base font-black tracking-tight text-slate-800 sm:mb-4 sm:text-lg">
-        <span>{dict["learn.yourBuddy"] || "Your Buddy"}</span>
+      <div className="relative mb-3 text-sm font-black tracking-tight text-slate-800">
+        {dict["learn.yourBuddy"] || "Your Buddy"}
       </div>
 
-      <div className="flex items-center gap-4 sm:gap-5">
+      <div className="relative flex flex-1 items-center gap-3">
         <motion.div
           key={pop}
           initial={pop ? { scale: 1.4, rotate: -8 } : false}
-          animate={{ scale: 1, rotate: 0, y: [0, -8, 0] }}
+          animate={{ scale: 1, rotate: 0, y: [0, -6, 0] }}
           transition={{
             y: { repeat: Infinity, duration: 2.6, ease: "easeInOut" },
             scale: { type: "spring", stiffness: 300, damping: 12 },
           }}
-          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-white bg-indigo-100 text-3xl shadow-inner sm:h-24 sm:w-24 sm:text-5xl"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-indigo-100 to-purple-100 text-3xl shadow-inner sm:h-16 sm:w-16 sm:text-4xl"
         >
           {buddy.stage.emoji}
         </motion.div>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-black text-slate-800">{buddyName}</h3>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-600">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="truncate text-base font-black text-slate-800 sm:text-lg">
+              {buddyName}
+            </h3>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-indigo-600">
               {buddy.stage.name}
             </span>
           </div>
 
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
                 initial={{ width: 0 }}
@@ -92,22 +95,23 @@ export const CompanionBuddy = ({ buddyName, buddyXp, points, lang }: Props) => {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">
               {buddy.isMaxStage
                 ? dict["learn.max"] || "MAX"
                 : `${buddy.xpToNext} XP`}
             </span>
           </div>
-
-          <button
-            onClick={onFeed}
-            disabled={pending || !canFeed}
-            className="mt-4 flex items-center gap-1.5 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-4 py-2.5 text-sm font-black text-white shadow transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Star className="h-4 w-4 fill-current" />
-            {dict["learn.feed"] || "Feed"} ({FEED_COST})
-          </button>
         </div>
+
+        <button
+          onClick={onFeed}
+          disabled={pending || !canFeed}
+          className="flex shrink-0 flex-col items-center gap-0.5 rounded-2xl border-b-4 border-indigo-800 bg-indigo-600 px-3 py-2 text-[11px] font-black leading-none text-white shadow transition-all hover:bg-indigo-700 active:translate-y-1 active:border-b-0 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Star className="h-4 w-4 fill-current" />
+          {dict["learn.feed"] || "Feed"}
+          <span className="text-[9px] opacity-80">({FEED_COST})</span>
+        </button>
       </div>
     </div>
   );

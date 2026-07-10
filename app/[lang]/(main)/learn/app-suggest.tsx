@@ -38,15 +38,15 @@ export const AppSuggest = ({ dict }: Props) => {
   if (APPS.length === 0) return null;
 
   return (
-    <section className="hidden lg:block">
-      <div className="mb-4 flex items-center justify-between px-2">
+    <section>
+      <div className="mb-3 flex items-center justify-between px-2">
         <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-800">
           <LayoutGrid className="h-5 w-5 text-indigo-500" />{" "}
           {dict["learn.moreApps"] || "More Apps"}
         </h2>
       </div>
 
-      <div className="space-y-3 rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm">
+      <div className="space-y-3 rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm">
         {APPS.map((app) => (
           <a
             key={app.key}
