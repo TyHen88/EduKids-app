@@ -13,7 +13,8 @@
     "format:fix": "prettier --write --ignore-path .gitignore .",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "db:prod": "tsx ./scripts/prod.ts"
+    "db:prod": "tsx ./scripts/prod.ts",
+    "db:seed-videos": "tsx ./scripts/seed-video-keywords.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

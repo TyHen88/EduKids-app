@@ -11,6 +11,7 @@ import {
   Users,
   BookOpen,
   BookText,
+  Video,
   Settings,
   LogOut,
   ScrollText,
@@ -85,6 +86,11 @@ export const AdminShell = ({
       icon: BookText,
     },
     {
+      name: dict["admin.navVideos"] || "Videos",
+      href: `/${locale}/admin/videos`,
+      icon: Video,
+    },
+    {
       name: dict["admin.navAudit"] || "Login Audit",
       href: `/${locale}/admin/audit`,
       icon: ScrollText,
@@ -111,6 +117,8 @@ export const AdminShell = ({
         return dict["admin.navUsers"] || "Users";
       case "courses":
         return dict["admin.navCourses"] || "Courses";
+      case "videos":
+        return dict["admin.navVideos"] || "Videos";
       case "audit":
         return dict["admin.navAudit"] || "Login Audit";
       case "settings":

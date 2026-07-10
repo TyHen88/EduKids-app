@@ -24,6 +24,8 @@ import {
   audioSettings,
   books,
   bookUnits,
+  videoKeywords,
+  videoChannels,
 } from "./schema";
 
 // Global, admin-managed background-music config. Falls back to sensible
@@ -35,6 +37,29 @@ export const getAudioSettings = cache(async () => {
     musicVolume: row?.musicVolume ?? 50,
   };
 });
+
+// --- Videos ------------------------------------------------------------------
+
+// Admin-managed video keywords. `onlyEnabled` restricts to active ones (used to
+// build the learner feed); the admin manager passes false to see everything.
+export const getVideoKeywords = cache(async (onlyEnabled = false) => {
+  return db.query.videoKeywords.findMany({
+    where: onlyEnabled ? eq(videoKeywords.enabled, true) : undefined,
+    orderBy: [asc(videoKeywords.order), asc(videoKeywords.id)],
+  });
+});
+
+// Admin allowlist of trusted YouTube channels. When any enabled channel exists,
+// the default keyword feed is constrained to these channels.
+export const getVideoChannels = cache(async (onlyEnabled = false) => {
+  return db.query.videoChannels.findMany({
+    where: onlyEnabled ? eq(videoChannels.enabled, true) : undefined,
+    orderBy: [asc(videoChannels.id)],
+  });
+});
+
+export type VideoKeyword = Awaited<ReturnType<typeof getVideoKeywords>>[number];
+export type VideoChannel = Awaited<ReturnType<typeof getVideoChannels>>[number];
 
 // --- Books -------------------------------------------------------------------
 

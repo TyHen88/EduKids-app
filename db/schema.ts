@@ -484,6 +484,39 @@ export const booksRelations = relations(books, ({ many }) => ({
   units: many(bookUnits),
 }));
 
+// --- Videos (admin-curated YouTube learning feed) ----------------------------
+// Learners browse a feed built from admin `videoKeywords`, restricted to an
+// admin `videoChannels` allowlist (safety). Free-text learner search runs open
+// with YouTube safeSearch=strict. YouTube API responses are cached in
+// `videoCache` (keyed by query/page) to stay within the daily quota.
+export const videoKeywords = pgTable("video_keywords", {
+  id: serial("id").primaryKey(),
+  keyword: text("keyword").notNull(),
+  category: text("category").notNull().default("General"),
+  language: text("language").notNull().default("en"), // "km" | "en" | ...
+  enabled: boolean("enabled").notNull().default(true),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Allowlist of trusted YouTube channels. When any enabled channel exists, the
+// default keyword feed is restricted to these channels.
+export const videoChannels = pgTable("video_channels", {
+  id: serial("id").primaryKey(),
+  channelId: text("channel_id").notNull(), // YouTube channel id (UC...)
+  title: text("title").notNull().default(""),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// TTL cache of YouTube API responses, keyed by a normalized query/page token so
+// many learners share one upstream call (the daily search quota is tiny).
+export const videoCache = pgTable("video_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  payload: jsonb("payload").notNull(),
+  fetchedAt: timestamp("fetched_at").notNull().defaultNow(),
+});
+
 export const bookUnitsRelations = relations(bookUnits, ({ one }) => ({
   book: one(books, {
     fields: [bookUnits.bookId],
