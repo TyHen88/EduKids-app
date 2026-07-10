@@ -204,6 +204,8 @@
   "courses.myBackpack": "My Backpack",
   "courses.subtitle": "Your collected learning books and adventures!",
   "courses.noneAvailable": "No courses available yet.",
+  "courses.loadMore": "Load more",
+  "books.seeAll": "See all",
   "courses.active": "Active",
   "courses.lessons": "Lessons",
   "courses.startAdventure": "Start your learning adventure!",

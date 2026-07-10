@@ -14,7 +14,6 @@ import {
   Flame,
   Star,
   Heart,
-  BookOpen,
   LayoutDashboard,
   Users,
 } from "lucide-react";
@@ -79,7 +78,6 @@ export const MainShell = ({
         ]
       : []),
     { name: dict["nav.backpack"] || "Backpack", href: `/${locale}/courses`, icon: Backpack },
-    { name: dict["nav.books"] || "Books", href: `/${locale}/books`, icon: BookOpen },
     ...(isChild
       ? [{ name: dict["nav.family"] || "Family", href: `/${locale}/my-family`, icon: Heart }]
       : [{ name: dict["nav.friends"] || "Friends", href: `/${locale}/friends`, icon: Users }]),
