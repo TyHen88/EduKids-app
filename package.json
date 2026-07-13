@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:prod": "tsx ./scripts/prod.ts",
-    "db:seed-videos": "tsx ./scripts/seed-video-keywords.ts"
+    "db:seed-videos": "tsx ./scripts/seed-video-keywords.ts",
+    "seed": "tsx ./scripts/seed.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
