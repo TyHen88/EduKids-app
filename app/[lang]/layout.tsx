@@ -1,6 +1,13 @@
 import { Nunito, Battambang } from "next/font/google";
 import type { Metadata, Viewport } from "next";
-import { siteConfig } from "@/config";
+import {
+  siteConfig,
+  siteDescription,
+  siteName,
+  siteOgImage,
+  siteTagline,
+  siteUrl,
+} from "@/config";
 
 import { ExitModal } from "@/components/modals/exit-modal";
 import { HeartsModal } from "@/components/modals/hearts-modal";
@@ -29,7 +36,47 @@ export const viewport: Viewport = {
   // when the app runs full-screen / added to the iPad/iPhone home screen.
   viewportFit: "cover",
 };
-export const metadata: Metadata = siteConfig;
+const OG_LOCALES: Record<string, string> = { km: "km_KH", en: "en_US" };
+
+/**
+ * Every page lives under /[lang], so the share card is resolved per locale:
+ * og:url points at the localized URL and og:locale / hreflang tell scrapers
+ * and search engines which language they got.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = locales.includes(lang as (typeof locales)[number])
+    ? lang
+    : defaultLocale;
+  const title = `${siteName} — ${siteTagline}`;
+
+  return {
+    ...siteConfig,
+    alternates: {
+      canonical: `/${locale}`,
+      languages: {
+        ...Object.fromEntries(locales.map((l) => [l, `/${l}`])),
+        "x-default": `/${defaultLocale}`,
+      },
+    },
+    openGraph: {
+      type: "website",
+      siteName,
+      title,
+      description: siteDescription,
+      url: `${siteUrl}/${locale}`,
+      locale: OG_LOCALES[locale] ?? OG_LOCALES[defaultLocale],
+      alternateLocale: locales
+        .filter((l) => l !== locale)
+        .map((l) => OG_LOCALES[l]),
+      images: [{ url: siteOgImage, width: 1200, height: 630, alt: title }],
+    },
+  };
+}
 
 export async function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
