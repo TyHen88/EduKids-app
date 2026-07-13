@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Users, GraduationCap, PlayCircle, BookOpen } from "lucide-react";
+import { Users, GraduationCap, PlayCircle, BookOpen, Library } from "lucide-react";
 
 import { getAdminStats, getCoursesWithProgress } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
@@ -39,6 +39,13 @@ const AdminDashboardPage = async ({
       bg: "bg-emerald-50 border-emerald-100",
     },
     {
+      label: dict["admin.totalBooks"] || "Total Books",
+      value: stats.books.toLocaleString(),
+      icon: Library,
+      color: "text-rose-600",
+      bg: "bg-rose-50 border-rose-100",
+    },
+    {
       label: dict["admin.completions"] || "Completions",
       value: stats.completions.toLocaleString(),
       icon: PlayCircle,
@@ -60,7 +67,7 @@ const AdminDashboardPage = async ({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {cards.map((stat) => (
           <div
             key={stat.label}
@@ -153,6 +160,10 @@ const AdminDashboardPage = async ({
                 {stats.lessons} {dict["admin.lessonsLower"] || "lessons"}{" "}
                 {dict["admin.across"] || "across"} {stats.courses}{" "}
                 {dict["admin.coursesLower"] || "courses"}
+              </div>
+              <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                {stats.books} {dict["admin.booksLower"] || "books"} (
+                {stats.publishedBooks} {dict["admin.publishedLower"] || "published"})
               </div>
               <div className="rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 text-sm font-bold text-slate-700">
                 {stats.completions} {dict["admin.blocksCompleted"] || "blocks completed"}

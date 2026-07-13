@@ -849,18 +849,30 @@ export const getUserBadges = cache(async () => {
 
 export const getAdminStats = cache(async () => {
   const adminIds = getAdminIds();
-  const [students, courseCount, lessonCount, completions] = await Promise.all([
-    // exclude admin operators from the user count (matches the Users list)
-    db.$count(
-      userProgress,
-      adminIds.length ? not(inArray(userProgress.userId, adminIds)) : undefined
-    ),
-    db.$count(courses),
-    db.$count(lessons),
-    db.$count(lessonBlockProgress, eq(lessonBlockProgress.completed, true)),
-  ]);
+  const [students, courseCount, lessonCount, bookCount, publishedBookCount, completions] =
+    await Promise.all([
+      // exclude admin operators from the user count (matches the Users list)
+      db.$count(
+        userProgress,
+        adminIds.length ? not(inArray(userProgress.userId, adminIds)) : undefined
+      ),
+      db.$count(courses),
+      db.$count(lessons),
+      db.$count(books),
+      // Learners only ever see published books, so the gap between these two is
+      // the number of books sitting in the library that nobody can read yet.
+      db.$count(books, eq(books.isPublished, true)),
+      db.$count(lessonBlockProgress, eq(lessonBlockProgress.completed, true)),
+    ]);
 
-  return { students, courses: courseCount, lessons: lessonCount, completions };
+  return {
+    students,
+    courses: courseCount,
+    lessons: lessonCount,
+    books: bookCount,
+    publishedBooks: publishedBookCount,
+    completions,
+  };
 });
 
 export const getAllStudents = cache(async () => {
