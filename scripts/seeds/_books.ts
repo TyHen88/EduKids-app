@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 
 import type { SeedDb } from "../seed";
 
+import { options, stats } from "./_options";
+
 // ---------------------------------------------------------------------------
 // Shared plumbing for storybook seeds. Ignored by the runner (leading "_").
 //
@@ -36,10 +38,17 @@ export const seedBook = async (db: SeedDb, book: BookContent) => {
 
   let bookId: number;
   if (existing) {
+    if (!options.force) {
+      // Additive by default, so `npm run seed all` only creates what is missing.
+      stats.skipped++;
+      console.log(`  Book "${book.title}" (#${existing.id}) already exists — skipped.`);
+      return;
+    }
     bookId = existing.id;
     // Replace this book's pages only; bookUnits cascade off the book row, which
     // stays put so any link to /read/<id> keeps working.
     await db.delete(schema.bookUnits).where(eq(schema.bookUnits.bookId, bookId));
+    stats.replaced++;
     console.log(`  Book "${book.title}" (#${bookId}) exists — replacing its pages.`);
   } else {
     const [created] = await db
@@ -56,6 +65,7 @@ export const seedBook = async (db: SeedDb, book: BookContent) => {
       })
       .returning();
     bookId = created.id;
+    stats.created++;
     console.log(`  Created book "${book.title}" (#${bookId}).`);
   }
 

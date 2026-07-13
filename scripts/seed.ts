@@ -8,13 +8,21 @@ import postgres from "postgres";
 
 import * as schema from "@/db/schema";
 
+import { options, stats } from "./seeds/_options";
+
 // ---------------------------------------------------------------------------
 // Generic seed runner.  Usage:
 //
-//   npm run seed              list the available seeds
-//   npm run seed math-kh      run scripts/seeds/math-kh.ts
-//   npm run seed math-kh foo  run several, in the order given
-//   npm run seed all          run every seed
+//   npm run seed                 list the available seeds
+//   npm run seed all             create everything that does not exist yet
+//   npm run seed math-kh-g12     run one seed
+//   npm run seed math-kh-g12 iq-kh   run several, in the order given
+//   npm run seed all -- --force  replace the content of what already exists
+//
+// Seeds are ADDITIVE by default: a course or book whose title already exists is
+// left untouched, so `npm run seed all` is safe to run at any time — it only
+// fills in what is missing. Pass --force to overwrite existing content instead
+// (needed after editing a seed; it resets learner progress in that course).
 //
 // A seed is any file in scripts/seeds/ that default-exports a `Seed`. Adding
 // one is just adding a file — no package.json edit, no new npm script.
@@ -55,18 +63,31 @@ const loadSeed = async (name: string): Promise<Seed> => {
 
 const main = async () => {
   const available = listSeeds();
-  const args = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+
+  const flags = argv.filter((a) => a.startsWith("-"));
+  const args = argv.filter((a) => !a.startsWith("-"));
+
+  const unknownFlags = flags.filter((f) => f !== "--force");
+  if (unknownFlags.length > 0) {
+    throw new Error(`Unknown flag(s): ${unknownFlags.join(", ")}. Only --force is supported.`);
+  }
+  options.force = flags.includes("--force");
 
   if (args.length === 0) {
     if (available.length === 0) {
       console.log(`No seeds found in ${SEEDS_DIR}`);
       return;
     }
-    console.log("Available seeds — run one with:  npm run seed <name>\n");
+    console.log("Available seeds — run one with:  npm run seed <name>");
+    console.log("Or create everything missing with:  npm run seed all\n");
     for (const name of available) {
       const { description } = await loadSeed(name);
-      console.log(`  ${name.padEnd(16)} ${description}`);
+      console.log(`  ${name.padEnd(24)} ${description}`);
     }
+    console.log(
+      "\nExisting courses/books are skipped. To overwrite them:  npm run seed all -- --force"
+    );
     return;
   }
 
@@ -81,13 +102,23 @@ const main = async () => {
   const client = postgres(process.env.DATABASE_URL!, { prepare: false });
   const db = drizzle(client, { schema });
 
+  console.log(
+    options.force
+      ? "Mode: --force — existing courses/books will be REPLACED."
+      : "Mode: additive — existing courses/books are skipped (use --force to replace)."
+  );
+
   try {
     for (const name of names) {
       const seed = await loadSeed(name);
       console.log(`\n▶ ${name} — ${seed.description}`);
       await seed.run(db);
     }
-    console.log(`\nDone (${names.length} seed${names.length === 1 ? "" : "s"}).`);
+    const summary = [
+      `${stats.created} created`,
+      options.force ? `${stats.replaced} replaced` : `${stats.skipped} skipped (already existed)`,
+    ].join(", ");
+    console.log(`\nDone (${names.length} seed${names.length === 1 ? "" : "s"}) — ${summary}.`);
   } finally {
     // postgres-js keeps the socket open; close it so the process exits.
     await client.end();
