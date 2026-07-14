@@ -184,11 +184,13 @@ export const BookManager = ({
         </Button>
       </div>
 
-      {books.length === 0 ? (
+      {books.length === 0 && (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">
           {dict["admin.noBooks"] || "No books yet. Create your first one!"}
         </div>
-      ) : (
+      )}
+
+      {books.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {paginatedBooks.map((book) => (
             <div
@@ -247,9 +249,7 @@ export const BookManager = ({
                 </div>
 
                 <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                  {book.description ||
-                    dict["admin.noDescription"] ||
-                    "No description."}
+                  {book.description || dict["admin.noDescription"] || "No description."}
                 </p>
 
                 <div className="mt-auto flex items-center justify-between gap-2 pt-3">

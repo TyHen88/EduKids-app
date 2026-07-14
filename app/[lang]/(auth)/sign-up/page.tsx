@@ -21,14 +21,12 @@ export default function SignUpPage() {
   const [step, setStep] = useState<"form" | "sent">("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
 
-  // Where Supabase sends the user after they click the confirmation link. The
-  // sso-callback route exchanges the PKCE code for a session, then forwards to
-  // /learn (same route the Google login uses). This URL must be in Supabase's
-  // Auth → URL Configuration → Redirect URLs allowlist.
+  // Where Supabase sends the user after they click the confirmation link (kept as fallback redirect configuration).
   const confirmRedirectUrl = () =>
     `${window.location.origin}/${locale}/sso-callback?next=${encodeURIComponent(
       `/${locale}/learn`
@@ -42,8 +40,6 @@ export default function SignUpPage() {
 
     try {
       const supabase = createClient();
-      // Supabase creates the (unconfirmed) user and emails a confirmation LINK.
-      // Use Supabase's default "Confirm signup" template with {{ .ConfirmationURL }}.
       const { error: createError } = await supabase.auth.signUp({
         email,
         password,
@@ -69,6 +65,43 @@ export default function SignUpPage() {
         )
       );
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const onVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: "signup",
+      });
+
+      if (verifyError) {
+        setError(
+          authError(
+            verifyError,
+            dict["auth.codeDidntWork"] || "That code didn't work."
+          )
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Session established inside PWA! Forward to learn page.
+      window.location.assign(`/${locale}/learn`);
+    } catch (err) {
+      setError(
+        authError(
+          err,
+          dict["auth.codeDidntWork"] || "That code didn't work."
+        )
+      );
       setLoading(false);
     }
   };
@@ -114,8 +147,8 @@ export default function SignUpPage() {
       <AuthShell
         title={dict["auth.checkYourEmail"] || "Check your email 📬"}
         subtitle={
-          dict["auth.confirmLinkSentTo"]?.replace("{email}", email) ||
-          `We sent a confirmation link to ${email}.`
+          dict["auth.sentCodeTo"]?.replace("{email}", email) ||
+          `We sent an 8-digit code to ${email}.`
         }
         footer={
           <button
@@ -124,6 +157,7 @@ export default function SignUpPage() {
               setStep("form");
               setError("");
               setResent(false);
+              setCode("");
             }}
             className="font-bold text-indigo-600 hover:underline"
           >
@@ -131,28 +165,49 @@ export default function SignUpPage() {
           </button>
         }
       >
-        <div className="space-y-5 text-center">
-          <div className="flex justify-center text-indigo-500">
-            <MailCheck className="h-12 w-12" />
+        <form onSubmit={onVerifyOtp} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="code">
+              {dict["auth.verificationCode"] || "Verification code"}
+            </Label>
+            <Input
+              id="code"
+              type="text"
+              required
+              maxLength={8}
+              pattern="\d{8}"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="12345678"
+              className="text-center tracking-[0.25em] text-lg font-black"
+            />
           </div>
-
-          <p className="text-sm font-medium text-slate-600">
-            {dict["auth.clickLinkToConfirm"] ||
-              "Open the email and click the link to confirm your account. Then come back and sign in to start learning! 🚀"}
-          </p>
-
-          {resent && (
-            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600">
-              {dict["auth.linkResent"] ||
-                "We've sent the link again — check your inbox."}
-            </p>
-          )}
 
           {error && (
             <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600">
               {error}
             </p>
           )}
+
+          {resent && (
+            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600 text-center">
+              {dict["auth.linkResent"] || "We've sent the link again — check your inbox."}
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              dict["auth.verifyAndLaunch"] || "Verify & launch 🚀"
+            )}
+          </Button>
 
           <Button
             type="button"
@@ -162,13 +217,9 @@ export default function SignUpPage() {
             size="lg"
             disabled={loading}
           >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              dict["auth.resendLink"] || "Resend confirmation link"
-            )}
+            {dict["auth.resendLink"] || "Resend confirmation link"}
           </Button>
-        </div>
+        </form>
       </AuthShell>
     );
   }

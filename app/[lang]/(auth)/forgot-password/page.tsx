@@ -18,40 +18,38 @@ export default function ForgotPasswordPage() {
 
   const [step, setStep] = useState<"email" | "sent">("email");
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
 
-  // After clicking the email link, Supabase sends the user through sso-callback
-  // (which exchanges the recovery code for a session) and then to the
-  // reset-password page where they choose a new password. This URL must be in
-  // Supabase's Auth → URL Configuration → Redirect URLs allowlist.
+  // Keep fallback redirect URL configuration if needed.
   const resetRedirectUrl = () =>
     `${window.location.origin}/${locale}/sso-callback?next=${encodeURIComponent(
       `/${locale}/reset-password`
     )}`;
 
-  const sendLink = async () => {
+  const sendOtp = async () => {
     const supabase = createClient();
-    // Sends a recovery email with {{ .ConfirmationURL }} (the link flow).
+    // Sends a recovery email containing the OTP code (rendered via {{ .Token }} in template).
     return supabase.auth.resetPasswordForEmail(email, {
       redirectTo: resetRedirectUrl(),
     });
   };
 
-  const onSendLink = async (e: React.FormEvent) => {
+  const onSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
     setError("");
 
     try {
-      const { error: sendError } = await sendLink();
+      const { error: sendError } = await sendOtp();
       if (sendError) {
         setError(
           authError(
             sendError,
-            dict["auth.couldntSendResetCode"] || "Couldn't send the reset link."
+            dict["auth.couldntSendResetCode"] || "Couldn't send the reset code."
           )
         );
         setLoading(false);
@@ -71,6 +69,43 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const onVerifyRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: "recovery",
+      });
+
+      if (verifyError) {
+        setError(
+          authError(
+            verifyError,
+            dict["auth.codeDidntWork"] || "That code didn't work."
+          )
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Successful verification automatically logs user in. Forward to reset password page!
+      window.location.assign(`/${locale}/reset-password`);
+    } catch (err) {
+      setError(
+        authError(
+          err,
+          dict["auth.codeDidntWork"] || "That code didn't work."
+        )
+      );
+      setLoading(false);
+    }
+  };
+
   const onResend = async () => {
     if (loading) return;
 
@@ -79,12 +114,12 @@ export default function ForgotPasswordPage() {
     setResent(false);
 
     try {
-      const { error: resendError } = await sendLink();
+      const { error: resendError } = await sendOtp();
       if (resendError) {
         setError(
           authError(
             resendError,
-            dict["auth.couldntSendResetCode"] || "Couldn't send the reset link."
+            dict["auth.couldntSendResetCode"] || "Couldn't send the reset code."
           )
         );
       } else {
@@ -94,7 +129,7 @@ export default function ForgotPasswordPage() {
       setError(
         authError(
           err,
-          dict["auth.couldntSendResetCode"] || "Couldn't send the reset link."
+          dict["auth.couldntSendResetCode"] || "Couldn't send the reset code."
         )
       );
     } finally {
@@ -116,33 +151,54 @@ export default function ForgotPasswordPage() {
       <AuthShell
         title={dict["auth.checkYourEmail"] || "Check your email 📬"}
         subtitle={
-          dict["auth.resetLinkSentTo"]?.replace("{email}", email) ||
-          `We sent a password reset link to ${email}.`
+          dict["auth.resetCodeSubtitle"]?.replace("{email}", email) ||
+          `Enter the code we sent to ${email}.`
         }
         footer={footer}
       >
-        <div className="space-y-5 text-center">
-          <div className="flex justify-center text-indigo-500">
-            <MailCheck className="h-12 w-12" />
+        <form onSubmit={onVerifyRecovery} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="code">
+              {dict["auth.resetCode"] || "Reset code"}
+            </Label>
+            <Input
+              id="code"
+              type="text"
+              required
+              maxLength={8}
+              pattern="\d{8}"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="12345678"
+              className="text-center tracking-[0.25em] text-lg font-black"
+            />
           </div>
 
-          <p className="text-sm font-medium text-slate-600">
-            {dict["auth.clickLinkToReset"] ||
-              "Open the email and click the link — it brings you right back here to set a new password. 🔑"}
-          </p>
-
-          {resent && (
-            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600">
-              {dict["auth.linkResent"] ||
-                "We've sent the link again — check your inbox."}
-            </p>
-          )}
-
           {error && (
-            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600">
+            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 text-center">
               {error}
             </p>
           )}
+
+          {resent && (
+            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600 text-center">
+              {dict["auth.linkResent"] || "We've sent the link again — check your inbox."}
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              dict["auth.verifyCode"] || "Verify code"
+            )}
+          </Button>
 
           <Button
             type="button"
@@ -152,13 +208,9 @@ export default function ForgotPasswordPage() {
             size="lg"
             disabled={loading}
           >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              dict["auth.resendResetLink"] || "Resend reset link"
-            )}
+            {dict["auth.resendResetLink"] || "Resend reset link"}
           </Button>
-        </div>
+        </form>
       </AuthShell>
     );
   }
@@ -167,12 +219,12 @@ export default function ForgotPasswordPage() {
     <AuthShell
       title={dict["auth.resetTitle"] || "Reset your password 🔑"}
       subtitle={
-        dict["auth.resetEmailLinkSubtitle"] ||
-        "We'll email you a link to reset it."
+        dict["auth.resetEmailSubtitle"] ||
+        "We'll email you a code to reset it."
       }
       footer={footer}
     >
-      <form onSubmit={onSendLink} className="space-y-4">
+      <form onSubmit={onSendOtp} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">{dict["auth.email"] || "Email"}</Label>
           <Input
@@ -203,7 +255,7 @@ export default function ForgotPasswordPage() {
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            dict["auth.sendResetLink"] || "Send reset link"
+            dict["auth.sendResetCode"] || "Send reset code"
           )}
         </Button>
       </form>

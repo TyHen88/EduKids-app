@@ -81,7 +81,7 @@
   "auth.createAccount": "បង្កើតគណនី",
   "auth.atLeast8Characters": "យ៉ាងតិច ៨ តួ",
   "auth.checkYourEmail": "ឆែកមើលអ៊ីមែលរបស់អ្នក 📬",
-  "auth.sentCodeTo": "យើងបានផ្ញើលេខកូដ ៦ ខ្ទង់ទៅកាន់ {email}។",
+  "auth.sentCodeTo": "យើងបានផ្ញើលេខកូដ ៨ ខ្ទង់ទៅកាន់ {email}។",
   "auth.confirmLinkSentTo": "យើងបានផ្ញើតំណភ្ជាប់បញ្ជាក់ទៅកាន់ {email}។",
   "auth.clickLinkToConfirm": "សូមឆែកអ៊ីមែល ហើយចុចតំណភ្ជាប់ដើម្បីបញ្ជាក់គណនីរបស់អ្នក។ រួចហើយត្រឡប់មកទីនេះវិញដើម្បីចូលរៀន! 🚀",
   "auth.resendLink": "ផ្ញើតំណភ្ជាប់បញ្ជាក់ម្ដងទៀត",

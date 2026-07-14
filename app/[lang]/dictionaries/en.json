@@ -81,7 +81,7 @@
   "auth.createAccount": "Create account",
   "auth.atLeast8Characters": "At least 8 characters",
   "auth.checkYourEmail": "Check your email 📬",
-  "auth.sentCodeTo": "We sent a 6-digit code to {email}.",
+  "auth.sentCodeTo": "We sent an 8-digit code to {email}.",
   "auth.confirmLinkSentTo": "We sent a confirmation link to {email}.",
   "auth.clickLinkToConfirm": "Open the email and click the link to confirm your account. Then come back and sign in to start learning! 🚀",
   "auth.resendLink": "Resend confirmation link",
