@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,8 +30,11 @@ import {
 } from "@/components/ui/dialog";
 import { createBook, updateBook, deleteBook, type BookInput } from "@/actions/book";
 import { uploadImage } from "@/actions/lesson-block";
+import { Pagination } from "@/components/ui/pagination";
 import type { AdminBook } from "@/db/queries";
 import { useDictionary } from "@/app/[lang]/lang-provider";
+
+const PAGE_SIZE = 10;
 
 const empty: BookInput = {
   title: "",
@@ -59,6 +62,18 @@ export const BookManager = ({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<BookInput>(empty);
   const [uploading, setUploading] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(books.length / PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
+  const paginatedBooks = books.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -175,7 +190,7 @@ export const BookManager = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {books.map((book) => (
+          {paginatedBooks.map((book) => (
             <div
               key={book.id}
               className="flex gap-4 rounded-[24px] border-2 border-slate-100 bg-white p-4 shadow-sm transition-colors hover:border-indigo-100"
@@ -253,6 +268,18 @@ export const BookManager = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {books.length > 0 && (
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-sm font-medium text-slate-400">
+            {dict["admin.showing"] || "Showing"}{" "}
+            {(page - 1) * PAGE_SIZE + 1}–
+            {Math.min(page * PAGE_SIZE, books.length)}{" "}
+            {dict["common.of"] || "of"} {books.length}
+          </p>
+          <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
         </div>
       )}
 

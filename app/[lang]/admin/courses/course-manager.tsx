@@ -42,7 +42,7 @@ import type { AdminCourse } from "@/db/queries";
 import { useDictionary } from "@/app/[lang]/lang-provider";
 
 const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
 
 const empty: CourseInput = {
   title: "",
