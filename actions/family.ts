@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/db/drizzle";
 import { auth } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { userProgress, familyGroups, familyGroupAdults, familyGroupChildren, courseAssignments } from "@/db/schema";
+import { userProgress, familyGroups, familyGroupAdults, familyGroupChildren, courseAssignments, userBadges } from "@/db/schema";
 import { MAX_HEARTS } from "@/constants";
 import { notifyAdmins } from "@/actions/notifications";
 import { recordCreateChild } from "@/actions/audit";
@@ -270,4 +270,210 @@ export const acceptFamilyInvite = async (targetUserId?: string) => {
     revalidatePath(`/en/family`, "layout");
     revalidatePath(`/km/family`, "layout");
   }
+};
+
+export type FamilyMemberDetailResult = {
+  userId: string;
+  userName: string;
+  userImageSrc: string;
+  role: string;
+  isActive: boolean;
+  points: number;
+  hearts: number;
+  streak: number;
+  buddyName: string;
+  buddyXp: number;
+  
+  // Parent-specific fields
+  familyName?: string;
+  familyMotto?: string;
+  familyCover?: string;
+  children?: {
+    userId: string;
+    userName: string;
+    userImageSrc: string;
+    points: number;
+    streak: number;
+    activeCourse: string | null;
+  }[];
+
+  // Learner/Child-specific fields
+  parentName?: string | null;
+  isChild?: boolean;
+  assignedCourses?: {
+    courseId: number;
+    courseTitle: string;
+    assignedAt: string;
+    notes: string | null;
+  }[];
+  activeCourseTitle?: string | null;
+  collectedBadges?: {
+    id: number;
+    name: string;
+    icon: string;
+    description: string;
+    earnedAt: string;
+  }[];
+};
+
+export const getFamilyMemberDetail = async (targetUserId: string): Promise<FamilyMemberDetailResult> => {
+  const { userId: currentUserId } = await auth();
+  if (!currentUserId) throw new Error("Unauthorized");
+
+  // 1. Check authorization: Same user or sharing a family group
+  let isAuthorized = currentUserId === targetUserId;
+
+  if (!isAuthorized) {
+    const targetGroups = new Set<number>();
+    
+    // Find target's family group memberships
+    const groupsOwnedByTarget = await db.query.familyGroups.findMany({
+      where: eq(familyGroups.ownerId, targetUserId),
+      columns: { id: true }
+    });
+    for (const g of groupsOwnedByTarget) targetGroups.add(g.id);
+
+    const targetAdultLinks = await db.query.familyGroupAdults.findMany({
+      where: eq(familyGroupAdults.userId, targetUserId),
+      columns: { familyGroupId: true }
+    });
+    for (const link of targetAdultLinks) targetGroups.add(link.familyGroupId);
+
+    const targetChildLinks = await db.query.familyGroupChildren.findMany({
+      where: eq(familyGroupChildren.childId, targetUserId),
+      columns: { familyGroupId: true }
+    });
+    for (const link of targetChildLinks) targetGroups.add(link.familyGroupId);
+
+    if (targetGroups.size > 0) {
+      // Find current user's family group memberships
+      const currentUserGroups = new Set<number>();
+      
+      const groupsOwnedByCurrent = await db.query.familyGroups.findMany({
+        where: eq(familyGroups.ownerId, currentUserId),
+        columns: { id: true }
+      });
+      for (const g of groupsOwnedByCurrent) currentUserGroups.add(g.id);
+
+      const currentUserAdultLinks = await db.query.familyGroupAdults.findMany({
+        where: eq(familyGroupAdults.userId, currentUserId),
+        columns: { familyGroupId: true }
+      });
+      for (const link of currentUserAdultLinks) currentUserGroups.add(link.familyGroupId);
+
+      const currentUserChildLinks = await db.query.familyGroupChildren.findMany({
+        where: eq(familyGroupChildren.childId, currentUserId),
+        columns: { familyGroupId: true }
+      });
+      for (const link of currentUserChildLinks) currentUserGroups.add(link.familyGroupId);
+
+      // Overlap check
+      for (const gid of targetGroups) {
+        if (currentUserGroups.has(gid)) {
+          isAuthorized = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!isAuthorized) {
+    throw new Error("Unauthorized to view this family member's details.");
+  }
+
+  // 2. Fetch target user's details
+  const progress = await db.query.userProgress.findFirst({
+    where: eq(userProgress.userId, targetUserId),
+    with: {
+      activeCourse: true,
+      userBadges: {
+        with: {
+          badge: true,
+        },
+      },
+    },
+  });
+
+  if (!progress) throw new Error("User not found.");
+
+  const childLink = await db.query.familyGroupChildren.findFirst({
+    where: eq(familyGroupChildren.childId, targetUserId),
+    with: {
+      familyGroup: {
+        with: {
+          owner: true,
+        },
+      },
+    },
+  });
+
+  const result: FamilyMemberDetailResult = {
+    userId: progress.userId,
+    userName: progress.userName,
+    userImageSrc: progress.userImageSrc,
+    role: progress.role,
+    isActive: progress.isActive,
+    points: progress.points,
+    hearts: progress.hearts,
+    streak: progress.streak,
+    buddyName: progress.buddyName,
+    buddyXp: progress.buddyXp,
+    activeCourseTitle: progress.activeCourse?.title ?? null,
+    isChild: !!childLink,
+    parentName: childLink?.familyGroup?.owner?.userName ?? null,
+    collectedBadges: progress.userBadges.map((ub) => ({
+      id: ub.badge.id,
+      name: ub.badge.name,
+      icon: ub.badge.icon,
+      description: ub.badge.description,
+      earnedAt: ub.earnedAt.toISOString(),
+    })),
+  };
+
+  if (progress.role === "parent") {
+    const group = await db.query.familyGroups.findFirst({
+      where: eq(familyGroups.ownerId, targetUserId),
+      with: {
+        children: {
+          with: {
+            child: {
+              with: {
+                activeCourse: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (group) {
+      result.familyName = group.name;
+      result.familyMotto = group.motto;
+      result.familyCover = group.cover;
+      result.children = group.children.map((c) => ({
+        userId: c.child.userId,
+        userName: c.child.userName,
+        userImageSrc: c.child.userImageSrc,
+        points: c.child.points,
+        streak: c.child.streak,
+        activeCourse: c.child.activeCourse?.title ?? null,
+      }));
+    }
+  } else {
+    const assignments = await db.query.courseAssignments.findMany({
+      where: eq(courseAssignments.childId, targetUserId),
+      with: {
+        course: true,
+      },
+    });
+
+    result.assignedCourses = assignments.map((a) => ({
+      courseId: a.courseId,
+      courseTitle: a.course.title,
+      assignedAt: a.assignedAt.toISOString(),
+      notes: a.notes,
+    }));
+  }
+
+  return result;
 };
