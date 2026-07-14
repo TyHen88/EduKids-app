@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import db from "@/db/drizzle";
 import { auth } from "@/lib/auth";
 import { getIsAdmin } from "@/lib/admin";
-import { videoKeywords, videoChannels, videoCache } from "@/db/schema";
+import { videoKeywords, videoChannels, videoCache, userProgress } from "@/db/schema";
+import { getUserProgress } from "@/db/queries";
 import { getDefaultVideos, searchVideos, type VideoPage } from "@/lib/youtube";
 
 const assertAdmin = async () => {
@@ -147,4 +148,26 @@ export const loadVideos = async (
 
   const q = query.trim();
   return q ? searchVideos(q, pageToken) : getDefaultVideos(pageToken);
+};
+
+export const awardVideoPoints = async () => {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized.");
+
+  const currentUserProgress = await getUserProgress();
+  if (!currentUserProgress) throw new Error("User progress not found.");
+
+  await db
+    .update(userProgress)
+    .set({
+      points: currentUserProgress.points + 10, // Award 10 Stardust
+      buddyXp: currentUserProgress.buddyXp + 15, // Award 15 Buddy XP
+    })
+    .where(eq(userProgress.userId, userId));
+
+  revalidatePath(`/learn`);
+  revalidatePath(`/path`);
+  revalidatePath(`/achievements`);
+  revalidatePath(`/videos`);
+  return { success: true };
 };

@@ -140,50 +140,29 @@ export const MainShell = ({
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center space-x-2 sm:space-x-4">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           {/* Streak */}
-          <div className="hidden items-center space-x-2 rounded-2xl border border-slate-100 bg-white px-3 py-1.5 shadow-sm sm:flex sm:px-4 sm:py-2">
-            <Flame className="h-4 w-4 fill-current text-orange-500 sm:h-5 sm:w-5" />
-            <div className="leading-tight">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                {dict["common.streak"] || "Streak"}
-              </p>
-              <p className="text-sm font-black text-orange-500 sm:text-base">
-                {streak}
-              </p>
-            </div>
+          <div className="hidden items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1.5 shadow-sm sm:flex" title={dict["common.streak"] || "Streak"}>
+            <Flame className="h-5 w-5 fill-current text-orange-500" />
+            <span className="text-sm font-black text-orange-500">{streak}</span>
           </div>
 
           {/* Hearts */}
-          <div className="hidden items-center space-x-2 rounded-2xl border border-slate-100 bg-white px-3 py-1.5 shadow-sm sm:flex sm:px-4 sm:py-2">
-            <Heart className="h-4 w-4 fill-current text-rose-500 sm:h-5 sm:w-5" />
-            <div className="leading-tight">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                {dict["common.hearts"] || "Hearts"}
-              </p>
-              <p className="text-sm font-black text-rose-500 sm:text-base">
-                {hearts}
-              </p>
-            </div>
+          <div className="hidden items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1.5 shadow-sm sm:flex" title={dict["common.hearts"] || "Hearts"}>
+            <Heart className="h-5 w-5 fill-current text-rose-500" />
+            <span className="text-sm font-black text-rose-500">{hearts}</span>
           </div>
 
           {/* Stardust / points */}
-          <div className="flex items-center space-x-2 rounded-2xl border border-slate-100 bg-white px-3 py-1.5 shadow-sm sm:px-4 sm:py-2">
-            <Star className="h-4 w-4 fill-current text-indigo-600 sm:h-5 sm:w-5" />
-            <div className="leading-tight">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
-                {dict["common.stardust"] || "Stardust"}
-              </p>
-              <p className="text-sm font-black text-indigo-600 sm:text-base">
-                {points}
-              </p>
-            </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1.5 shadow-sm" title={dict["common.stardust"] || "Stardust"}>
+            <Star className="h-5 w-5 fill-current text-indigo-600" />
+            <span className="text-sm font-black text-indigo-600">{points}</span>
           </div>
 
           {isAdmin && (
             <Link
               href={`/${locale}/admin`}
-              className="ml-1 hidden h-10 w-10 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-slate-500 shadow-sm transition-colors hover:border-indigo-500 hover:text-indigo-600 sm:flex"
+              className="hidden h-10 w-10 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-slate-500 shadow-sm transition-colors hover:border-indigo-500 hover:text-indigo-600 sm:flex"
               title={dict["admin.brandShort"] || "Admin"}
             >
               <LayoutDashboard className="h-5 w-5" />
@@ -194,19 +173,17 @@ export const MainShell = ({
 
           <LanguageToggle />
 
-          <div className="ml-1 sm:ml-2">
-            <NotificationBell
-              userId={userId}
-              initialNotifications={initialNotifications}
-              initialUnreadCount={initialUnreadCount}
-            />
-          </div>
+          <NotificationBell
+            userId={userId}
+            initialNotifications={initialNotifications}
+            initialUnreadCount={initialUnreadCount}
+          />
 
           <Link
             href={`/${locale}/profile`}
             title={userName}
             className={cn(
-              "relative ml-1 h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-slate-100 shadow-sm transition-colors sm:ml-2",
+              "relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-slate-100 shadow-sm transition-colors",
               isLinkActive(`/${locale}/profile`)
                 ? "border-indigo-500"
                 : "border-slate-200 hover:border-indigo-400"

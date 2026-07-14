@@ -67,6 +67,7 @@ export const Quiz = ({
     if (initialPercentage === 100) openPracticeModal();
   });
 
+  const [isReview] = useState(initialPercentage === 100);
   const [lessonId] = useState(initialLessonId);
   const [hearts, setHearts] = useState(initialHearts);
   const [percentage, setPercentage] = useState(() => {
@@ -184,7 +185,7 @@ export const Quiz = ({
             setPercentage((prev) => prev + 100 / blocks.length);
 
             // This is a practice
-            if (initialPercentage === 100) {
+            if (isReview) {
               setHearts((prev) => Math.min(prev + 1, MAX_HEARTS));
             }
           })
@@ -268,7 +269,7 @@ export const Quiz = ({
 
           <div className="flex w-full items-center gap-x-4">
             {/* Review/practice runs don't award points — only show time. */}
-            {initialPercentage !== 100 && (
+            {!isReview && (
               <ResultCard variant="points" value={blocks.length * 10} />
             )}
             <ResultCard variant="time" value={elapsedSeconds} />
@@ -279,7 +280,7 @@ export const Quiz = ({
           lessonId={lessonId}
           status="completed"
           onCheck={() => {
-            window.location.href = `/${locale}/learn`;
+            window.location.href = `/${locale}/path`;
           }}
         />
       </>
