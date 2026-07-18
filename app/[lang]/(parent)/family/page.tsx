@@ -52,9 +52,11 @@ const FamilyDashboardPage = async ({ params }: Props) => {
   ]);
 
   let canManage = false;
-  if (familyGroup?.ownerId === userId) {
+  if (!familyGroup) {
     canManage = true;
-  } else if (familyGroup) {
+  } else if (familyGroup.ownerId === userId) {
+    canManage = true;
+  } else {
     const adultLink = familyGroup.adults.find((a) => a.userId === userId);
     if (adultLink?.permissions && (adultLink.permissions as any).manage) {
       canManage = true;
