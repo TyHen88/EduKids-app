@@ -9,12 +9,12 @@ type Props = {
 const ChildrenPage = async ({ params }: Props) => {
   const { lang } = await params;
   const { userId } = await auth();
-  
+
   const [children, familyGroup] = await Promise.all([
     getChildren(),
     getFamilyGroupDetails(),
   ]);
-  
+
   let canManage = false;
   if (!familyGroup) {
     canManage = true;
