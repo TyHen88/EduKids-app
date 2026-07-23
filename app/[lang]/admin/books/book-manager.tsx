@@ -49,10 +49,12 @@ export const BookManager = ({
   books,
   lang,
   basePath,
+  canCreate = true,
 }: {
   books: AdminBook[];
   lang: string;
   basePath: string;
+  canCreate?: boolean;
 }) => {
   const dict = useDictionary();
   const router = useRouter();
@@ -94,7 +96,7 @@ export const BookManager = ({
     setOpen(true);
   };
 
-  const set = <K extends keyof BookInput>(key: K, value: BookInput[K]) =>
+  const set = (key: keyof BookInput, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,12 +179,14 @@ export const BookManager = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={openCreate} disabled={pending}>
-          <Plus className="mr-1 h-5 w-5" />{" "}
-          {dict["admin.createBook"] || "Create Book"}
-        </Button>
-      </div>
+      {canCreate && (
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={openCreate} disabled={pending}>
+            <Plus className="mr-1 h-5 w-5" />{" "}
+            {dict["admin.createBook"] || "Create Book"}
+          </Button>
+        </div>
+      )}
 
       {books.length === 0 && (
         <div className="rounded-[32px] border-2 border-slate-100 bg-white p-10 text-center text-slate-500 shadow-sm">

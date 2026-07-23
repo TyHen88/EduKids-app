@@ -1,7 +1,9 @@
 import { BookOpen } from "lucide-react";
 
-import { getParentCourses } from "@/db/queries";
+import { getParentCourses, getFamilyGroupDetails } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/family-permissions";
 
 import { ParentCourseManager } from "./parent-course-manager";
 
@@ -11,8 +13,22 @@ type Props = {
 
 const MyCoursesPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const { userId } = await auth();
   const dict = await getDictionary(lang as "km" | "en");
-  const courses = await getParentCourses();
+  const [courses, familyGroup] = await Promise.all([
+    getParentCourses(),
+    getFamilyGroupDetails(),
+  ]);
+
+  let canCreateCourse = false;
+  if (!familyGroup || familyGroup.ownerId === userId) {
+    canCreateCourse = true;
+  } else {
+    const adultLink = familyGroup.adults.find((a) => a.userId === userId);
+    if (adultLink?.permissions) {
+      canCreateCourse = hasPermission(adultLink.permissions as any, "createCourse");
+    }
+  }
 
   return (
     <div className="space-y-8 pb-12">
@@ -31,7 +47,7 @@ const MyCoursesPage = async ({ params }: Props) => {
         </div>
       </div>
 
-      <ParentCourseManager courses={courses} lang={lang} />
+      <ParentCourseManager courses={courses} lang={lang} canCreateCourse={canCreateCourse} />
     </div>
   );
 };

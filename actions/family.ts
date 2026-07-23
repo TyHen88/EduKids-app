@@ -11,6 +11,8 @@ import { MAX_HEARTS } from "@/constants";
 import { notifyAdmins } from "@/actions/notifications";
 import { recordCreateChild } from "@/actions/audit";
 
+import { hasPermission } from "@/lib/family-permissions";
+
 export const createChildAccount = async (
   name: string,
   username: string,
@@ -69,7 +71,7 @@ export const createChildAccount = async (
       where: eq(familyGroupAdults.userId, userId),
     });
     if (adultLink) {
-      if (!(adultLink.permissions as any)?.manage) {
+      if (!hasPermission(adultLink.permissions as any, "createChild")) {
         throw new Error("You do not have permission to add children to this family.");
       }
       familyGroupId = adultLink.familyGroupId;
@@ -116,7 +118,7 @@ export const removeChildAccount = async (childId: string, lang: string = "en") =
   });
   
   if (!ownedGroup && adultLink) {
-    if (!(adultLink.permissions as any)?.manage) {
+    if (!hasPermission(adultLink.permissions as any, "editChild")) {
       throw new Error("You do not have permission to remove children from this family.");
     }
   }

@@ -46,7 +46,9 @@ type Child = {
 type ChildrenClientProps = {
   initialChildren: Child[];
   lang: string;
-  canManage: boolean;
+  canManage?: boolean;
+  canCreate?: boolean;
+  canEdit?: boolean;
 };
 
 const formatDuration = (totalSeconds: number) => {
@@ -58,7 +60,13 @@ const formatDuration = (totalSeconds: number) => {
   return `${s}s`;
 };
 
-export const ChildrenClient = ({ initialChildren, lang, canManage }: ChildrenClientProps) => {
+export const ChildrenClient = ({
+  initialChildren,
+  lang,
+  canManage,
+  canCreate = canManage ?? true,
+  canEdit = canManage ?? true,
+}: ChildrenClientProps) => {
   const dict = useDictionary();
   const [children] = useState(initialChildren);
   const [isPending, startTransition] = useTransition();
@@ -128,7 +136,7 @@ export const ChildrenClient = ({ initialChildren, lang, canManage }: ChildrenCli
             {dict["parent.createManageProfiles"] || "Create and manage profiles for your kids."}
           </p>
         </div>
-        {!isAdding && canManage && (
+        {!isAdding && canCreate && (
           <Button
             onClick={() => setIsAdding(true)}
             className="rounded-xl border-b-4 border-emerald-800 bg-emerald-600 font-bold text-white hover:bg-emerald-700 active:translate-y-1 active:border-b-0"
@@ -241,7 +249,7 @@ export const ChildrenClient = ({ initialChildren, lang, canManage }: ChildrenCli
               className="group relative flex flex-col rounded-3xl border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-emerald-200 sm:p-5"
             >
               {/* Remove */}
-              {canManage && (
+              {canEdit && (
                 <button
                   disabled={isPending}
                   onClick={() => handleRemoveChild(child.userId)}

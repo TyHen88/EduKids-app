@@ -51,9 +51,11 @@ const empty: CourseInput = {
 export const ParentCourseManager = ({
   courses,
   lang,
+  canCreateCourse = true,
 }: {
   courses: ParentCourse[];
   lang: string;
+  canCreateCourse?: boolean;
 }) => {
   const dict = useDictionary();
   const router = useRouter();
@@ -98,15 +100,15 @@ export const ParentCourseManager = ({
       const url = await uploadImage(formData);
       set("imageSrc", url);
       toast.success(dict["myCourses.imageUploaded"] || "Image uploaded successfully!", { id: toastId });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : (dict["myCourses.uploadFailed"] || "Upload failed."), { id: toastId });
+    } catch (err: any) {
+      toast.error(err.message || (dict as any)["myCourses.failedToUploadImage"] || "Failed to upload image.", { id: toastId });
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!form.title.trim()) {
       toast.error(dict["myCourses.titleRequired"] || "Title is required.");
       return;
@@ -147,15 +149,17 @@ export const ParentCourseManager = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 rounded-2xl font-bold"
-          onClick={openCreate}
-          disabled={pending}
-        >
-          <Plus className="mr-1 h-5 w-5" /> {dict["myCourses.createCourse"] || "Create Course"}
-        </Button>
-      </div>
+      {canCreateCourse && (
+        <div className="flex justify-end">
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 rounded-2xl font-bold"
+            onClick={openCreate}
+            disabled={pending}
+          >
+            <Plus className="mr-1 h-5 w-5" /> {dict["myCourses.createCourse"] || "Create Course"}
+          </Button>
+        </div>
+      )}
 
       {courses.length === 0 ? (
         <div className="rounded-[32px] border-2 border-b-4 border-slate-100 border-b-slate-200 bg-white p-12 text-center shadow-sm">

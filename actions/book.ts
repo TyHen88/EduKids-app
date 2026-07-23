@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import db from "@/db/drizzle";
 import { auth } from "@/lib/auth";
 import { getIsAdmin } from "@/lib/admin";
-import { books, bookUnits, userProgress } from "@/db/schema";
+import { books, bookUnits, userProgress, familyGroups, familyGroupAdults } from "@/db/schema";
+import { hasPermission } from "@/lib/family-permissions";
 
 export type BookInput = {
   title: string;
@@ -27,9 +28,22 @@ const assertAdminOrParent = async () => {
     where: eq(userProgress.userId, userId),
     columns: { role: true },
   });
-  if (user?.role === "parent") return { userId, isAdmin: false, isParent: true };
+  if (user?.role === "parent") {
+    // Check family group ownership or book permission
+    const ownedGroup = await db.query.familyGroups.findFirst({
+      where: eq(familyGroups.ownerId, userId),
+    });
+    if (ownedGroup) return { userId, isAdmin: false, isParent: true };
+
+    const adultLink = await db.query.familyGroupAdults.findFirst({
+      where: eq(familyGroupAdults.userId, userId),
+    });
+    if (adultLink && hasPermission(adultLink.permissions as any, "book")) {
+      return { userId, isAdmin: false, isParent: true };
+    }
+  }
   
-  throw new Error("Unauthorized.");
+  throw new Error("You do not have permission to manage storybooks.");
 };
 
 const assertBookOwnership = async (bookId: number) => {
@@ -41,9 +55,37 @@ const assertBookOwnership = async (bookId: number) => {
     columns: { createdBy: true },
   });
   
-  if (!book || book.createdBy !== userId) {
-    throw new Error("Unauthorized or book not found.");
+  if (!book) throw new Error("Book not found.");
+  if (book.createdBy === userId) return;
+
+  // Check if caller is in the same family group as the creator with book permission
+  if (book.createdBy) {
+    const creatorOwnedGroup = await db.query.familyGroups.findFirst({
+      where: eq(familyGroups.ownerId, book.createdBy),
+    });
+    const creatorAdultLink = await db.query.familyGroupAdults.findFirst({
+      where: eq(familyGroupAdults.userId, book.createdBy),
+    });
+    const bookFamilyGroupId = creatorOwnedGroup?.id || creatorAdultLink?.familyGroupId;
+
+    if (bookFamilyGroupId) {
+      const callerOwnedGroup = await db.query.familyGroups.findFirst({
+        where: eq(familyGroups.ownerId, userId),
+      });
+      const callerAdultLink = await db.query.familyGroupAdults.findFirst({
+        where: eq(familyGroupAdults.userId, userId),
+      });
+      const callerFamilyGroupId = callerOwnedGroup?.id || callerAdultLink?.familyGroupId;
+
+      if (callerFamilyGroupId === bookFamilyGroupId) {
+        if (callerOwnedGroup || (callerAdultLink && hasPermission(callerAdultLink.permissions as any, "book"))) {
+          return;
+        }
+      }
+    }
   }
+
+  throw new Error("Unauthorized to modify this book.");
 };
 
 const normalize = (data: BookInput) => ({

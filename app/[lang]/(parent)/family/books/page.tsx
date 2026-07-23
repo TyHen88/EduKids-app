@@ -1,8 +1,10 @@
 import { BookText } from "lucide-react";
 
-import { getParentBooks } from "@/db/queries";
+import { getParentBooks, getFamilyGroupDetails } from "@/db/queries";
 import { getDictionary } from "@/app/[lang]/dictionaries";
 import { BookManager } from "@/app/[lang]/admin/books/book-manager";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/family-permissions";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -10,8 +12,22 @@ type Props = {
 
 const ParentBooksPage = async ({ params }: Props) => {
   const { lang } = await params;
+  const { userId } = await auth();
   const dict = await getDictionary(lang as "km" | "en");
-  const books = await getParentBooks();
+  const [books, familyGroup] = await Promise.all([
+    getParentBooks(),
+    getFamilyGroupDetails(),
+  ]);
+
+  let canManageBook = false;
+  if (!familyGroup || familyGroup.ownerId === userId) {
+    canManageBook = true;
+  } else {
+    const adultLink = familyGroup.adults.find((a) => a.userId === userId);
+    if (adultLink?.permissions) {
+      canManageBook = hasPermission(adultLink.permissions as any, "book");
+    }
+  }
 
   return (
     <div className="space-y-6 pb-12 sm:space-y-8">
@@ -29,7 +45,7 @@ const ParentBooksPage = async ({ params }: Props) => {
         </div>
       </div>
 
-      <BookManager books={books} lang={lang} basePath={`/${lang}/family/books`} />
+      <BookManager books={books} lang={lang} basePath={`/${lang}/family/books`} canCreate={canManageBook} />
     </div>
   );
 };

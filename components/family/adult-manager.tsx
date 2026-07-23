@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { inviteFamilyAdult, removeFamilyAdult, acceptFamilyInvite } from "@/actions/family";
+import { inviteFamilyAdult, removeFamilyAdult, acceptFamilyInvite, updateAdultPermissions } from "@/actions/family";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { updateAdultPermissions } from "@/actions/family";
+import { hasPermission, DEFAULT_MEMBER_PERMISSIONS, type PermissionAction } from "@/lib/family-permissions";
 
 type AdultManagerProps = {
   isOwner: boolean;
@@ -64,7 +64,7 @@ export const AdultManager = ({ isOwner, adults, ownerId, currentUserId, lang }: 
     if (!email) return;
 
     startTransition(() => {
-      inviteFamilyAdult(email, { view: true, manage: true }, lang)
+      inviteFamilyAdult(email, DEFAULT_MEMBER_PERMISSIONS, lang)
         .then(() => {
           toast.success("Invitation sent successfully!");
           setEmail("");
@@ -88,28 +88,31 @@ export const AdultManager = ({ isOwner, adults, ownerId, currentUserId, lang }: 
     setIsPermissionsModalOpen(true);
   };
 
-  const handlePermissionToggle = (checked: boolean) => {
+  const handlePermissionToggle = (action: PermissionAction, checked: boolean) => {
     if (!selectedAdult) return;
     
+    const currentPerms = selectedAdult.permissions || {};
     const newPermissions = {
-      ...(selectedAdult.permissions || {}),
-      manage: checked
+      ...currentPerms,
+      [action]: checked,
+      // Clear legacy manage override when toggling specific permissions so granular toggles take effect
+      manage: false,
     };
     
-    // Update local state immediately for snappy UI
     setSelectedAdult({
       ...selectedAdult,
       permissions: newPermissions,
     });
-    
-    // Optimistic UI update by modifying the object in place could work,
-    // but the server action will trigger a revalidatePath anyway.
     
     startTransition(() => {
       updateAdultPermissions(selectedAdult.userId, newPermissions, lang)
         .then(() => toast.success("Permissions updated!"))
         .catch((err) => toast.error(err.message));
     });
+  };
+
+  const isPermChecked = (action: PermissionAction) => {
+    return hasPermission(selectedAdult?.permissions, action);
   };
 
   return (
@@ -226,24 +229,85 @@ export const AdultManager = ({ isOwner, adults, ownerId, currentUserId, lang }: 
       </div>
 
       <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Manage Permissions</DialogTitle>
             <DialogDescription className="text-slate-500 font-semibold">
               Adjust what <span className="text-slate-800 font-bold">{selectedAdult?.user?.userName || "this member"}</span> can do in your family.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-6">
+          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            {/* Create Children */}
             <div className="flex flex-row items-center justify-between rounded-xl border-2 border-slate-100 p-4">
-              <div className="space-y-0.5">
-                <h4 className="font-bold text-slate-800">Manage Children</h4>
+              <div className="space-y-0.5 max-w-[280px]">
+                <h4 className="font-bold text-slate-800">Create Children</h4>
                 <p className="text-sm font-semibold text-slate-500">
-                  Allow this member to add or remove children from the family.
+                  Allow this member to add new child profiles to the family.
                 </p>
               </div>
               <Switch
-                checked={(selectedAdult?.permissions as any)?.manage === true}
-                onCheckedChange={handlePermissionToggle}
+                checked={isPermChecked("createChild")}
+                onCheckedChange={(checked) => handlePermissionToggle("createChild", checked)}
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Edit Children */}
+            <div className="flex flex-row items-center justify-between rounded-xl border-2 border-slate-100 p-4">
+              <div className="space-y-0.5 max-w-[280px]">
+                <h4 className="font-bold text-slate-800">Edit Children</h4>
+                <p className="text-sm font-semibold text-slate-500">
+                  Allow this member to edit or remove child profiles from the family.
+                </p>
+              </div>
+              <Switch
+                checked={isPermChecked("editChild")}
+                onCheckedChange={(checked) => handlePermissionToggle("editChild", checked)}
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Create Course */}
+            <div className="flex flex-row items-center justify-between rounded-xl border-2 border-slate-100 p-4">
+              <div className="space-y-0.5 max-w-[280px]">
+                <h4 className="font-bold text-slate-800">Create Course</h4>
+                <p className="text-sm font-semibold text-slate-500">
+                  Allow this member to create and manage courses for the family.
+                </p>
+              </div>
+              <Switch
+                checked={isPermChecked("createCourse")}
+                onCheckedChange={(checked) => handlePermissionToggle("createCourse", checked)}
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Book Action */}
+            <div className="flex flex-row items-center justify-between rounded-xl border-2 border-slate-100 p-4">
+              <div className="space-y-0.5 max-w-[280px]">
+                <h4 className="font-bold text-slate-800">Book Action</h4>
+                <p className="text-sm font-semibold text-slate-500">
+                  Allow this member to create and manage storybooks for the family.
+                </p>
+              </div>
+              <Switch
+                checked={isPermChecked("book")}
+                onCheckedChange={(checked) => handlePermissionToggle("book", checked)}
+                disabled={isPending}
+              />
+            </div>
+
+            {/* Commons Event Action */}
+            <div className="flex flex-row items-center justify-between rounded-xl border-2 border-slate-100 p-4">
+              <div className="space-y-0.5 max-w-[280px]">
+                <h4 className="font-bold text-slate-800">Commons Event Action</h4>
+                <p className="text-sm font-semibold text-slate-500">
+                  Allow this member to access and execute commons & event actions.
+                </p>
+              </div>
+              <Switch
+                checked={isPermChecked("commonsEvent")}
+                onCheckedChange={(checked) => handlePermissionToggle("commonsEvent", checked)}
                 disabled={isPending}
               />
             </div>

@@ -40,7 +40,7 @@ const FamilyMembersPage = async ({ params }: Props) => {
               id: 0,
               userId: familyGroup.ownerId,
               status: "active",
-              permissions: { manage: true, view: true },
+              permissions: { manage: true, view: true, createChild: true, editChild: true, createCourse: true, book: true, commonsEvent: true },
               user: familyGroup.owner,
             },
             ...familyGroup.adults,
